@@ -1,4 +1,6 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+
+import { AppState } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import HomeScreen from '@/app/index';
@@ -58,6 +60,7 @@ test('re-checks the stage when the budget is missing', async () => {
   await waitFor(() => expect(mockRefreshStage).toHaveBeenCalledTimes(1));
   // The stage stayed 'ready', so the screen must not spin forever.
   await screen.findByRole('button', { name: '다시 시도' });
+  screen.getByText('정보를 불러오지 못했어요. 다시 시도해 주세요.');
 });
 
 test('re-checks the stage when the pet is missing', async () => {
@@ -76,4 +79,40 @@ test('offers a retry when the server is unreachable', async () => {
 
   await screen.findByText('고양이 · 안정');
   expect(mockApi.getHome).toHaveBeenCalledTimes(2);
+});
+
+describe('returning to the foreground', () => {
+  function captureAppStateHandler() {
+    const remove = jest.fn();
+    const spy = jest.spyOn(AppState, 'addEventListener').mockImplementation(() => ({ remove }));
+    return { spy, remove, handler: () => spy.mock.calls[0][1] as (state: string) => void };
+  }
+
+  afterEach(() => jest.restoreAllMocks());
+
+  test('refetches home without the spinner and shows the new data', async () => {
+    const { handler, remove } = captureAppStateHandler();
+    mockApi.getHome.mockResolvedValueOnce(HOME).mockResolvedValueOnce({ ...HOME, month: '2026-11' });
+    const view = await render(<HomeScreen />);
+    await screen.findByText('고양이 · 안정');
+
+    await act(async () => handler()('active'));
+
+    await screen.findByText('2026년 11월');
+    expect(mockApi.getHome).toHaveBeenCalledTimes(2);
+    await view.unmount();
+    expect(remove).toHaveBeenCalled();
+  });
+
+  test('re-checks the stage when the refetch reports a missing budget', async () => {
+    const { handler } = captureAppStateHandler();
+    mockApi.getHome.mockResolvedValueOnce(HOME).mockRejectedValueOnce(new ApiError(409, 'BUDGET_REQUIRED'));
+    await render(<HomeScreen />);
+    await screen.findByText('고양이 · 안정');
+
+    await act(async () => handler()('active'));
+
+    await waitFor(() => expect(mockRefreshStage).toHaveBeenCalledTimes(1));
+    expect(mockApi.getHome).toHaveBeenCalledTimes(2);
+  });
 });

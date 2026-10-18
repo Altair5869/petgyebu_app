@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AppState, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiError } from '@/api/client';
@@ -11,7 +11,9 @@ import { monthTitle } from '@/lib/month';
 import { PET_LABELS, PET_STATE_COPY } from '@/lib/pet';
 import { useSession } from '@/session/session-provider';
 
-type HomeLoad = { status: 'loading' } | { status: 'error' } | { status: 'loaded'; home: Home };
+type HomeLoad = { status: 'loading' } | { status: 'error'; message: string } | { status: 'loaded'; home: Home };
+
+const LOAD_FAILED = '정보를 불러오지 못했어요. 다시 시도해 주세요.';
 
 function isStageError(error: unknown): boolean {
   return error instanceof ApiError && (error.code === 'PET_REQUIRED' || error.code === 'BUDGET_REQUIRED');
@@ -22,14 +24,14 @@ export default function HomeScreen() {
   const [load, setLoad] = useState<HomeLoad>({ status: 'loading' });
 
   const fetchHome = useCallback(() => {
-    const showError = () => setLoad({ status: 'error' });
+    const showError = (message: string) => () => setLoad({ status: 'error', message });
     return api.getHome().then(
         (home) => setLoad({ status: 'loaded', home }),
         (error: unknown) => {
           // e.g. the month rolled over while the app was open: let the session route to pet/budget.
           // If the stage stays 'ready' (or the check fails), this screen remains, so offer a retry.
-          if (isStageError(error)) refreshStage().then(showError, showError);
-          else showError();
+          if (isStageError(error)) refreshStage().then(showError(LOAD_FAILED), showError(LOAD_FAILED));
+          else showError(CONNECTION_ERROR)();
         },
       );
   }, [api, refreshStage]);
@@ -38,13 +40,21 @@ export default function HomeScreen() {
     fetchHome();
   }, [fetchHome]);
 
+  // Coming back to the foreground may mean a new month or an expired session; refetch quietly.
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') fetchHome();
+    });
+    return () => subscription.remove();
+  }, [fetchHome]);
+
   function retry() {
     setLoad({ status: 'loading' });
     fetchHome();
   }
 
   if (load.status === 'loading') return <LoadingView />;
-  if (load.status === 'error') return <MessageView message={CONNECTION_ERROR} actionLabel="다시 시도" onAction={retry} />;
+  if (load.status === 'error') return <MessageView message={load.message} actionLabel="다시 시도" onAction={retry} />;
 
   const { home } = load;
   const petCopy = PET_STATE_COPY[home.petState];

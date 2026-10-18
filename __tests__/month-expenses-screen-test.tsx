@@ -1,8 +1,10 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { router } from 'expo-router';
 
 import MonthExpensesScreen from '@/app/expenses';
+import { currentMonth } from '@/lib/month';
 
+let mockFocusEffect: () => void = () => {};
 const mockApi = { getMonthExpenses: jest.fn() };
 
 jest.mock('@/session/session-provider', () => ({
@@ -13,7 +15,10 @@ jest.mock('expo-router', () => {
   const { useEffect } = jest.requireActual('react');
   return {
     router: { push: jest.fn() },
-    useFocusEffect: (effect: () => void) => useEffect(() => effect(), [effect]),
+    useFocusEffect: (effect: () => void) => {
+      mockFocusEffect = effect;
+      useEffect(() => effect(), [effect]);
+    },
   };
 });
 
@@ -57,4 +62,59 @@ test('offers a retry when the first page fails', async () => {
   await fireEvent.press(screen.getByRole('button', { name: '다시 시도' }));
 
   await screen.findByText('아직 기록한 지출이 없어요');
+});
+
+const row = (id: number, memo: string) => ({
+  id,
+  amount: 1000,
+  expenseDate: '2026-10-17',
+  category: 'CAFE',
+  memo,
+});
+
+test('loads the next page when the list end is reached', async () => {
+  mockApi.getMonthExpenses
+    .mockResolvedValueOnce({ items: [row(2, '둘')], nextCursor: 'c1' })
+    .mockResolvedValueOnce({ items: [row(1, '하나')], nextCursor: null });
+  await render(<MonthExpensesScreen />);
+  await screen.findByText('둘');
+
+  await fireEvent(screen.getByTestId('expense-list'), 'endReached');
+
+  await screen.findByText('하나');
+  expect(mockApi.getMonthExpenses).toHaveBeenLastCalledWith(currentMonth(), 'c1');
+  screen.getByText('둘');
+});
+
+test('retries a failed next page only from the footer button', async () => {
+  mockApi.getMonthExpenses
+    .mockResolvedValueOnce({ items: [row(2, '둘')], nextCursor: 'c1' })
+    .mockRejectedValueOnce(new TypeError('Network request failed'))
+    .mockResolvedValueOnce({ items: [row(1, '하나')], nextCursor: null });
+  await render(<MonthExpensesScreen />);
+  await screen.findByText('둘');
+
+  await fireEvent(screen.getByTestId('expense-list'), 'endReached');
+  await screen.findByRole('button', { name: '다시 시도' });
+  screen.getByText('둘');
+  expect(mockApi.getMonthExpenses).toHaveBeenCalledTimes(2);
+
+  await fireEvent(screen.getByTestId('expense-list'), 'endReached');
+  expect(mockApi.getMonthExpenses).toHaveBeenCalledTimes(2);
+
+  await fireEvent.press(screen.getByRole('button', { name: '다시 시도' }));
+  await screen.findByText('하나');
+  expect(mockApi.getMonthExpenses).toHaveBeenLastCalledWith(currentMonth(), 'c1');
+});
+
+test('reloads from the first page when the screen regains focus', async () => {
+  mockApi.getMonthExpenses.mockResolvedValue({ items: [row(1, '하나')], nextCursor: null });
+  await render(<MonthExpensesScreen />);
+  await screen.findByText('하나');
+
+  await act(async () => mockFocusEffect());
+
+  await screen.findByText('하나');
+  expect(mockApi.getMonthExpenses).toHaveBeenCalledTimes(2);
+  expect(mockApi.getMonthExpenses).toHaveBeenLastCalledWith(currentMonth(), undefined);
 });

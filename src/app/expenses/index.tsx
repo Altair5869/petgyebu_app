@@ -9,6 +9,10 @@ import { CONNECTION_ERROR } from '@/lib/error-message';
 import { currentMonth, monthTitle } from '@/lib/month';
 import { useSession } from '@/session/session-provider';
 
+function Separator() {
+  return <View style={styles.separator} />;
+}
+
 export default function MonthExpensesScreen() {
   const { api } = useSession();
   const month = currentMonth();
@@ -24,12 +28,13 @@ export default function MonthExpensesScreen() {
 
   return (
     <FlatList
+      testID="expense-list"
       style={styles.list}
       contentContainerStyle={styles.content}
       data={list.items}
       keyExtractor={(item) => String(item.id)}
       renderItem={({ item }) => <ExpenseRow expense={item} />}
-      ItemSeparatorComponent={() => <View style={styles.separator} />}
+      ItemSeparatorComponent={Separator}
       ListHeaderComponent={
         <View style={styles.header}>
           <Text style={styles.month}>{monthTitle(month)}</Text>
@@ -48,7 +53,8 @@ export default function MonthExpensesScreen() {
           <Text style={[styles.message, styles.footer]}>모든 내역을 불러왔어요</Text>
         ) : undefined
       }
-      onEndReached={list.loadMore}
+      // After a failed page only the footer button retries, so layout changes can't loop requests.
+      onEndReached={list.moreError ? undefined : list.loadMore}
       onEndReachedThreshold={0.5}
     />
   );

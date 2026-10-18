@@ -30,6 +30,7 @@ export default function MonthExpensesScreen() {
     <FlatList
       testID="expense-list"
       style={styles.list}
+      contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={styles.content}
       data={list.items}
       keyExtractor={(item) => String(item.id)}

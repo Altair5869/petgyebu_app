@@ -15,10 +15,6 @@ jest.mock('expo-router', () => ({
   router: { back: jest.fn(), push: jest.fn() },
 }));
 
-jest.mock('expo-router/react-navigation', () => ({
-  useHeaderHeight: () => 0,
-}));
-
 // The SwiftUI picker is native; render its value so tests can see it.
 jest.mock('@expo/ui/community/datetime-picker', () => {
   const { createElement } = jest.requireActual('react');

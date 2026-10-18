@@ -1,6 +1,5 @@
 import DatePicker from '@expo/ui/community/datetime-picker';
 import { router } from 'expo-router';
-import { useHeaderHeight } from 'expo-router/react-navigation';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,7 +21,6 @@ type FieldErrors = Partial<Record<'amount' | 'expenseDate' | 'category' | 'memo'
 
 export default function NewExpenseScreen() {
   const { api } = useSession();
-  const headerHeight = useHeaderHeight();
   const [amountText, setAmountText] = useState('');
   const [day, setDay] = useState(() => todayInSeoul());
   const [category, setCategory] = useState<ExpenseCategory | null>(null);
@@ -63,10 +61,7 @@ export default function NewExpenseScreen() {
 
   return (
     <SafeAreaView edges={['bottom']} style={styles.safeArea}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={headerHeight}
-        style={styles.flex}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <ScrollView
           contentInsetAdjustmentBehavior="automatic"
           contentContainerStyle={styles.form}

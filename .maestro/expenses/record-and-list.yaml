@@ -1,0 +1,38 @@
+# 지출 기록 → 홈 갱신 → 이번 달 내역. 준비: first-login 직후(예산 300,000원, 지출 0건).
+appId: host.exp.Exponent
+env:
+  APP_URL: exp://127.0.0.1:8081
+---
+- runFlow: ../subflows/open-app.yaml
+- extendedWaitUntil: { visible: "고양이 · 안정", timeout: 120000 }
+- tapOn: "지출 기록하기"
+# The home card is also titled "지출 기록", so wait for something only the entry screen shows.
+- extendedWaitUntil: { visible: "금액을 입력해 주세요", timeout: 20000 }
+- tapOn: "지출 금액"
+- inputText: "12000"
+- tapOn: "카페"
+- tapOn: "메모"
+- inputText: "라떼"
+- waitForAnimationToEnd
+- tapOn: "저장"
+- extendedWaitUntil: { visible: "288,000원 남았어요", timeout: 20000 }
+- assertVisible: "사용률 4%"
+- tapOn: "지출 기록하기"
+- tapOn: "지출 금액"
+- inputText: "5000"
+- waitForAnimationToEnd
+- tapOn: "저장"
+- extendedWaitUntil: { visible: "283,000원 남았어요", timeout: 20000 }
+- tapOn: "지출 기록하기"
+- tapOn: "지출 금액"
+- inputText: "150000"
+- waitForAnimationToEnd
+- tapOn: "저장"
+- extendedWaitUntil: { visible: "고양이 · 주의", timeout: 20000 }
+- tapOn: "이번 달 내역 보기"
+- extendedWaitUntil: { visible: "라떼", timeout: 20000 }
+- assertVisible: ".*월 .*일 · 카페"
+- assertVisible: "12,000원"
+- assertVisible: "기타"
+- assertVisible: "5,000원"
+- assertVisible: "모든 내역을 불러왔어요"

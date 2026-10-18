@@ -56,6 +56,10 @@ maestro test -e APP_URL=exp://127.0.0.1:8081 .maestro/onboarding/relaunch-home.y
 | `onboarding/budget-range.yaml` | 0원·1억 원 초과면 저장 비활성 | 예산 화면이 열린 상태 |
 | `onboarding/budget-suggestion.yaml` | 직전 달 예산 제안 | 펫만 고른 계정 + 아래 "직전 달 예산 넣기" |
 | `onboarding/server-unavailable.yaml` | 서버가 꺼지면 연결 오류와 다시 시도 | 로그인된 계정, 백엔드 중지 |
+| `expenses/record-and-list.yaml` | 지출 기록 → 홈 갱신 → 이번 달 내역 | `first-login` 직후 |
+| `expenses/validation.yaml` | 빈 금액·101자 메모는 저장 비활성 | 홈 |
+| `expenses/paging.yaml` | 25건 목록 무한 스크롤 | 새 개발용 ID, 아래 "이번 달 지출 25건 넣기" |
+| `expenses/list-server-unavailable.yaml` | 백엔드가 꺼지면 내역에서 오류와 다시 시도 | 홈이 열린 상태, 백엔드 중지 |
 
 앱에 아직 로그아웃이 없어서, 다른 계정으로 시작하려면 먼저 앱 세션을 끊는다.
 
@@ -69,6 +73,12 @@ docker exec petgyebu_backend_renewal-postgres-1 psql -U petgyebu -d petgyebu -c 
   "INSERT INTO monthly_budgets (user_id, budget_month, amount) \
    SELECT id, (date_trunc('month', now() AT TIME ZONE 'Asia/Seoul') - interval '1 month')::date, 250000 \
    FROM users WHERE provider = 'KAKAO' AND provider_user_id = '<개발용 ID>';"
+
+# 이번 달 지출 25건 넣기: 로컬 개발 DB에만 실행
+docker exec petgyebu_backend_renewal-postgres-1 psql -U petgyebu -d petgyebu -c \
+  "INSERT INTO expenses (user_id, amount, expense_date, category, memo) \
+   SELECT u.id, 1000, (now() AT TIME ZONE 'Asia/Seoul')::date, 'OTHER', 'p' || lpad(g::text, 2, '0') \
+   FROM users u, generate_series(1, 25) g WHERE u.provider = 'KAKAO' AND u.provider_user_id = '<개발용 ID>';"
 ```
 
 리프레시 토큰은 DB에 해시로 저장되므로 백엔드를 다시 시작해도(JWT 비밀값이 바뀌어도) 앱 세션은 유지된다.

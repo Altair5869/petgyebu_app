@@ -1,0 +1,5 @@
+# Restart Expo Go and open the app from the local Metro server.
+appId: host.exp.Exponent
+---
+- stopApp
+- openLink: "${APP_URL}?__expo_disable_fab=1&__expo_disable_auto_launch=1&__expo_disable_onboarding=1"

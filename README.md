@@ -27,6 +27,52 @@ GitHub Actions(`.github/workflows/ci.yml`)가 모든 push·PR에서 lint, typech
 
 **확인 순서**: 로그인하고 펫·현재 월 예산을 설정한다. 그다음 지출을 저장하면 `POST /expenses`가 호출되고, 현재 월 목록(`GET /months/{month}/expenses`)을 첫 페이지부터 다시 불러오고, 새 항목이 날짜 내림차순 위치에 보여야 한다. 홈으로 돌아가면 `GET /home`이 다시 호출되어 사용 금액과 펫 상태가 바뀌어야 한다. 앱을 재시작해도 같은 값이 나오는지 확인한다.
 
+## 시뮬레이터 자동 확인 (Maestro)
+
+`.maestro/`에 사용자 흐름 확인 시나리오를 둔다. CI에서는 돌리지 않고, 사용자 흐름을 바꾼 뒤 로컬 iOS 시뮬레이터에서 실행한다.
+
+**준비**
+
+1. Maestro 설치: `brew tap mobile-dev-inc/tap && brew install mobile-dev-inc/tap/maestro` (Java 17 이상, Xcode 필요)
+2. 백엔드 `./gradlew bootTestRun` 실행
+3. `.env.local`의 `EXPO_PUBLIC_DEV_LOGIN_ID`를 처음 쓰는 값으로 바꾸고 `npx expo start --clear`로 Metro 실행. `EXPO_PUBLIC_*`는 번들에 들어가므로 값을 바꾸면 Metro를 다시 시작한다(실행 명령 앞에 환경 변수를 붙여도 `.env.local` 값이 우선한다).
+4. iOS 27.0 시뮬레이터를 켜고 Expo Go를 한 번 연다(`npm run ios`).
+
+**실행**
+
+```bash
+maestro test .maestro/onboarding/first-login.yaml
+maestro test -e APP_URL=exp://127.0.0.1:8081 .maestro/onboarding/relaunch-home.yaml   # Metro 주소가 다를 때
+```
+
+**시나리오와 준비 상태**
+
+| 파일 | 확인 내용 | 준비 |
+|---|---|---|
+| `onboarding/first-login.yaml` | 로그인 → 고양이 → 예산 300,000원 → 홈 | 새 개발용 ID, 로그인 화면 |
+| `onboarding/relaunch-home.yaml` | 재실행 시 로그인 없이 홈 | `first-login` 이후 |
+| `onboarding/relaunch-sign-in.yaml` | 세션이 끊기면 로그인 화면 | 아래 "앱 세션 끊기" |
+| `onboarding/pet-only-relaunch.yaml` | 펫만 고르고 재실행하면 예산 화면부터 | 새 개발용 ID, 로그인 화면 |
+| `onboarding/budget-range.yaml` | 0원·1억 원 초과면 저장 비활성 | 예산 화면이 열린 상태 |
+| `onboarding/budget-suggestion.yaml` | 직전 달 예산 제안 | 펫만 고른 계정 + 아래 "직전 달 예산 넣기" |
+| `onboarding/server-unavailable.yaml` | 서버가 꺼지면 연결 오류와 다시 시도 | 로그인된 계정, 백엔드 중지 |
+
+앱에 아직 로그아웃이 없어서, 다른 계정으로 시작하려면 먼저 앱 세션을 끊는다.
+
+```bash
+# 앱 세션 끊기: 같은 계정으로 다른 곳에서 로그인하면 이전 로그인이 무효가 된다(bootTestRun 전용 가짜 로그인)
+curl -X POST http://localhost:8080/api/v1/auth/login/kakao \
+  -H 'Content-Type: application/json' -d '{"credential":"ok:<현재 개발용 ID>"}'
+
+# 직전 달 예산 넣기: 로컬 개발 DB에만 실행
+docker exec petgyebu_backend_renewal-postgres-1 psql -U petgyebu -d petgyebu -c \
+  "INSERT INTO monthly_budgets (user_id, budget_month, amount) \
+   SELECT id, (date_trunc('month', now() AT TIME ZONE 'Asia/Seoul') - interval '1 month')::date, 250000 \
+   FROM users WHERE provider = 'KAKAO' AND provider_user_id = '<개발용 ID>';"
+```
+
+리프레시 토큰은 DB에 해시로 저장되므로 백엔드를 다시 시작해도(JWT 비밀값이 바뀌어도) 앱 세션은 유지된다.
+
 ## Expo
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).

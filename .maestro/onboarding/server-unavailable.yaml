@@ -1,0 +1,8 @@
+# 백엔드가 꺼져 있으면 연결 오류와 다시 시도. 준비: 로그인된 계정, 백엔드 중지.
+appId: host.exp.Exponent
+env:
+  APP_URL: exp://127.0.0.1:8081
+---
+- runFlow: ../subflows/open-app.yaml
+- extendedWaitUntil: { visible: "서버에 연결할 수 없어요. 다시 시도해 주세요.", timeout: 120000 }
+- assertVisible: "다시 시도"

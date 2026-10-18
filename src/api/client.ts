@@ -1,4 +1,16 @@
-import type { Budget, ErrorBody, FieldError, Home, Me, PetType, Provider, TokenResponse } from './types';
+import type {
+  Budget,
+  ErrorBody,
+  Expense,
+  ExpensePage,
+  FieldError,
+  Home,
+  Me,
+  NewExpense,
+  PetType,
+  Provider,
+  TokenResponse,
+} from './types';
 
 export class ApiError extends Error {
   constructor(
@@ -26,6 +38,8 @@ type ApiClientOptions = {
   tokenStore: TokenStore;
   onSessionExpired: () => void;
 };
+
+const EXPENSE_PAGE_SIZE = 20;
 
 type Method = 'GET' | 'POST' | 'PUT';
 
@@ -112,5 +126,13 @@ export function createApiClient({ baseUrl, tokenStore, onSessionExpired }: ApiCl
     putBudget: (month: string, amount: number) =>
       request<Budget>('PUT', `/months/${month}/budget`, { amount }),
     getHome: () => request<Home>('GET', '/home'),
+    createExpense: (body: NewExpense) => request<Expense>('POST', '/expenses', body),
+    // The cursor is opaque: pass it back exactly as received.
+    getMonthExpenses: (month: string, cursor?: string) =>
+      request<ExpensePage>(
+        'GET',
+        `/months/${month}/expenses?limit=${EXPENSE_PAGE_SIZE}` +
+          (cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''),
+      ),
   };
 }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiError } from '@/api/client';
@@ -62,33 +62,39 @@ export default function BudgetScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>{monthTitle(month)} 예산</Text>
-      <View style={styles.field}>
-        <View style={styles.inputRow}>
-          <TextInput
-            accessibilityLabel="예산 금액"
-            keyboardType="number-pad"
-            value={text}
-            onChangeText={handleChange}
-            placeholder="0"
-            style={styles.input}
-          />
-          <Text style={styles.unit}>원</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboardAvoiding}>
+        <View style={styles.container}>
+          <Text style={styles.title}>{monthTitle(month)} 예산</Text>
+          <View style={styles.field}>
+            <View style={styles.inputRow}>
+              <TextInput
+                accessibilityLabel="예산 금액"
+                keyboardType="number-pad"
+                value={text}
+                onChangeText={handleChange}
+                placeholder="0"
+                style={styles.input}
+              />
+              <Text style={styles.unit}>원</Text>
+            </View>
+            {suggested && <Text style={styles.hint}>지난달 예산을 불러왔어요</Text>}
+            {!parsed.ok && <Text style={styles.hint}>{parsed.error}</Text>}
+            {serverError && <Text style={styles.error}>{serverError}</Text>}
+          </View>
+          <View style={styles.footer}>
+            <Button label="저장" onPress={() => void save()} disabled={!parsed.ok} loading={saving} />
+          </View>
         </View>
-        {suggested && <Text style={styles.hint}>지난달 예산을 불러왔어요</Text>}
-        {!parsed.ok && <Text style={styles.hint}>{parsed.error}</Text>}
-        {serverError && <Text style={styles.error}>{serverError}</Text>}
-      </View>
-      <View style={styles.footer}>
-        <Button label="저장" onPress={() => void save()} disabled={!parsed.ok} loading={saving} />
-      </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, gap: 24, backgroundColor: '#fff' },
+  safeArea: { flex: 1, backgroundColor: '#fff' },
+  keyboardAvoiding: { flex: 1 },
+  container: { flex: 1, padding: 24, gap: 24 },
   title: { fontSize: 24, fontWeight: '700', color: '#111', marginTop: 24 },
   field: { gap: 8 },
   inputRow: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: 2, borderColor: '#208AEF' },

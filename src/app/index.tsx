@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { AppState, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { router, useFocusEffect } from 'expo-router';
+import { AppState, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiError } from '@/api/client';
 import type { Home } from '@/api/types';
+import { Button } from '@/components/button';
 import { LoadingView, MessageView } from '@/components/message-view';
 import { CONNECTION_ERROR } from '@/lib/error-message';
 import { describeBalance, formatUsagePercent, formatWon } from '@/lib/money';
@@ -36,9 +38,12 @@ export default function HomeScreen() {
       );
   }, [api, refreshStage]);
 
-  useEffect(() => {
-    fetchHome();
-  }, [fetchHome]);
+  // Runs on first display and every return to this screen (e.g. after saving an expense).
+  useFocusEffect(
+    useCallback(() => {
+      fetchHome();
+    }, [fetchHome]),
+  );
 
   // Coming back to the foreground may mean a new month or an expired session; refetch quietly.
   useEffect(() => {
@@ -78,6 +83,10 @@ export default function HomeScreen() {
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>지출 기록</Text>
           {home.spentAmount === 0 && <Text style={styles.body}>첫 지출을 기록해 보세요</Text>}
+          <Button label="지출 기록하기" onPress={() => router.push('/expenses/new')} />
+          <Pressable accessibilityRole="link" accessibilityLabel="이번 달 내역 보기" onPress={() => router.push('/expenses')}>
+            <Text style={styles.link}>이번 달 내역 보기</Text>
+          </Pressable>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -93,5 +102,6 @@ const styles = StyleSheet.create({
   balance: { fontSize: 24, fontWeight: '700', color: '#111' },
   sectionTitle: { fontSize: 18, fontWeight: '600', color: '#111' },
   body: { fontSize: 16, color: '#333' },
+  link: { fontSize: 15, color: '#1565C0', textAlign: 'center', paddingVertical: 8 },
   caption: { fontSize: 14, color: '#666' },
 });

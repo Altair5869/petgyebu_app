@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
+import { router } from 'expo-router';
 import { AppState } from 'react-native';
 
 import { ApiError } from '@/api/client';
@@ -7,10 +8,22 @@ import HomeScreen from '@/app/index';
 
 const mockApi = { getHome: jest.fn() };
 const mockRefreshStage = jest.fn();
+let mockFocusEffect: (() => void) | undefined;
 
 jest.mock('@/session/session-provider', () => ({
   useSession: () => ({ api: mockApi, refreshStage: mockRefreshStage }),
 }));
+
+jest.mock('expo-router', () => {
+  const { useEffect } = jest.requireActual('react');
+  return {
+    router: { push: jest.fn() },
+    useFocusEffect: (effect: () => void) => {
+      mockFocusEffect = effect;
+      useEffect(() => effect(), [effect]);
+    },
+  };
+});
 
 const HOME = {
   month: '2026-10',
@@ -115,4 +128,44 @@ describe('returning to the foreground', () => {
     await waitFor(() => expect(mockRefreshStage).toHaveBeenCalledTimes(1));
     expect(mockApi.getHome).toHaveBeenCalledTimes(2);
   });
+});
+
+test('links to expense entry and the month list', async () => {
+  mockApi.getHome.mockResolvedValue(HOME);
+  await render(<HomeScreen />);
+
+  await fireEvent.press(await screen.findByRole('button', { name: '지출 기록하기' }));
+  expect(router.push).toHaveBeenCalledWith('/expenses/new');
+  await fireEvent.press(screen.getByRole('link', { name: '이번 달 내역 보기' }));
+  expect(router.push).toHaveBeenCalledWith('/expenses');
+});
+
+test('refetches on focus without replacing the loaded home with a spinner', async () => {
+  const next = new Promise(() => {});
+  mockApi.getHome.mockResolvedValueOnce(HOME).mockReturnValueOnce(next);
+  await render(<HomeScreen />);
+  await screen.findByText('고양이 · 안정');
+
+  await act(async () => mockFocusEffect?.());
+
+  expect(mockApi.getHome).toHaveBeenCalledTimes(2);
+  screen.getByText('고양이 · 안정');
+});
+
+test('shows the new totals after a focus refetch', async () => {
+  mockApi.getHome.mockResolvedValueOnce(HOME).mockResolvedValueOnce({
+    ...HOME,
+    petState: 'CAUTION',
+    spentAmount: 162000,
+    usagePercent: 54,
+    budgetBalanceAmount: 138000,
+  });
+  await render(<HomeScreen />);
+  await screen.findByText('300,000원 남았어요');
+
+  await act(async () => mockFocusEffect?.());
+
+  await screen.findByText('고양이 · 주의');
+  screen.getByText('138,000원 남았어요');
+  screen.getByText('사용률 54%');
 });

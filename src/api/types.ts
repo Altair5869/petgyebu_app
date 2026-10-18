@@ -26,3 +26,17 @@ export type Home = {
 export type FieldError = { field: string; message: string };
 
 export type ErrorBody = { code: string; message: string; fields?: FieldError[] };
+
+export type ExpenseCategory = 'FOOD' | 'CAFE' | 'TRANSPORT' | 'SHOPPING' | 'HEALTH' | 'LIVING' | 'OTHER';
+
+export type Expense = {
+  id: number;
+  amount: number;
+  expenseDate: string;
+  category: ExpenseCategory;
+  memo: string | null;
+};
+
+export type NewExpense = Omit<Expense, 'id'>;
+
+export type ExpensePage = { items: Expense[]; nextCursor: string | null };

@@ -1,4 +1,12 @@
-import { currentMonth, monthTitle, previousMonth } from '@/lib/month';
+import {
+  currentMonth,
+  dateToSeoulDay,
+  formatDay,
+  monthTitle,
+  previousMonth,
+  seoulDayToDate,
+  todayInSeoul,
+} from '@/lib/month';
 
 describe('currentMonth', () => {
   test('uses Seoul time, not the device time zone', () => {
@@ -25,5 +33,25 @@ describe('previousMonth', () => {
 describe('monthTitle', () => {
   test('formats YYYY-MM as a Korean title', () => {
     expect(monthTitle('2026-03')).toBe('2026년 3월');
+  });
+});
+
+describe('todayInSeoul', () => {
+  test('switches the day at Seoul midnight', () => {
+    expect(todayInSeoul(new Date('2026-10-17T14:59:59Z'))).toBe('2026-10-17');
+    expect(todayInSeoul(new Date('2026-10-17T15:00:00Z'))).toBe('2026-10-18');
+  });
+});
+
+describe('seoulDayToDate / dateToSeoulDay', () => {
+  test('round-trips a Seoul calendar day', () => {
+    expect(dateToSeoulDay(seoulDayToDate('2000-01-01'))).toBe('2000-01-01');
+    expect(dateToSeoulDay(seoulDayToDate('2026-12-31'))).toBe('2026-12-31');
+  });
+});
+
+describe('formatDay', () => {
+  test('formats a day without leading zeros', () => {
+    expect(formatDay('2026-10-07')).toBe('10월 7일');
   });
 });

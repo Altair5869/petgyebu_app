@@ -1,0 +1,17 @@
+# 빈 금액·101자 메모는 저장 비활성. 준비: 홈.
+appId: host.exp.Exponent
+env:
+  APP_URL: exp://127.0.0.1:8081
+---
+- runFlow: ../subflows/open-app.yaml
+- extendedWaitUntil: { visible: "지출 기록하기", timeout: 120000 }
+- tapOn: "지출 기록하기"
+- extendedWaitUntil: { visible: "금액을 입력해 주세요", timeout: 20000 }
+- assertVisible: { text: "저장", enabled: false }
+- tapOn: "지출 금액"
+- inputText: "1000"
+# The label and the input are both named "메모"; tap the input's placeholder.
+- tapOn: "선택"
+- inputText: "가나다라마바사아자차가나다라마바사아자차가나다라마바사아자차가나다라마바사아자차가나다라마바사아자차가나다라마바사아자차가나다라마바사아자차가나다라마바사아자차가나다라마바사아자차가나다라마바사아자차가나다라마바사아자차가"
+- assertVisible: "메모는 100자까지 입력할 수 있어요"
+- assertVisible: { text: "저장", enabled: false }

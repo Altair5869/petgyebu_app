@@ -157,3 +157,37 @@ test('never puts tokens into error messages', async () => {
   expect(String(error)).not.toMatch(/secret/);
   expect(error.message).not.toMatch(/secret/);
 });
+
+test('creates an expense with the given body', async () => {
+  const body = { amount: 12000, expenseDate: '2026-10-17', category: 'OTHER', memo: null } as const;
+  handler = (url, init) => {
+    if (url.endsWith('/auth/refresh')) {
+      return jsonResponse(200, { accessToken: 'a1', refreshToken: 'r1', accessExpiresInSeconds: 900 });
+    }
+    expect(url).toBe(`${BASE}/expenses`);
+    expect(init.method).toBe('POST');
+    expect(JSON.parse(init.body as string)).toEqual(body);
+    return jsonResponse(201, { id: 42, ...body });
+  };
+  const { api } = setup('r0');
+  await api.restoreSession();
+
+  await expect(api.createExpense(body)).resolves.toEqual({ id: 42, ...body });
+});
+
+test('requests a month page with limit 20 and an encoded cursor', async () => {
+  const urls: string[] = [];
+  handler = (url) => {
+    urls.push(url);
+    return jsonResponse(200, { items: [], nextCursor: null });
+  };
+  const { api } = setup();
+
+  await api.getMonthExpenses('2026-10');
+  await api.getMonthExpenses('2026-10', 'a+b/c=');
+
+  expect(urls).toEqual([
+    `${BASE}/months/2026-10/expenses?limit=20`,
+    `${BASE}/months/2026-10/expenses?limit=20&cursor=a%2Bb%2Fc%3D`,
+  ]);
+});

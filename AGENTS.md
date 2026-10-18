@@ -62,3 +62,9 @@ Docs: https://docs.expo.dev/eas/index.md
 ### 보안
 - API 주소와 비밀값을 코드에 직접 쓰지 않는다. 환경 변수(`EXPO_PUBLIC_*`)나 앱 설정에서 가져온다. `EXPO_PUBLIC_*` 값은 앱 번들에 포함되므로 비밀값을 넣지 않는다.
 - 인증 토큰은 로그, 에러 메시지, 콘솔 출력에 남기지 않는다.
+
+### 브랜치·PR
+- 브랜치 생성·PR·병합·출시 전에 `docs/petgyebu-app-branch-strategy.md`를 읽고 따른다.
+- `main`·`develop`에 직접 커밋하지 않는다. 최신 `develop`에서 `feature/{F-ID}-{slug}`, `fix/{slug}`, `chore/{slug}`, `docs/{slug}` 브랜치를 만들고 `develop`으로 PR을 보낸다.
+- 커밋과 PR 제목은 Conventional Commits 형식을 쓴다. PR에는 기능 ID, 사용한 API, 확인한 기기, 실제로 실행한 검사 결과를 적는다.
+- 작업 PR은 `develop`에 squash merge하고, 출시 PR만 `develop` → `main` 일반 merge commit으로 병합한다.

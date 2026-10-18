@@ -56,6 +56,16 @@ test('re-checks the stage when the budget is missing', async () => {
   await render(<HomeScreen />);
 
   await waitFor(() => expect(mockRefreshStage).toHaveBeenCalledTimes(1));
+  // The stage stayed 'ready', so the screen must not spin forever.
+  await screen.findByRole('button', { name: '다시 시도' });
+});
+
+test('re-checks the stage when the pet is missing', async () => {
+  mockApi.getHome.mockRejectedValue(new ApiError(409, 'PET_REQUIRED'));
+  await render(<HomeScreen />);
+
+  await waitFor(() => expect(mockRefreshStage).toHaveBeenCalledTimes(1));
+  await screen.findByRole('button', { name: '다시 시도' });
 });
 
 test('offers a retry when the server is unreachable', async () => {

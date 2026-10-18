@@ -21,18 +21,18 @@ export default function HomeScreen() {
   const { api, refreshStage } = useSession();
   const [load, setLoad] = useState<HomeLoad>({ status: 'loading' });
 
-  const fetchHome = useCallback(
-    () =>
-      api.getHome().then(
+  const fetchHome = useCallback(() => {
+    const showError = () => setLoad({ status: 'error' });
+    return api.getHome().then(
         (home) => setLoad({ status: 'loaded', home }),
         (error: unknown) => {
           // e.g. the month rolled over while the app was open: let the session route to pet/budget.
-          if (isStageError(error)) refreshStage().catch(() => setLoad({ status: 'error' }));
-          else setLoad({ status: 'error' });
+          // If the stage stays 'ready' (or the check fails), this screen remains, so offer a retry.
+          if (isStageError(error)) refreshStage().then(showError, showError);
+          else showError();
         },
-      ),
-    [api, refreshStage],
-  );
+      );
+  }, [api, refreshStage]);
 
   useEffect(() => {
     fetchHome();

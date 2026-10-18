@@ -1,0 +1,60 @@
+import { fireEvent, render, screen } from '@testing-library/react-native';
+import { router } from 'expo-router';
+
+import MonthExpensesScreen from '@/app/expenses';
+
+const mockApi = { getMonthExpenses: jest.fn() };
+
+jest.mock('@/session/session-provider', () => ({
+  useSession: () => ({ api: mockApi }),
+}));
+
+jest.mock('expo-router', () => {
+  const { useEffect } = jest.requireActual('react');
+  return {
+    router: { push: jest.fn() },
+    useFocusEffect: (effect: () => void) => useEffect(() => effect(), [effect]),
+  };
+});
+
+beforeEach(() => jest.clearAllMocks());
+
+test('shows rows with title, subtitle, and amount, then the end message', async () => {
+  mockApi.getMonthExpenses.mockResolvedValue({
+    items: [
+      { id: 2, amount: 12000, expenseDate: '2026-10-17', category: 'CAFE', memo: '라떼' },
+      { id: 1, amount: 5000, expenseDate: '2026-10-07', category: 'OTHER', memo: null },
+    ],
+    nextCursor: null,
+  });
+  await render(<MonthExpensesScreen />);
+
+  await screen.findByText('라떼');
+  screen.getByText('10월 17일 · 카페');
+  screen.getByText('12,000원');
+  screen.getByText('기타');
+  screen.getByText('10월 7일');
+  screen.getByText('모든 내역을 불러왔어요');
+});
+
+test('shows the empty state with a record button', async () => {
+  mockApi.getMonthExpenses.mockResolvedValue({ items: [], nextCursor: null });
+  await render(<MonthExpensesScreen />);
+
+  await screen.findByText('아직 기록한 지출이 없어요');
+  expect(screen.queryByText('모든 내역을 불러왔어요')).toBeNull();
+  await fireEvent.press(screen.getByRole('button', { name: '지출 기록하기' }));
+  expect(router.push).toHaveBeenCalledWith('/expenses/new');
+});
+
+test('offers a retry when the first page fails', async () => {
+  mockApi.getMonthExpenses
+    .mockRejectedValueOnce(new TypeError('Network request failed'))
+    .mockResolvedValueOnce({ items: [], nextCursor: null });
+  await render(<MonthExpensesScreen />);
+
+  await screen.findByText('서버에 연결할 수 없어요. 다시 시도해 주세요.');
+  await fireEvent.press(screen.getByRole('button', { name: '다시 시도' }));
+
+  await screen.findByText('아직 기록한 지출이 없어요');
+});

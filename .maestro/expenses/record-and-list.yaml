@@ -11,7 +11,8 @@ env:
 - tapOn: "지출 금액"
 - inputText: "12000"
 - tapOn: "카페"
-- tapOn: "메모"
+# The label and the input are both named "메모"; tap the input's placeholder.
+- tapOn: "선택"
 - inputText: "라떼"
 - waitForAnimationToEnd
 - tapOn: "저장"

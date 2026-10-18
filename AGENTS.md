@@ -64,6 +64,7 @@ Docs: https://docs.expo.dev/eas/index.md
 - 토큰 갱신, 화면 진입 분기, 입력 검증, 금액·사용률 표시처럼 틀리기 쉬운 로직에는 의미 있는 Jest 테스트를 추가한다. 테스트는 `__tests__/`에 둔다.
 - 완료 전에 `npm run lint`, `npm run typecheck`, `npm test`를 실행해 통과시킨다. CI(`.github/workflows/ci.yml`)도 모든 push·PR에서 같은 검사를 실행한다.
 - 사용자 흐름을 바꿨다면 iOS 시뮬레이터에서 `bootTestRun` 백엔드와 연결해 실제로 확인한다. 실행하지 않은 검사나 기기 확인을 완료했다고 보고하지 않는다.
+- 시뮬레이터 확인은 `.maestro/`의 Maestro 시나리오로 자동화한다. 흐름을 추가·변경하면 해당 시나리오도 추가·수정하고 실행 결과를 PR에 적는다(실행 방법은 README).
 
 ### 보안
 - API 주소와 비밀값을 코드에 직접 쓰지 않는다. 환경 변수(`EXPO_PUBLIC_*`)나 앱 설정에서 가져온다. `EXPO_PUBLIC_*` 값은 앱 번들에 포함되므로 비밀값을 넣지 않는다.

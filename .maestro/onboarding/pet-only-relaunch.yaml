@@ -1,0 +1,15 @@
+# 펫만 고르고 재실행하면 예산 화면부터. 준비: first-login과 같음(새 개발용 ID).
+appId: host.exp.Exponent
+env:
+  APP_URL: exp://127.0.0.1:8081
+---
+- runFlow: ../subflows/open-app.yaml
+- extendedWaitUntil: { visible: "카카오로 시작하기", timeout: 120000 }
+- tapOn: "카카오로 시작하기"
+- extendedWaitUntil: { visible: "함께할 펫을 골라 주세요", timeout: 20000 }
+- tapOn: "강아지"
+- tapOn: "다음"
+- extendedWaitUntil: { visible: ".*월 예산", timeout: 20000 }
+- runFlow: ../subflows/open-app.yaml
+- extendedWaitUntil: { visible: ".*월 예산", timeout: 120000 }
+- assertNotVisible: "함께할 펫을 골라 주세요"

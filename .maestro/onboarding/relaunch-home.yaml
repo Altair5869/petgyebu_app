@@ -1,0 +1,8 @@
+# 앱 재실행 시 로그인 없이 홈. 준비: first-login 이후(고양이 계정).
+appId: host.exp.Exponent
+env:
+  APP_URL: exp://127.0.0.1:8081
+---
+- runFlow: ../subflows/open-app.yaml
+- extendedWaitUntil: { visible: "고양이 · 안정", timeout: 120000 }
+- assertNotVisible: "카카오로 시작하기"

@@ -56,8 +56,14 @@ Docs: https://docs.expo.dev/eas/index.md
 - 범위 밖: 과거 Flutter 설계와 계좌 연동 설계는 가져오지 않는다.
 
 ### 작업 방식
-- 한 번에 사용자 흐름 하나만 구현한다.
-- 완료 전에 `npx expo lint`, `npx tsc --noEmit`을 통과시키고 그 흐름이 실제 앱에서 동작하는지 확인한다.
+- 한 번에 사용자 흐름 하나만 구현한다. 시작 전에 그 흐름의 완료 기준과 필요한 API를 정한다.
+- 코드 작성·수정·리뷰 시 `.agents/skills/karpathy-guidelines/SKILL.md`를 반드시 적용한다.
+- 역할을 나눌 때 `app-engineer`가 구현하고 `app-qa`가 완료된 변경을 독립 검토한다(Codex: `.codex/agents/`, Claude Code: `.claude/agents/`). 같은 파일을 동시에 수정하지 않는다.
+
+### 검증
+- 토큰 갱신, 화면 진입 분기, 입력 검증, 금액·사용률 표시처럼 틀리기 쉬운 로직에는 의미 있는 Jest 테스트를 추가한다. 테스트는 `__tests__/`에 둔다.
+- 완료 전에 `npm run lint`, `npm run typecheck`, `npm test`를 실행해 통과시킨다. CI(`.github/workflows/ci.yml`)도 모든 push·PR에서 같은 검사를 실행한다.
+- 사용자 흐름을 바꿨다면 iOS 시뮬레이터에서 `bootTestRun` 백엔드와 연결해 실제로 확인한다. 실행하지 않은 검사나 기기 확인을 완료했다고 보고하지 않는다.
 
 ### 보안
 - API 주소와 비밀값을 코드에 직접 쓰지 않는다. 환경 변수(`EXPO_PUBLIC_*`)나 앱 설정에서 가져온다. `EXPO_PUBLIC_*` 값은 앱 번들에 포함되므로 비밀값을 넣지 않는다.

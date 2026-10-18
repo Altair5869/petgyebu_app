@@ -6,7 +6,10 @@
 ```bash
 npm run lint       # ESLint (eslint-config-expo)
 npm run typecheck  # tsc --noEmit
+npm test           # Jest (jest-expo, React Native Testing Library)
 ```
+
+GitHub Actions(`.github/workflows/ci.yml`)가 모든 push·PR에서 lint, typecheck, test를 실행한다.
 
 `expo-env.d.ts`는 git에 올리지 않는 자동 생성 파일이다. 새로 clone했다면 `npx expo start`를 한 번 실행한 뒤 타입 검사를 한다.
 

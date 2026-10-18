@@ -15,6 +15,8 @@ import { useSession } from '@/session/session-provider';
 
 const MIN_DATE = seoulDayToDate('2000-01-01');
 
+const KNOWN_FIELDS = ['amount', 'expenseDate', 'category', 'memo'];
+
 type FieldErrors = Partial<Record<'amount' | 'expenseDate' | 'category' | 'memo', string>>;
 
 export default function NewExpenseScreen() {
@@ -27,6 +29,11 @@ export default function NewExpenseScreen() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
 
+  function clearError(field?: keyof FieldErrors) {
+    setFormError(null);
+    if (field) setFieldErrors(({ [field]: _cleared, ...rest }) => rest);
+  }
+
   const amount = parseAmountInput(amountText, '금액을 입력해 주세요');
   const memo = parseMemo(memoText);
 
@@ -36,11 +43,17 @@ export default function NewExpenseScreen() {
     setFieldErrors({});
     setFormError(null);
     try {
-      await api.createExpense({ amount: amount.amount, expenseDate: day, category: category ?? 'OTHER', memo: memo.memo });
+      await api.createExpense({
+        amount: amount.amount,
+        expenseDate: day,
+        category: category ?? 'OTHER',
+        memo: memo.memo,
+      });
       router.back();
     } catch (e) {
       const fields = e instanceof ApiError ? e.fields : [];
-      if (fields.length > 0) setFieldErrors(Object.fromEntries(fields.map((f) => [f.field, f.message])));
+      const known = fields.filter((f) => KNOWN_FIELDS.includes(f.field));
+      if (known.length > 0) setFieldErrors(Object.fromEntries(known.map((f) => [f.field, f.message])));
       else setFormError(errorMessage(e));
       setSaving(false);
     }
@@ -57,7 +70,10 @@ export default function NewExpenseScreen() {
                 accessibilityLabel="지출 금액"
                 keyboardType="number-pad"
                 value={amountText}
-                onChangeText={(t) => setAmountText(formatAmountInput(t))}
+                onChangeText={(t) => {
+                  clearError('amount');
+                  setAmountText(formatAmountInput(t));
+                }}
                 placeholder="0"
                 style={styles.amountInput}
               />
@@ -78,7 +94,10 @@ export default function NewExpenseScreen() {
               maximumDate={seoulDayToDate(todayInSeoul())}
               timeZoneName="Asia/Seoul"
               locale="ko_KR"
-              onValueChange={(_, selected) => setDay(dateToSeoulDay(selected))}
+              onValueChange={(_, selected) => {
+                clearError('expenseDate');
+                setDay(dateToSeoulDay(selected));
+              }}
             />
             {fieldErrors.expenseDate && <Text style={styles.error}>{fieldErrors.expenseDate}</Text>}
           </View>
@@ -92,9 +111,14 @@ export default function NewExpenseScreen() {
                   accessibilityRole="radio"
                   accessibilityLabel={CATEGORY_LABELS[c]}
                   accessibilityState={{ selected: category === c }}
-                  onPress={() => setCategory((current) => (current === c ? null : c))}
+                  onPress={() => {
+                    clearError('category');
+                    setCategory((current) => (current === c ? null : c));
+                  }}
                   style={[styles.chip, category === c && styles.chipSelected]}>
-                  <Text style={[styles.chipLabel, category === c && styles.chipLabelSelected]}>{CATEGORY_LABELS[c]}</Text>
+                  <Text style={[styles.chipLabel, category === c && styles.chipLabelSelected]}>
+                    {CATEGORY_LABELS[c]}
+                  </Text>
                 </Pressable>
               ))}
             </View>
@@ -106,7 +130,10 @@ export default function NewExpenseScreen() {
             <TextInput
               accessibilityLabel="메모"
               value={memoText}
-              onChangeText={setMemoText}
+              onChangeText={(t) => {
+                clearError('memo');
+                setMemoText(t);
+              }}
               placeholder="선택"
               style={styles.memoInput}
             />
@@ -129,15 +156,32 @@ const styles = StyleSheet.create({
   form: { padding: 24, gap: 24 },
   field: { gap: 8 },
   label: { fontSize: 14, fontWeight: '600', color: '#555' },
-  inputRow: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: 2, borderColor: '#208AEF' },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: 2,
+    borderColor: '#208AEF',
+  },
   amountInput: { flex: 1, fontSize: 28, paddingVertical: 8, color: '#111' },
   unit: { fontSize: 24, color: '#111' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { borderRadius: 999, borderWidth: 1, borderColor: '#D1D5DB', paddingHorizontal: 14, paddingVertical: 8 },
+  chip: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
   chipSelected: { borderColor: '#208AEF', backgroundColor: '#EAF4FE' },
   chipLabel: { fontSize: 15, color: '#333' },
   chipLabelSelected: { color: '#1565C0', fontWeight: '600' },
-  memoInput: { borderBottomWidth: 1, borderColor: '#D1D5DB', fontSize: 16, paddingVertical: 8, color: '#111' },
+  memoInput: {
+    borderBottomWidth: 1,
+    borderColor: '#D1D5DB',
+    fontSize: 16,
+    paddingVertical: 8,
+    color: '#111',
+  },
   hint: { color: '#555' },
   error: { color: '#D93025' },
   footer: { paddingHorizontal: 24, paddingBottom: 16, gap: 8 },

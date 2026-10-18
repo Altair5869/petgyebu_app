@@ -11,7 +11,9 @@ jest.mock('@/session/session-provider', () => ({
   useSession: () => ({ api: mockApi }),
 }));
 
-jest.mock('expo-router', () => ({ router: { back: jest.fn(), push: jest.fn() } }));
+jest.mock('expo-router', () => ({
+  router: { back: jest.fn(), push: jest.fn() },
+}));
 
 // The SwiftUI picker is native; render its value so tests can see it.
 jest.mock('@expo/ui/community/datetime-picker', () => {
@@ -19,8 +21,19 @@ jest.mock('@expo/ui/community/datetime-picker', () => {
   const { Text } = jest.requireActual('react-native');
   return {
     __esModule: true,
-    default: (props: { testID?: string; value: Date }) =>
-      createElement(Text, { testID: props.testID }, props.value.toISOString()),
+    default: (props: { testID?: string; value: Date; onValueChange: (e: unknown, d: Date) => void }) =>
+      createElement(
+        Text,
+        {
+          testID: props.testID,
+          onPress: () =>
+            props.onValueChange(
+              { nativeEvent: { timestamp: 0, utcOffset: 0 } },
+              jest.requireActual('@/lib/month').seoulDayToDate('2026-09-30'),
+            ),
+        },
+        props.value.toISOString(),
+      ),
   };
 });
 
@@ -117,4 +130,36 @@ test('sends one request when save is pressed twice', async () => {
   await fireEvent.press(save);
 
   expect(mockApi.createExpense).toHaveBeenCalledTimes(1);
+});
+
+test('sends the day chosen in the date picker', async () => {
+  await render(<NewExpenseScreen />);
+  await fillAmount('12000');
+  await fireEvent.press(screen.getByTestId('expense-date'));
+  await fireEvent.press(screen.getByRole('button', { name: '저장' }));
+
+  expect(mockApi.createExpense).toHaveBeenCalledWith(expect.objectContaining({ expenseDate: '2026-09-30' }));
+});
+
+test('clears a server field error when that field is edited', async () => {
+  mockApi.createExpense.mockRejectedValue(
+    new ApiError(400, 'INVALID_REQUEST', [{ field: 'expenseDate', message: '미래 날짜는 입력할 수 없어요' }]),
+  );
+  await render(<NewExpenseScreen />);
+  await fillAmount('12000');
+  await fireEvent.press(screen.getByRole('button', { name: '저장' }));
+  await screen.findByText('미래 날짜는 입력할 수 없어요');
+
+  await fireEvent.press(screen.getByTestId('expense-date'));
+  expect(screen.queryByText('미래 날짜는 입력할 수 없어요')).toBeNull();
+});
+
+test('shows the generic message when the server reports only unknown fields', async () => {
+  mockApi.createExpense.mockRejectedValue(new ApiError(400, 'INVALID_REQUEST', [{ field: 'unknown', message: 'x' }]));
+  await render(<NewExpenseScreen />);
+  await fillAmount('12000');
+  await fireEvent.press(screen.getByRole('button', { name: '저장' }));
+
+  await screen.findByText('서버에 연결할 수 없어요. 다시 시도해 주세요.');
+  expect(screen.queryByText('x')).toBeNull();
 });

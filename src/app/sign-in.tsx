@@ -13,6 +13,7 @@ export default function SignInScreen() {
   const [error, setError] = useState<string | null>(null);
 
   async function handlePress(provider: Provider) {
+    if (pending) return;
     setPending(provider);
     setError(null);
     try {
@@ -32,13 +33,13 @@ export default function SignInScreen() {
       <View style={styles.actions}>
         <Button
           label="카카오로 시작하기"
-          onPress={() => handlePress('kakao')}
+          onPress={() => void handlePress('kakao')}
           loading={pending === 'kakao'}
           disabled={pending !== null}
         />
         <Button
           label="구글로 시작하기"
-          onPress={() => handlePress('google')}
+          onPress={() => void handlePress('google')}
           loading={pending === 'google'}
           disabled={pending !== null}
         />

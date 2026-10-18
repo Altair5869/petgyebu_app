@@ -104,6 +104,20 @@ test('re-checks the stage without showing the error when the month rolled over',
   expect(screen.queryByText('달이 바뀌었어요')).toBeNull();
 });
 
+test('shows an error when the month-rollover re-check fails', async () => {
+  mockApi.getBudget.mockResolvedValue({ month: '2026-09', amount: null });
+  mockApi.putBudget.mockRejectedValue(
+    new ApiError(400, 'INVALID_REQUEST', [{ field: 'month', message: '달이 바뀌었어요' }]),
+  );
+  mockRefreshStage.mockRejectedValue(new TypeError('Network request failed'));
+  await render(<BudgetScreen />);
+
+  await fireEvent.changeText(screen.getByLabelText('예산 금액'), '300000');
+  await fireEvent.press(screen.getByRole('button', { name: '저장' }));
+
+  await screen.findByText('서버에 연결할 수 없어요. 다시 시도해 주세요.');
+});
+
 test('shows the network error and keeps the input', async () => {
   mockApi.getBudget.mockResolvedValue({ month: '2026-09', amount: null });
   mockApi.putBudget.mockRejectedValue(new TypeError('Network request failed'));

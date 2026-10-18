@@ -53,7 +53,7 @@ export default function BudgetScreen() {
     } catch (e) {
       if (e instanceof ApiError && e.fieldMessage('month')) {
         // The month changed while this screen was open; re-check the stage for the new month.
-        await refreshStage().catch(() => {});
+        await refreshStage().catch((refreshError: unknown) => setServerError(errorMessage(refreshError)));
       } else {
         setServerError((e instanceof ApiError && e.fieldMessage('amount')) || errorMessage(e));
       }

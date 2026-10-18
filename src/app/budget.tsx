@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ApiError } from '@/api/client';
 import { Button } from '@/components/button';
 import { errorMessage } from '@/lib/error-message';
-import { formatBudgetInput, parseBudgetInput } from '@/lib/money';
+import { formatAmountInput, parseBudgetInput } from '@/lib/money';
 import { currentMonth, monthTitle, previousMonth } from '@/lib/month';
 import { useSession } from '@/session/session-provider';
 
@@ -24,7 +24,7 @@ export default function BudgetScreen() {
     api.getBudget(previousMonth(month)).then(
       (budget) => {
         if (!active || touched.current || budget.amount === null) return;
-        setText(formatBudgetInput(String(budget.amount)));
+        setText(formatAmountInput(String(budget.amount)));
         setSuggested(true);
       },
       () => {},
@@ -38,7 +38,7 @@ export default function BudgetScreen() {
 
   function handleChange(value: string) {
     touched.current = true;
-    setText(formatBudgetInput(value));
+    setText(formatAmountInput(value));
     setSuggested(false);
     setServerError(null);
   }

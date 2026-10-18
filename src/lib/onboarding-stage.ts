@@ -1,4 +1,3 @@
-// src/lib/onboarding-stage.ts
 import type { PetType } from '@/api/types';
 
 export type Stage = 'pet' | 'budget' | 'ready';

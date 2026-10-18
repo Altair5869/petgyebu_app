@@ -73,6 +73,14 @@ test('turns an error body into ApiError with code and field messages', async () 
   expect((error as ApiError).fieldMessage('amount')).toBe('금액을 확인해 주세요');
 });
 
+test('falls back to UNKNOWN when the error body has no code', async () => {
+  handler = () => jsonResponse(502, {});
+  const { api } = setup();
+
+  const error = await api.getMe().catch((e: unknown) => e);
+  expect(error).toMatchObject({ status: 502, code: 'UNKNOWN' });
+});
+
 test('refreshes after a 401 and retries the request once', async () => {
   handler = (url, init) => {
     if (url.endsWith('/auth/refresh')) {

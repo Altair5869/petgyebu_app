@@ -1,4 +1,3 @@
-// src/api/types.ts
 // Response shapes from docs/api-spec.md.
 export type Provider = 'kakao' | 'google';
 export type PetType = 'CAT' | 'DOG';

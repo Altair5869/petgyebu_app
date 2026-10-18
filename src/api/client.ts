@@ -32,7 +32,7 @@ type Method = 'GET' | 'POST' | 'PUT';
 async function toApiError(res: Response): Promise<ApiError> {
   try {
     const body = (await res.json()) as ErrorBody;
-    return new ApiError(res.status, body.code, body.fields ?? []);
+    return new ApiError(res.status, body.code ?? 'UNKNOWN', body.fields ?? []);
   } catch {
     return new ApiError(res.status, 'UNKNOWN');
   }

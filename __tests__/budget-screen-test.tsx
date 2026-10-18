@@ -1,7 +1,8 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
 import { ApiError } from '@/api/client';
 import BudgetScreen from '@/app/budget';
+import { currentMonth } from '@/lib/month';
 
 const mockApi = { getBudget: jest.fn(), putBudget: jest.fn() };
 const mockRefreshStage = jest.fn();
@@ -39,6 +40,9 @@ test('does not overwrite what the user typed with a late suggestion', async () =
 
   await fireEvent.changeText(screen.getByLabelText('예산 금액'), '50000');
   suggestion.resolve({ month: '2026-09', amount: 250000 });
+  await act(async () => {
+    await suggestion.promise;
+  });
 
   await screen.findByDisplayValue('50,000');
   expect(screen.queryByText('지난달 예산을 불러왔어요')).toBeNull();
@@ -84,4 +88,42 @@ test('sends one request when save is pressed twice', async () => {
 
   expect(mockApi.putBudget).toHaveBeenCalledTimes(1);
   expect(mockApi.putBudget).toHaveBeenCalledWith(expect.stringMatching(/^\d{4}-\d{2}$/), 300000);
+});
+
+test('re-checks the stage without showing the error when the month rolled over', async () => {
+  mockApi.getBudget.mockResolvedValue({ month: '2026-09', amount: null });
+  mockApi.putBudget.mockRejectedValue(
+    new ApiError(400, 'INVALID_REQUEST', [{ field: 'month', message: '달이 바뀌었어요' }]),
+  );
+  await render(<BudgetScreen />);
+
+  await fireEvent.changeText(screen.getByLabelText('예산 금액'), '300000');
+  await fireEvent.press(screen.getByRole('button', { name: '저장' }));
+
+  await waitFor(() => expect(mockRefreshStage).toHaveBeenCalledTimes(1));
+  expect(screen.queryByText('달이 바뀌었어요')).toBeNull();
+});
+
+test('shows the network error and keeps the input', async () => {
+  mockApi.getBudget.mockResolvedValue({ month: '2026-09', amount: null });
+  mockApi.putBudget.mockRejectedValue(new TypeError('Network request failed'));
+  await render(<BudgetScreen />);
+
+  await fireEvent.changeText(screen.getByLabelText('예산 금액'), '300000');
+  await fireEvent.press(screen.getByRole('button', { name: '저장' }));
+
+  await screen.findByText('서버에 연결할 수 없어요. 다시 시도해 주세요.');
+  expect(screen.getByLabelText('예산 금액')).toHaveDisplayValue('300,000');
+});
+
+test('saves the current month and refreshes the stage', async () => {
+  mockApi.getBudget.mockResolvedValue({ month: '2026-09', amount: null });
+  mockApi.putBudget.mockResolvedValue({ month: currentMonth(), amount: 300000 });
+  await render(<BudgetScreen />);
+
+  await fireEvent.changeText(screen.getByLabelText('예산 금액'), '300000');
+  await fireEvent.press(screen.getByRole('button', { name: '저장' }));
+
+  await waitFor(() => expect(mockRefreshStage).toHaveBeenCalledTimes(1));
+  expect(mockApi.putBudget).toHaveBeenCalledWith(currentMonth(), 300000);
 });

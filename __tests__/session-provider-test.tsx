@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react-native';
-import { Text } from 'react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
+import { Pressable, Text } from 'react-native';
 
 import type { TokenStore } from '@/api/client';
 import { SessionProvider, useSession } from '@/session/session-provider';
@@ -13,8 +13,13 @@ function jsonResponse(status: number, body?: unknown): Response {
 }
 
 let handler: Handler;
+let bodies: Record<string, string | undefined>;
 beforeEach(() => {
-  globalThis.fetch = jest.fn((url: string) => Promise.resolve(handler(url))) as unknown as typeof fetch;
+  bodies = {};
+  globalThis.fetch = jest.fn((url: string, init?: RequestInit) => {
+    bodies[url] = init?.body as string | undefined;
+    return Promise.resolve(handler(url));
+  }) as unknown as typeof fetch;
 });
 
 function storeWith(token: string | null) {
@@ -26,8 +31,21 @@ function storeWith(token: string | null) {
 }
 
 function Probe() {
-  const { state } = useSession();
-  return <Text>{state.status === 'signedIn' ? `signedIn:${state.stage}` : state.status}</Text>;
+  const { state, signIn, refreshStage, retry } = useSession();
+  return (
+    <>
+      <Text>{state.status === 'signedIn' ? `signedIn:${state.stage}` : state.status}</Text>
+      <Pressable onPress={retry}>
+        <Text>retry</Text>
+      </Pressable>
+      <Pressable onPress={() => signIn('kakao')}>
+        <Text>signIn</Text>
+      </Pressable>
+      <Pressable onPress={() => refreshStage()}>
+        <Text>refresh</Text>
+      </Pressable>
+    </>
+  );
 }
 
 async function renderSession(store: TokenStore) {
@@ -92,4 +110,53 @@ test('shows an error and keeps the token when the server is unreachable', async 
 
   await screen.findByText('error');
   expect(store.clear).not.toHaveBeenCalled();
+});
+
+test('retry reboots the session after a network failure', async () => {
+  handler = (url) => {
+    if (url.endsWith('/auth/refresh')) return jsonResponse(200, TOKENS);
+    throw new TypeError('Network request failed');
+  };
+  await renderSession(storeWith('r0'));
+  await screen.findByText('error');
+
+  handler = (url) => {
+    if (url.endsWith('/auth/refresh')) return jsonResponse(200, TOKENS);
+    return jsonResponse(200, { id: 1, provider: 'KAKAO', petType: null });
+  };
+  await fireEvent.press(screen.getByText('retry'));
+
+  await screen.findByText('signedIn:pet');
+});
+
+test('signIn logs in with the dev credential and resolves the stage', async () => {
+  handler = (url) => {
+    if (url.endsWith('/auth/login/kakao')) return jsonResponse(200, TOKENS);
+    return jsonResponse(200, { id: 1, provider: 'KAKAO', petType: null });
+  };
+  await renderSession(storeWith(null));
+  await screen.findByText('signedOut');
+
+  await fireEvent.press(screen.getByText('signIn'));
+
+  await screen.findByText('signedIn:pet');
+  const body = bodies['http://api.test/api/v1/auth/login/kakao'];
+  expect(JSON.parse(body as string).credential).toMatch(/^ok:.+/);
+});
+
+test('refreshStage re-resolves the stage from the server', async () => {
+  handler = (url) => {
+    if (url.endsWith('/auth/refresh')) return jsonResponse(200, TOKENS);
+    return jsonResponse(200, { id: 1, provider: 'KAKAO', petType: null });
+  };
+  await renderSession(storeWith('r0'));
+  await screen.findByText('signedIn:pet');
+
+  handler = (url) => {
+    if (url.endsWith('/users/me')) return jsonResponse(200, { id: 1, provider: 'KAKAO', petType: 'CAT' });
+    return jsonResponse(200, { month: '2026-10', amount: 300000 });
+  };
+  await fireEvent.press(screen.getByText('refresh'));
+
+  await screen.findByText('signedIn:ready');
 });

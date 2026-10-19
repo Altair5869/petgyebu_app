@@ -56,12 +56,16 @@ maestro test -e APP_URL=exp://127.0.0.1:8081 .maestro/onboarding/relaunch-home.y
 | `onboarding/budget-range.yaml` | 0원·1억 원 초과면 저장 비활성 | 예산 화면이 열린 상태 |
 | `onboarding/budget-suggestion.yaml` | 직전 달 예산 제안 | 펫만 고른 계정 + 아래 "직전 달 예산 넣기" |
 | `onboarding/server-unavailable.yaml` | 서버가 꺼지면 연결 오류와 다시 시도 | 로그인된 계정, 백엔드 중지 |
-| `expenses/record-and-list.yaml` | 지출 기록 → 홈 갱신 → 이번 달 내역 | `first-login` 직후 |
-| `expenses/edit-and-delete.yaml` | 내역에서 수정(금액·메모 지움·칩 유지) → 삭제 취소 → 삭제, 홈 금액 갱신 | `first-login` 직후 |
+| `expenses/record-and-list.yaml` | 지출 기록 → 홈 갱신 → 월별 통계 | `first-login` 직후 |
+| `expenses/edit-and-delete.yaml` | 월별 통계에서 수정(금액·메모 지움·칩 유지) → 삭제 취소 → 삭제, 홈 금액 갱신 | `first-login` 직후 |
 | `expenses/edit-deleted.yaml` | 수정 화면 중 다른 경로로 지출이 삭제되면 저장 시 안내 | `first-login` 직후 + 아래 "수정 화면 중 지출 지우기" |
+| `stats/monthly-stats.yaml` | 이번 달 통계·카테고리 비중, 지난달(예산 없음), 지출 없는 달, 예산 초과 | `first-login` 직후 + 아래 "지난달 지출 넣기"(금액 9,000원 아무 메모) |
+| `stats/move-month.yaml` | 지난달 지출 수정 후 지난달 통계로 복귀, 이번 달 지출을 날짜 선택기로 지난달로 이동(이번 달에서 빠지고 홈 잔액 복원), 같은 화면에서 반복 | `first-login` 직후 + "지난달 지출 넣기"(금액 7,000원, 메모 `old`, 카테고리 `OTHER`). 다시 돌리려면 이번 달 지출을 지우고 `old`를 7,000원으로 되돌린다 |
 | `expenses/validation.yaml` | 빈 금액·101자 메모는 저장 비활성 | 홈 |
-| `expenses/paging.yaml` | 25건 목록 무한 스크롤 | 새 개발용 ID, 아래 "이번 달 지출 25건 넣기" |
-| `expenses/list-server-unavailable.yaml` | 백엔드가 꺼지면 내역에서 오류와 다시 시도 | 홈이 열린 상태, 백엔드 중지 |
+| `expenses/paging.yaml` | 25건 통계 화면 무한 스크롤 | 새 개발용 ID, 아래 "이번 달 지출 25건 넣기" |
+| `expenses/list-server-unavailable.yaml` | 백엔드가 꺼지면 월별 통계에서 오류와 다시 시도 | 홈이 열린 상태, 백엔드 중지 |
+
+`stats/move-month.yaml`의 날짜 선택기 조작은 화면 비율 좌표 탭(이전 달 화살표, 9월 15일 칸, 헤더로 선택기 닫기)이라 iPhone 18 Pro 기준이고, 실행하는 달이 바뀌면 달력 배치가 달라 15일 칸 좌표를 다시 맞춰야 한다. 모든 기존 흐름은 `monthly-stats` → `move-month` → 나머지 순서로 같은 계정에서 이번 달 지출만 지우고 이어 돌릴 수 있다.
 
 앱에 아직 로그아웃이 없어서, 다른 계정으로 시작하려면 먼저 앱 세션을 끊는다.
 
@@ -74,6 +78,12 @@ curl -X POST http://localhost:8080/api/v1/auth/login/kakao \
 docker exec petgyebu_backend_renewal-postgres-1 psql -U petgyebu -d petgyebu -c \
   "INSERT INTO monthly_budgets (user_id, budget_month, amount) \
    SELECT id, (date_trunc('month', now() AT TIME ZONE 'Asia/Seoul') - interval '1 month')::date, 250000 \
+   FROM users WHERE provider = 'KAKAO' AND provider_user_id = '<개발용 ID>';"
+
+# 지난달 지출 넣기(stats/*): 지난달 예산은 넣지 않는다. 로컬 개발 DB에만
+docker exec petgyebu_backend_renewal-postgres-1 psql -U petgyebu -d petgyebu -c \
+  "INSERT INTO expenses (user_id, amount, expense_date, category, memo) \
+   SELECT id, 7000, ((now() AT TIME ZONE 'Asia/Seoul')::date - interval '1 month')::date, 'OTHER', 'old' \
    FROM users WHERE provider = 'KAKAO' AND provider_user_id = '<개발용 ID>';"
 
 # 수정 화면 중 지출 지우기(edit-deleted.yaml): 플로우가 "저장" 누르기 전 20초 멈추는 동안 다른 터미널에서 실행. 로컬 개발 DB에만

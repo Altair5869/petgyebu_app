@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { Alert } from 'react-native';
 
-import { ApiError } from '@/api/client';
+import { ApiError, RequestTimeoutError } from '@/api/client';
 import EditExpenseScreen from '@/app/expenses/[id]';
 import { currentMonth, seoulDayToDate, todayInSeoul } from '@/lib/month';
 
@@ -249,6 +249,37 @@ test('delete failure shows the connection error and stays', async () => {
   await screen.findByText('서버에 연결할 수 없어요. 다시 시도해 주세요.');
   expect(router.back).not.toHaveBeenCalled();
   expect(screen.getByLabelText('지출 금액')).toBeTruthy();
+});
+
+test('a save timeout says the edit could not be confirmed and keeps the input', async () => {
+  mockApi.updateExpense.mockRejectedValue(new RequestTimeoutError());
+  await renderReady();
+  await fireEvent.changeText(screen.getByLabelText('지출 금액'), '7000');
+  await fireEvent.press(screen.getByRole('button', { name: '저장' }));
+
+  await screen.findByText('수정됐는지 확인하지 못했어요. 월별 통계에서 확인해 주세요.');
+  expect(screen.getByLabelText('지출 금액')).toHaveDisplayValue('7,000');
+  expect(screen.getByRole('button', { name: '저장' })).toBeEnabled();
+  expect(router.dismissTo).not.toHaveBeenCalled();
+});
+
+test('a delete timeout says the delete could not be confirmed and stays', async () => {
+  mockApi.deleteExpense.mockRejectedValue(new RequestTimeoutError());
+  await renderReady();
+  await fireEvent.press(screen.getByRole('button', { name: '삭제' }));
+  await act(async () => confirmDelete().onPress!());
+
+  await screen.findByText('삭제됐는지 확인하지 못했어요. 월별 통계에서 확인해 주세요.');
+  expect(router.back).not.toHaveBeenCalled();
+  expect(screen.getByRole('button', { name: '삭제' })).toBeEnabled();
+});
+
+test('a load timeout shows the connection error with retry', async () => {
+  mockApi.getExpense.mockRejectedValueOnce(new RequestTimeoutError());
+  await render(<EditExpenseScreen />);
+
+  await screen.findByText('서버에 연결할 수 없어요. 다시 시도해 주세요.');
+  screen.getByRole('button', { name: '다시 시도' });
 });
 
 test('confirming delete twice sends one request', async () => {

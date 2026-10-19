@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { router } from 'expo-router';
 
-import { ApiError } from '@/api/client';
+import { ApiError, RequestTimeoutError } from '@/api/client';
 import NewExpenseScreen from '@/app/expenses/new';
 import { todayInSeoul } from '@/lib/month';
 
@@ -119,6 +119,18 @@ test('shows the connection message on a network error', async () => {
 
   await screen.findByText('서버에 연결할 수 없어요. 다시 시도해 주세요.');
   expect(screen.getByLabelText('지출 금액')).toHaveDisplayValue('12,000');
+});
+
+test('a timeout says the save could not be confirmed and keeps the input', async () => {
+  mockApi.createExpense.mockRejectedValue(new RequestTimeoutError());
+  await render(<NewExpenseScreen />);
+  await fillAmount('12000');
+  await fireEvent.press(screen.getByRole('button', { name: '저장' }));
+
+  await screen.findByText('저장됐는지 확인하지 못했어요. 월별 통계에서 확인해 주세요.');
+  expect(screen.getByLabelText('지출 금액')).toHaveDisplayValue('12,000');
+  expect(screen.getByRole('button', { name: '저장' })).toBeEnabled();
+  expect(router.back).not.toHaveBeenCalled();
 });
 
 test('sends one request when save is pressed twice', async () => {

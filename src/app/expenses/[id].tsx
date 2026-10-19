@@ -14,7 +14,7 @@ import {
   type FieldErrors,
 } from '@/components/expense-form';
 import { LoadingView, MessageView } from '@/components/message-view';
-import { CONNECTION_ERROR, errorMessage } from '@/lib/error-message';
+import { CONNECTION_ERROR, DELETE_UNCONFIRMED, UPDATE_UNCONFIRMED, errorMessage } from '@/lib/error-message';
 import { expenseChanges, parseMemo } from '@/lib/expense';
 import { formatAmountInput, parseAmountInput } from '@/lib/money';
 import { useSession } from '@/session/session-provider';
@@ -106,7 +106,7 @@ export default function EditExpenseScreen() {
       const fields = e instanceof ApiError ? e.fields : [];
       const known = fields.filter((f) => (EXPENSE_FIELDS as string[]).includes(f.field));
       if (known.length > 0) setFieldErrors(Object.fromEntries(known.map((f) => [f.field, f.message])));
-      else setFormError(errorMessage(e));
+      else setFormError(errorMessage(e, UPDATE_UNCONFIRMED));
     }
   }
 
@@ -125,7 +125,7 @@ export default function EditExpenseScreen() {
       }
       busyRef.current = false;
       setBusy(null);
-      setFormError(errorMessage(e));
+      setFormError(errorMessage(e, DELETE_UNCONFIRMED));
     }
   }
 

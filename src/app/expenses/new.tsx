@@ -12,7 +12,7 @@ import {
   type ExpenseField,
   type FieldErrors,
 } from '@/components/expense-form';
-import { errorMessage } from '@/lib/error-message';
+import { SAVE_UNCONFIRMED, errorMessage } from '@/lib/error-message';
 import { parseMemo } from '@/lib/expense';
 import { parseAmountInput } from '@/lib/money';
 import { todayInSeoul } from '@/lib/month';
@@ -55,7 +55,7 @@ export default function NewExpenseScreen() {
       const fields = e instanceof ApiError ? e.fields : [];
       const known = fields.filter((f) => (EXPENSE_FIELDS as string[]).includes(f.field));
       if (known.length > 0) setFieldErrors(Object.fromEntries(known.map((f) => [f.field, f.message])));
-      else setFormError(errorMessage(e));
+      else setFormError(errorMessage(e, SAVE_UNCONFIRMED));
       setSaving(false);
     }
   }

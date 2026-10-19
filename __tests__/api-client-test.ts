@@ -304,7 +304,7 @@ describe('request timeout', () => {
     const assertion = expect(result).rejects.toBeInstanceOf(RequestTimeoutError);
 
     await jest.advanceTimersByTimeAsync(REQUEST_TIMEOUT_MS - 1);
-    expect(fetchMock.mock.calls[0][1].signal.aborted).toBe(false);
+    expect(fetchMock.mock.calls[0][1].signal?.aborted).toBe(false);
     await jest.advanceTimersByTimeAsync(1);
     await assertion;
   });

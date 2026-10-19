@@ -20,7 +20,7 @@ env:
 - eraseText: 10
 - inputText: "8000"
 - waitForAnimationToEnd
-# 여기서 다른 터미널로 README의 SQL 삭제를 실행한 뒤 저장한다(CI/수동 확인용 일시 정지: 20초).
+# 여기서 다른 터미널로 README의 SQL 삭제를 실행한 뒤 저장한다(수동 전용 일시 정지: 20초).
 - extendedWaitUntil: { visible: "NEVER-VISIBLE-PAUSE", timeout: 20000, optional: true }
 - tapOn: "저장"
 - extendedWaitUntil: { visible: "이미 삭제된 지출이에요", timeout: 20000 }

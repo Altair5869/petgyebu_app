@@ -231,3 +231,53 @@ test('confirming delete twice sends one request', async () => {
 
   expect(mockApi.deleteExpense).toHaveBeenCalledTimes(1);
 });
+
+test('after a successful save the buttons stay disabled and a second tap sends nothing', async () => {
+  await renderReady();
+  await fireEvent.changeText(screen.getByLabelText('지출 금액'), '7000');
+  await fireEvent.press(screen.getByRole('button', { name: '저장' }));
+
+  expect(screen.getByRole('button', { name: '저장' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: '삭제' })).toBeDisabled();
+  await fireEvent.press(screen.getByRole('button', { name: '저장' }));
+  expect(mockApi.updateExpense).toHaveBeenCalledTimes(1);
+  expect(router.back).toHaveBeenCalledTimes(1);
+});
+
+test('after a successful delete the buttons stay disabled and a second confirm sends nothing', async () => {
+  await renderReady();
+  await fireEvent.press(screen.getByRole('button', { name: '삭제' }));
+  const { onPress } = confirmDelete();
+  await act(async () => onPress!());
+
+  expect(screen.getByRole('button', { name: '삭제' })).toBeDisabled();
+  await act(async () => onPress!());
+  expect(mockApi.deleteExpense).toHaveBeenCalledTimes(1);
+  expect(router.back).toHaveBeenCalledTimes(1);
+});
+
+test('while a save is in flight delete is disabled and opens no confirm', async () => {
+  mockApi.updateExpense.mockReturnValue(new Promise(() => {}));
+  await renderReady();
+  await fireEvent.changeText(screen.getByLabelText('지출 금액'), '7000');
+  await fireEvent.press(screen.getByRole('button', { name: '저장' }));
+
+  const del = screen.getByRole('button', { name: '삭제' });
+  expect(del).toBeDisabled();
+  await fireEvent.press(del);
+  expect(alertSpy).not.toHaveBeenCalled();
+  expect(mockApi.deleteExpense).not.toHaveBeenCalled();
+});
+
+test('while a delete is in flight save is disabled', async () => {
+  mockApi.deleteExpense.mockReturnValue(new Promise(() => {}));
+  await renderReady();
+  await fireEvent.changeText(screen.getByLabelText('지출 금액'), '7000');
+  await fireEvent.press(screen.getByRole('button', { name: '삭제' }));
+  await act(async () => confirmDelete().onPress!());
+
+  const save = screen.getByRole('button', { name: '저장' });
+  expect(save).toBeDisabled();
+  await fireEvent.press(save);
+  expect(mockApi.updateExpense).not.toHaveBeenCalled();
+});

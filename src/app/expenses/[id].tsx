@@ -34,7 +34,7 @@ export default function EditExpenseScreen() {
   const id = Number(useLocalSearchParams<{ id: string }>().id);
   const [screen, setScreen] = useState<Screen>({ status: 'loading' });
   const [draft, setDraft] = useState<ExpenseDraft | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<'save' | 'delete' | null>(null);
   const busyRef = useRef(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -99,13 +99,15 @@ export default function EditExpenseScreen() {
   async function save() {
     if (!changes || !canSave || busyRef.current) return;
     busyRef.current = true;
-    setBusy(true);
+    setBusy('save');
     setFieldErrors({});
     setFormError(null);
     try {
       await api.updateExpense(id, changes);
       router.back();
     } catch (e) {
+      busyRef.current = false;
+      setBusy(null);
       if (isNotFound(e)) {
         setScreen({ status: 'notFound' });
         return;
@@ -114,16 +116,13 @@ export default function EditExpenseScreen() {
       const known = fields.filter((f) => (EXPENSE_FIELDS as string[]).includes(f.field));
       if (known.length > 0) setFieldErrors(Object.fromEntries(known.map((f) => [f.field, f.message])));
       else setFormError(errorMessage(e));
-    } finally {
-      busyRef.current = false;
-      setBusy(false);
     }
   }
 
   async function remove() {
     if (busyRef.current) return;
     busyRef.current = true;
-    setBusy(true);
+    setBusy('delete');
     setFormError(null);
     try {
       await api.deleteExpense(id);
@@ -133,10 +132,9 @@ export default function EditExpenseScreen() {
         router.back();
         return;
       }
-      setFormError(errorMessage(e));
-    } finally {
       busyRef.current = false;
-      setBusy(false);
+      setBusy(null);
+      setFormError(errorMessage(e));
     }
   }
 
@@ -167,13 +165,13 @@ export default function EditExpenseScreen() {
         </ScrollView>
         <View style={styles.footer}>
           {formError && <Text style={styles.error}>{formError}</Text>}
-          <Button label="저장" onPress={() => void save()} disabled={!canSave || busy} loading={busy} />
+          <Button label="저장" onPress={() => void save()} disabled={!canSave || busy !== null} loading={busy === 'save'} />
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="삭제"
-            disabled={busy}
+            disabled={busy !== null}
             onPress={confirmDelete}
-            style={[styles.delete, busy && styles.inactive]}>
+            style={[styles.delete, busy !== null && styles.inactive]}>
             <Text style={styles.deleteLabel}>삭제</Text>
           </Pressable>
         </View>

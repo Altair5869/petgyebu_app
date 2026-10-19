@@ -1,5 +1,7 @@
-# Restart Expo Go and open the app from the local Metro server.
-appId: host.exp.Exponent
+# Restart the development build and open the app from the local Metro server.
+# SDK 58 launch URL: exp+<scheme>://?__expo_url=<encoded Metro URL>; the __expo_disable_* flags
+# hide the first-launch onboarding, dev menu and tools button for this launch only.
+appId: com.altair.petgyebu
 ---
 - stopApp
-- openLink: "${APP_URL}?__expo_disable_fab=1&__expo_disable_auto_launch=1&__expo_disable_onboarding=1"
+- openLink: "exp+petgyebuapp://?__expo_url=${encodeURIComponent(APP_URL)}&__expo_disable_onboarding=1&__expo_disable_auto_launch=1&__expo_disable_fab=1"

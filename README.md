@@ -17,7 +17,7 @@ GitHub Actions(`.github/workflows/ci.yml`)가 모든 push·PR에서 lint, typech
 
 **백엔드**: `petgyebu_backend_renewal` 저장소에서 `./gradlew bootTestRun`을 실행한다(포트 8080). 가짜 소셜 검증기를 쓰므로 `credential: "ok:<아무 ID>"`로 로그인한다.
 
-**기기**: 기본은 iOS 시뮬레이터(`npm run ios`)다. 카카오·구글 SDK처럼 네이티브 모듈이 들어가면 Expo Go 대신 개발 빌드(`npx expo run:ios`)를 쓴다. 기기별 API 주소는 `.env.local`의 `EXPO_PUBLIC_API_BASE_URL`에 넣는다.
+**기기**: 기본은 iOS 시뮬레이터다. 카카오·구글 SDK 같은 네이티브 모듈을 쓰므로 Expo Go 대신 개발용 앱(Expo development build)을 쓴다. `npm run ios`(`npx expo run:ios`)는 처음 한 번, 또는 네이티브 의존성이 바뀌었을 때만 실행해 앱을 설치한다(번들 ID `com.altair.petgyebu`). 평소에는 `npx expo start --clear`로 Metro만 띄우고 개발용 앱에서 연다. 기기별 API 주소는 `.env.local`의 `EXPO_PUBLIC_API_BASE_URL`에 넣는다.
 
 | 기기 | `EXPO_PUBLIC_API_BASE_URL` |
 | --- | --- |
@@ -36,13 +36,14 @@ GitHub Actions(`.github/workflows/ci.yml`)가 모든 push·PR에서 lint, typech
 1. Maestro 설치: `brew tap mobile-dev-inc/tap && brew install mobile-dev-inc/tap/maestro` (Java 17 이상, Xcode 필요)
 2. 백엔드 `./gradlew bootTestRun` 실행
 3. `.env.local`의 `EXPO_PUBLIC_DEV_LOGIN_ID`를 처음 쓰는 값으로 바꾸고 `npx expo start --clear`로 Metro 실행. `EXPO_PUBLIC_*`는 번들에 들어가므로 값을 바꾸면 Metro를 다시 시작한다(실행 명령 앞에 환경 변수를 붙여도 `.env.local` 값이 우선한다).
-4. iOS 27.0 시뮬레이터를 켜고 Expo Go를 한 번 연다(`npm run ios`).
+4. iOS 27.0 시뮬레이터를 켜고 개발용 앱을 한 번 설치한다(`npm run ios`). 네이티브 의존성이 바뀌면 다시 설치한다. 시나리오는 `exp+petgyebuapp://?__expo_url=...` 링크(SDK 58 형식)로 앱을 열고 첫 실행 안내를 끈다.
+5. 로그인 토큰은 키체인에 남아 앱을 다시 열어도 로그인 상태다. 새 계정으로 처음부터 확인하려면 `xcrun simctl terminate <UDID> com.altair.petgyebu && xcrun simctl keychain <UDID> reset`으로 지운다.
 
 **실행**
 
 ```bash
 maestro test .maestro/onboarding/first-login.yaml
-maestro test -e APP_URL=exp://127.0.0.1:8081 .maestro/onboarding/relaunch-home.yaml   # Metro 주소가 다를 때
+maestro test -e APP_URL=http://127.0.0.1:8081 .maestro/onboarding/relaunch-home.yaml   # Metro 주소가 다를 때
 ```
 
 **시나리오와 준비 상태**
@@ -132,7 +133,6 @@ In the output, you'll find options to open the app in a
 - [development build](https://docs.expo.dev/develop/development-builds/introduction/)
 - [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
 - [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
 
 You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
 

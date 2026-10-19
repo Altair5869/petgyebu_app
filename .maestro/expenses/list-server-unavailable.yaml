@@ -1,5 +1,5 @@
 # 백엔드 중지 상태에서 월별 통계 → 오류와 다시 시도. 준비: 홈이 열린 상태에서 백엔드 중지.
-appId: host.exp.Exponent
+appId: com.altair.petgyebu
 ---
 - tapOn: "월별 통계"
 - extendedWaitUntil: { visible: "서버에 연결할 수 없어요. 다시 시도해 주세요.", timeout: 30000 }

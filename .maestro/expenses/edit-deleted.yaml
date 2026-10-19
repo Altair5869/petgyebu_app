@@ -13,8 +13,8 @@ env:
 - tapOn: "저장"
 - extendedWaitUntil: { visible: "291,000원 남았어요", timeout: 20000 }
 - tapOn: "이번 달 내역 보기"
-- extendedWaitUntil: { visible: "기타, 9,000원", timeout: 20000 }
-- tapOn: "기타, 9,000원"
+- extendedWaitUntil: { visible: "기타, .*월 .*일, 9,000원", timeout: 20000 }
+- tapOn: "기타, .*월 .*일, 9,000원"
 - extendedWaitUntil: { visible: "삭제", timeout: 20000 }
 - tapOn: "지출 금액"
 - eraseText: 10

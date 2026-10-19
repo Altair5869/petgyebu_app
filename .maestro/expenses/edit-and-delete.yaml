@@ -17,10 +17,10 @@ env:
 - tapOn: "저장"
 - extendedWaitUntil: { visible: "288,000원 남았어요", timeout: 20000 }
 - tapOn: "이번 달 내역 보기"
-- extendedWaitUntil: { visible: "라떼, 12,000원", timeout: 20000 }
+- extendedWaitUntil: { visible: "라떼, .*월 .*일 · 카페, 12,000원", timeout: 20000 }
 
 # 1. 내역에서 누르면 저장된 값이 채워지고 저장은 비활성
-- tapOn: "라떼, 12,000원"
+- tapOn: "라떼, .*월 .*일 · 카페, 12,000원"
 - extendedWaitUntil: { visible: "삭제", timeout: 20000 }
 - assertVisible: "12,000"
 - assertVisible: "라떼"
@@ -32,25 +32,25 @@ env:
 - inputText: "7000"
 - waitForAnimationToEnd
 - tapOn: "저장"
-- extendedWaitUntil: { visible: "라떼, 7,000원", timeout: 20000 }
-- assertNotVisible: "라떼, 12,000원"
+- extendedWaitUntil: { visible: "라떼, .*월 .*일 · 카페, 7,000원", timeout: 20000 }
+- assertNotVisible: "라떼, .*월 .*일 · 카페, 12,000원"
 - tapOn: "뒤로"
 - extendedWaitUntil: { visible: "293,000원 남았어요", timeout: 20000 }
 
 # 3. 메모 지움 → 제목이 카테고리로
 - tapOn: "이번 달 내역 보기"
-- extendedWaitUntil: { visible: "라떼, 7,000원", timeout: 20000 }
-- tapOn: "라떼, 7,000원"
+- extendedWaitUntil: { visible: "라떼, .*월 .*일 · 카페, 7,000원", timeout: 20000 }
+- tapOn: "라떼, .*월 .*일 · 카페, 7,000원"
 - extendedWaitUntil: { visible: "삭제", timeout: 20000 }
 - tapOn: "라떼"
 - eraseText: 10
 - waitForAnimationToEnd
 - tapOn: "저장"
-- extendedWaitUntil: { visible: "카페, 7,000원", timeout: 20000 }
-- assertNotVisible: "라떼, 7,000원"
+- extendedWaitUntil: { visible: "카페, .*월 .*일, 7,000원", timeout: 20000 }
+- assertNotVisible: "라떼, .*월 .*일 · 카페, 7,000원"
 
 # 4. 카테고리 칩을 다시 눌러도 선택 유지(저장 비활성 = 변경 없음)
-- tapOn: "카페, 7,000원"
+- tapOn: "카페, .*월 .*일, 7,000원"
 - extendedWaitUntil: { visible: "삭제", timeout: 20000 }
 - tapOn: "카페"
 - assertVisible: { text: "카페", selected: true }
@@ -62,10 +62,10 @@ env:
 - tapOn: "취소"
 - assertVisible: "지출 금액"
 - tapOn: "뒤로"
-- extendedWaitUntil: { visible: "카페, 7,000원", timeout: 20000 }
+- extendedWaitUntil: { visible: "카페, .*월 .*일, 7,000원", timeout: 20000 }
 
 # 6. 삭제 → 확인
-- tapOn: "카페, 7,000원"
+- tapOn: "카페, .*월 .*일, 7,000원"
 - extendedWaitUntil: { visible: "삭제", timeout: 20000 }
 - tapOn: "삭제"
 - extendedWaitUntil: { visible: "이 지출을 삭제할까요?", timeout: 10000 }

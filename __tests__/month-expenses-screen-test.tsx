@@ -127,7 +127,7 @@ test('tapping a row opens its edit screen', async () => {
   await render(<MonthExpensesScreen />);
   await screen.findByText('라떼');
 
-  await fireEvent.press(screen.getByRole('button', { name: '라떼, 12,000원' }));
+  await fireEvent.press(screen.getByRole('button', { name: '라떼, 10월 17일 · 카페, 12,000원' }));
 
   expect(router.push).toHaveBeenCalledWith('/expenses/2');
 });

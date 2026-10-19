@@ -12,7 +12,7 @@ export function ExpenseRow({ expense, onPress }: { expense: Expense; onPress: ()
       style={styles.row}
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${title}, ${amount}`}
+      accessibilityLabel={`${title}, ${subtitle}, ${amount}`}
     >
       <View style={styles.text}>
         <Text style={styles.title} numberOfLines={1}>

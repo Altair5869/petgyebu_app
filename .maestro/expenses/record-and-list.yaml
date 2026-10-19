@@ -32,7 +32,7 @@ env:
 - extendedWaitUntil: { visible: "고양이 · 주의", timeout: 20000 }
 - tapOn: "이번 달 내역 보기"
 # Each row is one accessible element labelled "{title}, {amount}원".
-- extendedWaitUntil: { visible: "라떼, 12,000원", timeout: 20000 }
-- assertVisible: "기타, 5,000원"
-- assertVisible: "기타, 150,000원"
+- extendedWaitUntil: { visible: "라떼, .*월 .*일 · 카페, 12,000원", timeout: 20000 }
+- assertVisible: "기타, .*월 .*일, 5,000원"
+- assertVisible: "기타, .*월 .*일, 150,000원"
 - assertVisible: "모든 내역을 불러왔어요"

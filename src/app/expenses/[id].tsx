@@ -17,14 +17,12 @@ import { LoadingView, MessageView } from '@/components/message-view';
 import { CONNECTION_ERROR, errorMessage } from '@/lib/error-message';
 import { expenseChanges, parseMemo } from '@/lib/expense';
 import { formatAmountInput, parseAmountInput } from '@/lib/money';
-import { currentMonth, firstDayOfMonthInSeoul } from '@/lib/month';
 import { useSession } from '@/session/session-provider';
 
 type Screen =
   | { status: 'loading' }
   | { status: 'error' }
   | { status: 'notFound' }
-  | { status: 'pastMonth' }
   | { status: 'ready'; original: NewExpense };
 
 const isNotFound = (e: unknown) => e instanceof ApiError && e.status === 404;
@@ -42,10 +40,6 @@ export default function EditExpenseScreen() {
   const load = useCallback(() => {
     return api.getExpense(id).then(
       (expense) => {
-        if (expense.expenseDate.slice(0, 7) !== currentMonth()) {
-          setScreen({ status: 'pastMonth' });
-          return;
-        }
         const { id: _id, ...original } = expense;
         setDraft({
           amountText: formatAmountInput(String(original.amount)),
@@ -71,9 +65,6 @@ export default function EditExpenseScreen() {
   if (screen.status === 'error') return <MessageView message={CONNECTION_ERROR} actionLabel="다시 시도" onAction={retry} />;
   if (screen.status === 'notFound') {
     return <MessageView message="이미 삭제된 지출이에요" actionLabel="내역으로" onAction={() => router.back()} />;
-  }
-  if (screen.status === 'pastMonth') {
-    return <MessageView message="지난달 지출은 아직 고칠 수 없어요" actionLabel="내역으로" onAction={() => router.back()} />;
   }
   if (screen.status !== 'ready' || !draft) return <LoadingView />;
 
@@ -103,8 +94,8 @@ export default function EditExpenseScreen() {
     setFieldErrors({});
     setFormError(null);
     try {
-      await api.updateExpense(id, changes);
-      router.back();
+      const saved = await api.updateExpense(id, changes);
+      router.dismissTo({ pathname: '/expenses', params: { month: saved.expenseDate.slice(0, 7) } });
     } catch (e) {
       busyRef.current = false;
       setBusy(null);
@@ -159,7 +150,7 @@ export default function EditExpenseScreen() {
               setDraft(next);
             }}
             fieldErrors={fieldErrors}
-            minDay={firstDayOfMonthInSeoul()}
+            minDay="2000-01-01"
             allowCategoryClear={false}
           />
         </ScrollView>

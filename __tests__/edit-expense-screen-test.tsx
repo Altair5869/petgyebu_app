@@ -4,17 +4,18 @@ import { Alert } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import EditExpenseScreen from '@/app/expenses/[id]';
-import { currentMonth, firstDayOfMonthInSeoul, previousMonth, seoulDayToDate, todayInSeoul } from '@/lib/month';
+import { currentMonth, previousMonth, seoulDayToDate, todayInSeoul } from '@/lib/month';
 
 const mockApi = { getExpense: jest.fn(), updateExpense: jest.fn(), deleteExpense: jest.fn() };
 const mockPicker = jest.fn();
+let mockPickedDay: string | null = null;
 
 jest.mock('@/session/session-provider', () => ({
   useSession: () => ({ api: mockApi }),
 }));
 
 jest.mock('expo-router', () => ({
-  router: { back: jest.fn(), push: jest.fn() },
+  router: { back: jest.fn(), push: jest.fn(), dismissTo: jest.fn() },
   useLocalSearchParams: () => ({ id: '7' }),
 }));
 
@@ -38,7 +39,9 @@ jest.mock('@expo/ui/community/datetime-picker', () => {
           onPress: () =>
             props.onValueChange(
               { nativeEvent: { timestamp: 0, utcOffset: 0 } },
-              jest.requireActual('@/lib/month').seoulDayToDate(`${jest.requireActual('@/lib/month').currentMonth()}-03`),
+              jest
+                .requireActual('@/lib/month')
+                .seoulDayToDate(mockPickedDay ?? `${jest.requireActual('@/lib/month').currentMonth()}-03`),
             ),
         },
         props.value.toISOString(),
@@ -54,6 +57,7 @@ const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockPickedDay = null;
   mockApi.getExpense.mockResolvedValue(loaded);
   mockApi.updateExpense.mockResolvedValue(loaded);
   mockApi.deleteExpense.mockResolvedValue(undefined);
@@ -78,13 +82,18 @@ test('fills the loaded values and disables save until something changes', async 
   expect(screen.getByRole('button', { name: '저장' })).toBeDisabled();
 });
 
-test('sends only the changed amount and goes back', async () => {
+test('sends only the changed amount and returns to that month', async () => {
   await renderReady();
   await fireEvent.changeText(screen.getByLabelText('지출 금액'), '7000');
   await fireEvent.press(screen.getByRole('button', { name: '저장' }));
 
   expect(mockApi.updateExpense).toHaveBeenCalledWith(7, { amount: 7000 });
-  expect(router.back).toHaveBeenCalledTimes(1);
+  expect(router.dismissTo).toHaveBeenCalledTimes(1);
+  expect(router.dismissTo).toHaveBeenCalledWith({
+    pathname: '/expenses',
+    params: { month: currentMonth() },
+  });
+  expect(router.back).not.toHaveBeenCalled();
 });
 
 test('clearing the memo sends memo null', async () => {
@@ -103,10 +112,10 @@ test('tapping the selected category keeps it selected', async () => {
   expect(screen.getByRole('button', { name: '저장' })).toBeDisabled();
 });
 
-test('limits the date picker to this month', async () => {
+test('date picker allows any month since 2000', async () => {
   await renderReady();
   expect(mockPicker).toHaveBeenLastCalledWith(
-    expect.objectContaining({ minimumDate: seoulDayToDate(firstDayOfMonthInSeoul()) }),
+    expect.objectContaining({ minimumDate: seoulDayToDate('2000-01-01') }),
   );
 });
 
@@ -174,12 +183,33 @@ test('load failure then retry', async () => {
   expect(mockApi.getExpense).toHaveBeenCalledTimes(2);
 });
 
-test('past-month expense is not editable', async () => {
-  mockApi.getExpense.mockResolvedValue({ ...loaded, expenseDate: `${previousMonth(currentMonth())}-15` });
-  await render(<EditExpenseScreen />);
+test('opens a past-month expense for editing', async () => {
+  mockApi.getExpense.mockResolvedValue({ ...loaded, expenseDate: '2026-09-30' });
+  await renderReady();
 
-  await screen.findByText('지난달 지출은 아직 고칠 수 없어요');
-  expect(screen.queryByLabelText('지출 금액')).toBeNull();
+  expect(screen.queryByText('지난달 지출은 아직 고칠 수 없어요')).toBeNull();
+});
+
+test('saving into another month returns to that month', async () => {
+  mockPickedDay = '2026-09-30';
+  mockApi.updateExpense.mockResolvedValue({ ...loaded, expenseDate: '2026-09-30' });
+  await renderReady();
+  await fireEvent.press(screen.getByTestId('expense-date'));
+  await fireEvent.press(screen.getByRole('button', { name: '저장' }));
+
+  expect(router.dismissTo).toHaveBeenCalledTimes(1);
+  expect(router.dismissTo).toHaveBeenCalledWith({ pathname: '/expenses', params: { month: '2026-09' } });
+});
+
+test('saving within the same past month keeps that month', async () => {
+  mockApi.getExpense.mockResolvedValue({ ...loaded, expenseDate: '2026-09-15' });
+  mockApi.updateExpense.mockResolvedValue({ ...loaded, expenseDate: '2026-09-15', amount: 7000 });
+  await renderReady();
+  await fireEvent.changeText(screen.getByLabelText('지출 금액'), '7000');
+  await fireEvent.press(screen.getByRole('button', { name: '저장' }));
+
+  expect(mockApi.updateExpense).toHaveBeenCalledWith(7, { amount: 7000 });
+  expect(router.dismissTo).toHaveBeenCalledWith({ pathname: '/expenses', params: { month: '2026-09' } });
 });
 
 test('cancel in the delete confirm sends nothing', async () => {
@@ -241,7 +271,7 @@ test('after a successful save the buttons stay disabled and a second tap sends n
   expect(screen.getByRole('button', { name: '삭제' })).toBeDisabled();
   await fireEvent.press(screen.getByRole('button', { name: '저장' }));
   expect(mockApi.updateExpense).toHaveBeenCalledTimes(1);
-  expect(router.back).toHaveBeenCalledTimes(1);
+  expect(router.dismissTo).toHaveBeenCalledTimes(1);
 });
 
 test('after a successful delete the buttons stay disabled and a second confirm sends nothing', async () => {

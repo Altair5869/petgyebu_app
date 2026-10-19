@@ -7,6 +7,7 @@ import type {
   FieldError,
   Home,
   Me,
+  MonthStats,
   NewExpense,
   PetType,
   Provider,
@@ -133,6 +134,7 @@ export function createApiClient({ baseUrl, tokenStore, onSessionExpired }: ApiCl
     updateExpense: (id: number, body: ExpenseUpdate) =>
       request<Expense>('PATCH', `/expenses/${id}`, body),
     deleteExpense: (id: number) => request<void>('DELETE', `/expenses/${id}`),
+    getMonthStats: (month: string) => request<MonthStats>('GET', `/months/${month}/stats`),
     // The cursor is opaque: pass it back exactly as received.
     getMonthExpenses: (month: string, cursor?: string) =>
       request<ExpensePage>(

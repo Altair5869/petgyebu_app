@@ -43,3 +43,21 @@ export type NewExpense = Omit<Expense, 'id'>;
 export type ExpenseUpdate = Partial<NewExpense>;
 
 export type ExpensePage = { items: Expense[]; nextCursor: string | null };
+
+export type CategoryStat = {
+  category: ExpenseCategory;
+  spentAmount: number;
+  expenseCount: number;
+  sharePercent: number;
+};
+
+// Budget-dependent fields are null when the month has no budget.
+export type MonthStats = {
+  month: string;
+  budgetAmount: number | null;
+  spentAmount: number;
+  expenseCount: number;
+  usagePercent: number | null;
+  budgetBalanceAmount: number | null;
+  categories: CategoryStat[];
+};

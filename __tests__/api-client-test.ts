@@ -259,3 +259,26 @@ test('surfaces EXPENSE_NOT_FOUND when deleting a missing expense', async () => {
   });
   await expect(api.deleteExpense(42)).rejects.toBeInstanceOf(ApiError);
 });
+
+test('gets monthly stats from the stats endpoint with the Bearer token', async () => {
+  const stats = {
+    month: '2026-09',
+    budgetAmount: null,
+    spentAmount: 26000,
+    expenseCount: 2,
+    usagePercent: null,
+    budgetBalanceAmount: null,
+    categories: [{ category: 'FOOD', spentAmount: 26000, expenseCount: 2, sharePercent: 100 }],
+  };
+  handler = (url, init) => {
+    if (url.endsWith('/auth/refresh')) return jsonResponse(200, REFRESH_OK);
+    expect(url).toBe(`${BASE}/months/2026-09/stats`);
+    expect(init.method).toBe('GET');
+    expect(bearer(init)).toBe('Bearer a1');
+    return jsonResponse(200, stats);
+  };
+  const { api } = setup('r0');
+  await api.restoreSession();
+
+  await expect(api.getMonthStats('2026-09')).resolves.toEqual(stats);
+});

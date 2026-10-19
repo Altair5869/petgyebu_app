@@ -39,6 +39,23 @@ export function previousMonth(month: string): string {
   return m === 1 ? toMonth(year - 1, 12) : toMonth(year, m - 1);
 }
 
+export function nextMonth(month: string): string {
+  const [year, m] = month.split('-').map(Number);
+  return m === 12 ? toMonth(year + 1, 1) : toMonth(year, m + 1);
+}
+
+// The product covers 2000-01 onward; YYYY-MM strings compare chronologically.
+const EARLIEST_MONTH = '2000-01';
+
+export function canGoToPreviousMonth(month: string): boolean {
+  return month > EARLIEST_MONTH;
+}
+
+// Future months are never reachable: the latest month is the current Seoul month.
+export function canGoToNextMonth(month: string, now: Date = new Date()): boolean {
+  return month < currentMonth(now);
+}
+
 export function monthTitle(month: string): string {
   const [year, m] = month.split('-').map(Number);
   return `${year}년 ${m}월`;

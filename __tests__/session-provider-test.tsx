@@ -11,6 +11,7 @@ jest.mock('@react-native-google-signin/google-signin', () => ({
 }));
 jest.mock('@/config', () => ({
   devLoginId: 'test-user',
+  kakaoNativeAppKey: null,
   googleIosClientId: null,
   googleWebClientId: null,
 }));

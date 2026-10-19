@@ -2,7 +2,7 @@ import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { login as kakaoLogin } from '@react-native-seoul/kakao-login';
 
 import type { Provider } from '@/api/types';
-import { devLoginId, googleIosClientId, googleWebClientId } from '@/config';
+import { devLoginId, googleIosClientId, googleWebClientId, kakaoNativeAppKey } from '@/config';
 
 export class SocialLoginCancelledError extends Error {
   constructor() {
@@ -25,6 +25,8 @@ function isKakaoCancel(error: unknown): boolean {
 }
 
 async function kakaoCredential(): Promise<string> {
+  // Without the key the config plugin is skipped and the native module would reject with MustInitAppKey.
+  if (!kakaoNativeAppKey) throw new SocialLoginUnavailableError('kakao');
   try {
     return (await kakaoLogin()).accessToken;
   } catch (error) {

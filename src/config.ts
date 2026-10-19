@@ -4,3 +4,4 @@ export const apiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL || null;
 export const devLoginId = process.env.EXPO_PUBLIC_DEV_LOGIN_ID || null;
 export const googleIosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || null;
 export const googleWebClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || null;
+export const kakaoNativeAppKey = process.env.EXPO_PUBLIC_KAKAO_NATIVE_APP_KEY || null;

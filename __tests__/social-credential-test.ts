@@ -13,6 +13,7 @@ jest.mock('@react-native-google-signin/google-signin', () => ({
 }));
 jest.mock('@/config', () => ({
   devLoginId: null,
+  kakaoNativeAppKey: 'kakao-key',
   googleIosClientId: 'ios-client',
   googleWebClientId: 'web-client',
 }));
@@ -54,7 +55,7 @@ test('maps a Kakao user cancel to SocialLoginCancelledError', async () => {
 });
 
 test('rethrows other Kakao errors unchanged', async () => {
-  const other = Object.assign(new Error('ClientFailed(MustInitAppKey): not initialized'), {
+  const other = Object.assign(new Error('ApiFailed(InvalidParameter): bad request'), {
     code: 'RNKakaoLogins',
   });
   kakao.mockRejectedValue(other);
@@ -71,12 +72,21 @@ test('rejects a Google success without an idToken instead of sending an empty cr
   await expect(getSocialCredential('google', false, null)).rejects.toBeInstanceOf(SocialLoginUnavailableError);
 });
 
-describe('without Google client ids', () => {
+describe('without login keys', () => {
   beforeEach(() => {
     jest.resetModules();
-    jest.doMock('@/config', () => ({ devLoginId: null, googleIosClientId: null, googleWebClientId: null }));
+    jest.doMock('@/config', () => ({ devLoginId: null, kakaoNativeAppKey: null, googleIosClientId: null, googleWebClientId: null }));
   });
   afterEach(() => jest.dontMock('@/config'));
+
+  test('Kakao is unavailable and never opens the SDK', async () => {
+    const mod = require('@/session/social-credential') as typeof import('@/session/social-credential');
+    const kakaoSdk = require('@react-native-seoul/kakao-login') as typeof import('@react-native-seoul/kakao-login');
+    await expect(mod.getSocialCredential('kakao', false, null)).rejects.toBeInstanceOf(
+      mod.SocialLoginUnavailableError,
+    );
+    expect(kakaoSdk.login).not.toHaveBeenCalled();
+  });
 
   test('is unavailable and never opens Google', async () => {
     const mod = require('@/session/social-credential') as typeof import('@/session/social-credential');

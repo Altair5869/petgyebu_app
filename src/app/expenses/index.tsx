@@ -34,7 +34,7 @@ export default function MonthExpensesScreen() {
       contentContainerStyle={styles.content}
       data={list.items}
       keyExtractor={(item) => String(item.id)}
-      renderItem={({ item }) => <ExpenseRow expense={item} />}
+      renderItem={({ item }) => <ExpenseRow expense={item} onPress={() => router.push(`/expenses/${item.id}`)} />}
       ItemSeparatorComponent={Separator}
       ListHeaderComponent={
         <View style={styles.header}>

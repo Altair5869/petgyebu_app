@@ -1,0 +1,26 @@
+# 수정 화면을 연 채 다른 경로로 지출이 삭제되면 저장 시 안내. 준비: first-login 직후 + README "수정 화면 중 지출 지우기".
+appId: host.exp.Exponent
+env:
+  APP_URL: exp://127.0.0.1:8081
+---
+- runFlow: ../subflows/open-app.yaml
+- extendedWaitUntil: { visible: "고양이 · 안정", timeout: 120000 }
+- tapOn: "지출 기록하기"
+- extendedWaitUntil: { visible: "금액을 입력해 주세요", timeout: 20000 }
+- tapOn: "지출 금액"
+- inputText: "9000"
+- waitForAnimationToEnd
+- tapOn: "저장"
+- extendedWaitUntil: { visible: "291,000원 남았어요", timeout: 20000 }
+- tapOn: "이번 달 내역 보기"
+- extendedWaitUntil: { visible: "기타, .*월 .*일, 9,000원", timeout: 20000 }
+- tapOn: "기타, .*월 .*일, 9,000원"
+- extendedWaitUntil: { visible: "삭제", timeout: 20000 }
+- tapOn: "지출 금액"
+- eraseText: 10
+- inputText: "8000"
+- waitForAnimationToEnd
+# 여기서 다른 터미널로 README의 SQL 삭제를 실행한 뒤 저장한다(수동 전용 일시 정지: 20초).
+- extendedWaitUntil: { visible: "NEVER-VISIBLE-PAUSE", timeout: 20000, optional: true }
+- tapOn: "저장"
+- extendedWaitUntil: { visible: "이미 삭제된 지출이에요", timeout: 20000 }

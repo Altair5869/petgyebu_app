@@ -6,9 +6,9 @@ env:
 - runFlow: ../subflows/open-app.yaml
 - extendedWaitUntil: { visible: "이번 달 내역 보기", timeout: 120000 }
 - tapOn: "이번 달 내역 보기"
-- extendedWaitUntil: { visible: "p25", timeout: 20000 }
+- extendedWaitUntil: { visible: "p25, .*월 .*일 · 기타, 1,000원", timeout: 20000 }
 - scrollUntilVisible:
     element: "모든 내역을 불러왔어요"
     direction: DOWN
     timeout: 30000
-- assertVisible: "p01"
+- assertVisible: "p01, .*월 .*일 · 기타, 1,000원"

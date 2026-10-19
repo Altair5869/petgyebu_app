@@ -3,6 +3,7 @@ import type {
   ErrorBody,
   Expense,
   ExpensePage,
+  ExpenseUpdate,
   FieldError,
   Home,
   Me,
@@ -41,7 +42,7 @@ type ApiClientOptions = {
 
 const EXPENSE_PAGE_SIZE = 20;
 
-type Method = 'GET' | 'POST' | 'PUT';
+type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 async function toApiError(res: Response): Promise<ApiError> {
   try {
@@ -110,6 +111,7 @@ export function createApiClient({ baseUrl, tokenStore, onSessionExpired }: ApiCl
       res = await send(method, path, body);
     }
     if (!res.ok) throw await toApiError(res);
+    if (res.status === 204) return undefined as T;
     return (await res.json()) as T;
   }
 
@@ -127,6 +129,10 @@ export function createApiClient({ baseUrl, tokenStore, onSessionExpired }: ApiCl
       request<Budget>('PUT', `/months/${month}/budget`, { amount }),
     getHome: () => request<Home>('GET', '/home'),
     createExpense: (body: NewExpense) => request<Expense>('POST', '/expenses', body),
+    getExpense: (id: number) => request<Expense>('GET', `/expenses/${id}`),
+    updateExpense: (id: number, body: ExpenseUpdate) =>
+      request<Expense>('PATCH', `/expenses/${id}`, body),
+    deleteExpense: (id: number) => request<void>('DELETE', `/expenses/${id}`),
     // The cursor is opaque: pass it back exactly as received.
     getMonthExpenses: (month: string, cursor?: string) =>
       request<ExpensePage>(

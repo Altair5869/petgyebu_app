@@ -191,3 +191,71 @@ test('requests a month page with limit 20 and an encoded cursor', async () => {
     `${BASE}/months/2026-10/expenses?limit=20&cursor=a%2Bb%2Fc%3D`,
   ]);
 });
+
+const REFRESH_OK = { accessToken: 'a1', refreshToken: 'r1', accessExpiresInSeconds: 900 };
+
+test('gets a single expense', async () => {
+  const expense = { id: 42, amount: 5000 };
+  handler = (url, init) => {
+    expect(url).toBe(`${BASE}/expenses/42`);
+    expect(init.method).toBe('GET');
+    return jsonResponse(200, expense);
+  };
+  const { api } = setup();
+
+  await expect(api.getExpense(42)).resolves.toEqual(expense);
+});
+
+test('patches an expense with exactly the given fields', async () => {
+  handler = (url, init) => {
+    expect(url).toBe(`${BASE}/expenses/42`);
+    expect(init.method).toBe('PATCH');
+    expect((init.headers as Record<string, string>)['Content-Type']).toBe('application/json');
+    expect(init.body).toBe('{"amount":7000,"memo":null}');
+    return jsonResponse(200, { id: 42, amount: 7000, memo: null });
+  };
+  const { api } = setup();
+
+  await expect(api.updateExpense(42, { amount: 7000, memo: null })).resolves.toEqual({
+    id: 42,
+    amount: 7000,
+    memo: null,
+  });
+});
+
+test('deletes an expense and resolves on an empty 204', async () => {
+  handler = (url, init) => {
+    expect(url).toBe(`${BASE}/expenses/42`);
+    expect(init.method).toBe('DELETE');
+    return new Response(null, { status: 204 });
+  };
+  const { api } = setup();
+
+  await expect(api.deleteExpense(42)).resolves.toBeUndefined();
+});
+
+test('refreshes and retries an update that got 401', async () => {
+  let patches = 0;
+  handler = (url, init) => {
+    if (url.endsWith('/auth/refresh')) return jsonResponse(200, REFRESH_OK);
+    patches += 1;
+    if (patches === 1) return jsonResponse(401, { code: 'UNAUTHORIZED' });
+    expect(bearer(init)).toBe('Bearer a1');
+    return jsonResponse(200, { id: 42, amount: 7000 });
+  };
+  const { api } = setup('r0');
+
+  await expect(api.updateExpense(42, { amount: 7000 })).resolves.toEqual({ id: 42, amount: 7000 });
+  expect(patches).toBe(2);
+});
+
+test('surfaces EXPENSE_NOT_FOUND when deleting a missing expense', async () => {
+  handler = () => jsonResponse(404, { code: 'EXPENSE_NOT_FOUND' });
+  const { api } = setup();
+
+  await expect(api.deleteExpense(42)).rejects.toMatchObject({
+    status: 404,
+    code: 'EXPENSE_NOT_FOUND',
+  });
+  await expect(api.deleteExpense(42)).rejects.toBeInstanceOf(ApiError);
+});

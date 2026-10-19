@@ -285,7 +285,7 @@ test('gets monthly stats from the stats endpoint with the Bearer token', async (
 
 describe('request timeout', () => {
   // A server that accepts the connection but never answers; aborting rejects like real fetch.
-  function hangingFetch(url: string, init: RequestInit) {
+  function hangingFetch(_url: string, init: RequestInit) {
     return new Promise<Response>((_, reject) => {
       init.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
     });

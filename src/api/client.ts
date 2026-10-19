@@ -75,6 +75,7 @@ export function createApiClient({ baseUrl, tokenStore, onSessionExpired }: ApiCl
     const headers: Record<string, string> = {};
     if (body !== undefined) headers['Content-Type'] = 'application/json';
     if (auth && accessToken) headers.Authorization = `Bearer ${accessToken}`;
+    // The limit covers the wait for the response headers; bodies here are small JSON.
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     try {

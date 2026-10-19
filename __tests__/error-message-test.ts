@@ -1,4 +1,4 @@
-import { ApiError } from '@/api/client';
+import { ApiError, RequestTimeoutError } from '@/api/client';
 import { CONNECTION_ERROR, errorMessage } from '@/lib/error-message';
 import { SocialLoginNotReadyError } from '@/session/social-credential';
 
@@ -13,4 +13,12 @@ test('maps social login errors to app copy', () => {
 test('falls back to the connection message for network and server errors', () => {
   expect(errorMessage(new TypeError('Network request failed'))).toBe(CONNECTION_ERROR);
   expect(errorMessage(new ApiError(500, 'INTERNAL_ERROR'))).toBe(CONNECTION_ERROR);
+});
+
+test('a timeout uses the caller-supplied message, or the connection message by default', () => {
+  expect(errorMessage(new RequestTimeoutError())).toBe(CONNECTION_ERROR);
+  expect(errorMessage(new RequestTimeoutError(), '저장됐는지 확인하지 못했어요. 월별 통계에서 확인해 주세요.')).toBe(
+    '저장됐는지 확인하지 못했어요. 월별 통계에서 확인해 주세요.',
+  );
+  expect(errorMessage(new TypeError('Network request failed'), '다른 문구')).toBe(CONNECTION_ERROR);
 });

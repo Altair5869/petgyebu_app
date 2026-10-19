@@ -29,6 +29,16 @@ export class ApiError extends Error {
   }
 }
 
+// The server did not answer in time. A write may still have been applied on the server.
+export class RequestTimeoutError extends Error {
+  constructor() {
+    super('Request timed out');
+    this.name = 'RequestTimeoutError';
+  }
+}
+
+export const REQUEST_TIMEOUT_MS = 10_000;
+
 export type TokenStore = {
   getRefreshToken(): Promise<string | null>;
   setRefreshToken(token: string): Promise<void>;
@@ -61,15 +71,26 @@ export function createApiClient({ baseUrl, tokenStore, onSessionExpired }: ApiCl
   let accessToken: string | null = null;
   let refreshing: Promise<boolean> | null = null;
 
-  function send(method: Method, path: string, body?: unknown, auth = true) {
+  async function send(method: Method, path: string, body?: unknown, auth = true) {
     const headers: Record<string, string> = {};
     if (body !== undefined) headers['Content-Type'] = 'application/json';
     if (auth && accessToken) headers.Authorization = `Bearer ${accessToken}`;
-    return fetch(`${baseUrl}${path}`, {
-      method,
-      headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
-    });
+    // The limit covers the wait for the response headers; bodies here are small JSON.
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    try {
+      return await fetch(`${baseUrl}${path}`, {
+        method,
+        headers,
+        body: body === undefined ? undefined : JSON.stringify(body),
+        signal: controller.signal,
+      });
+    } catch (e) {
+      if (controller.signal.aborted) throw new RequestTimeoutError();
+      throw e;
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   async function saveTokens(res: Response) {

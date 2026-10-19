@@ -1,9 +1,14 @@
-import { ApiError } from '@/api/client';
+import { ApiError, RequestTimeoutError } from '@/api/client';
 import { SocialLoginNotReadyError } from '@/session/social-credential';
 
 export const CONNECTION_ERROR = '서버에 연결할 수 없어요. 다시 시도해 주세요.';
+export const SAVE_UNCONFIRMED = '저장됐는지 확인하지 못했어요. 월별 통계에서 확인해 주세요.';
+export const UPDATE_UNCONFIRMED = '수정됐는지 확인하지 못했어요. 월별 통계에서 확인해 주세요.';
+export const DELETE_UNCONFIRMED = '삭제됐는지 확인하지 못했어요. 월별 통계에서 확인해 주세요.';
 
-export function errorMessage(error: unknown): string {
+// Writes pass their own timeout copy: the server may have applied the change before we gave up.
+export function errorMessage(error: unknown, timeoutMessage: string = CONNECTION_ERROR): string {
+  if (error instanceof RequestTimeoutError) return timeoutMessage;
   if (error instanceof SocialLoginNotReadyError) return '아직 준비 중인 로그인이에요.';
   if (error instanceof ApiError) {
     if (error.code === 'SOCIAL_LOGIN_FAILED') return '로그인에 실패했어요. 다시 시도해 주세요.';

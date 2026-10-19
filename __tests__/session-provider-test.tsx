@@ -1,7 +1,7 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { Pressable, Text } from 'react-native';
 
-import type { TokenStore } from '@/api/client';
+import { REQUEST_TIMEOUT_MS, type TokenStore } from '@/api/client';
 import { SessionProvider, useSession } from '@/session/session-provider';
 
 jest.mock('expo-secure-store', () => ({}));
@@ -110,6 +110,28 @@ test('shows an error and keeps the token when the server is unreachable', async 
 
   await screen.findByText('error');
   expect(store.clear).not.toHaveBeenCalled();
+});
+
+test('a session restore that times out shows the retry screen and keeps the token', async () => {
+  jest.useFakeTimers();
+  try {
+    globalThis.fetch = jest.fn(
+      (_url: string, init?: RequestInit) =>
+        new Promise<Response>((_, reject) => {
+          init?.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+        }),
+    ) as unknown as typeof fetch;
+    const store = storeWith('r0');
+    await renderSession(store);
+
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(REQUEST_TIMEOUT_MS);
+    });
+    await screen.findByText('error');
+    expect(store.clear).not.toHaveBeenCalled();
+  } finally {
+    jest.useRealTimers();
+  }
 });
 
 test('retry reboots the session after a network failure', async () => {

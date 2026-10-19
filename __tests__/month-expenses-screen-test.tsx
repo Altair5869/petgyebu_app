@@ -15,7 +15,7 @@ jest.mock('@/session/session-provider', () => ({
 jest.mock('expo-router', () => {
   const { useEffect } = jest.requireActual('react');
   return {
-    router: { push: jest.fn() },
+    router: { push: jest.fn(), setParams: jest.fn() },
     useLocalSearchParams: () => mockParams,
     useFocusEffect: (effect: () => void) => {
       mockFocusEffect = effect;
@@ -42,10 +42,8 @@ beforeEach(() => {
   mockApi.getMonthExpenses.mockResolvedValue(EMPTY_PAGE);
 });
 
-const MonthExpensesScreen = MonthStatsScreen;
-
 test('opens on the current month with stats and the record button', async () => {
-  await render(<MonthExpensesScreen />);
+  await render(<MonthStatsScreen />);
 
   await screen.findByText('26,000원');
   expect(mockApi.getMonthStats).toHaveBeenCalledWith(currentMonth());
@@ -57,14 +55,14 @@ test('opens on the current month with stats and the record button', async () => 
 });
 
 test('record button opens the entry screen', async () => {
-  await render(<MonthExpensesScreen />);
+  await render(<MonthStatsScreen />);
 
   await fireEvent.press(await screen.findByRole('button', { name: '지출 기록하기' }));
   expect(router.push).toHaveBeenCalledWith('/expenses/new');
 });
 
 test('the previous month loads both APIs for that month without the record button', async () => {
-  await render(<MonthExpensesScreen />);
+  await render(<MonthStatsScreen />);
   await screen.findByText('26,000원');
 
   await fireEvent.press(screen.getByRole('button', { name: '이전 달' }));
@@ -80,7 +78,7 @@ test('the previous month loads both APIs for that month without the record butto
 
 test('a month param opens that month and disables the previous arrow at the lower bound', async () => {
   mockParams = { month: '2000-01' };
-  await render(<MonthExpensesScreen />);
+  await render(<MonthStatsScreen />);
 
   await screen.findByText('26,000원');
   expect(mockApi.getMonthStats).toHaveBeenLastCalledWith('2000-01');
@@ -90,7 +88,7 @@ test('a month param opens that month and disables the previous arrow at the lowe
 
 test('an invalid or future month param is ignored', async () => {
   mockParams = { month: '2999-01' };
-  await render(<MonthExpensesScreen />);
+  await render(<MonthStatsScreen />);
 
   await screen.findByText('26,000원');
   expect(mockApi.getMonthStats).toHaveBeenLastCalledWith(currentMonth());
@@ -100,7 +98,7 @@ test('a failed list hides the stats and retry reloads both', async () => {
   mockApi.getMonthExpenses
     .mockRejectedValueOnce(new TypeError('Network request failed'))
     .mockResolvedValueOnce(EMPTY_PAGE);
-  await render(<MonthExpensesScreen />);
+  await render(<MonthStatsScreen />);
 
   await screen.findByText('서버에 연결할 수 없어요. 다시 시도해 주세요.');
   expect(screen.queryByText('26,000원')).toBeNull();
@@ -119,7 +117,7 @@ test('a late response for the month left behind never replaces the new month', a
       ? new Promise((resolve) => (resolveCurrent = resolve))
       : Promise.resolve(statsFor(month, 7000)),
   );
-  await render(<MonthExpensesScreen />);
+  await render(<MonthStatsScreen />);
 
   await fireEvent.press(screen.getByRole('button', { name: '이전 달' }));
   await screen.findByText('7,000원');
@@ -142,7 +140,7 @@ test('loads the next page when the list end is reached', async () => {
   mockApi.getMonthExpenses
     .mockResolvedValueOnce({ items: [row(2, '둘')], nextCursor: 'c1' })
     .mockResolvedValueOnce({ items: [row(1, '하나')], nextCursor: null });
-  await render(<MonthExpensesScreen />);
+  await render(<MonthStatsScreen />);
   await screen.findByText('둘');
 
   await fireEvent(screen.getByTestId('expense-list'), 'endReached');
@@ -157,7 +155,7 @@ test('retries a failed next page only from the footer button', async () => {
     .mockResolvedValueOnce({ items: [row(2, '둘')], nextCursor: 'c1' })
     .mockRejectedValueOnce(new TypeError('Network request failed'))
     .mockResolvedValueOnce({ items: [row(1, '하나')], nextCursor: null });
-  await render(<MonthExpensesScreen />);
+  await render(<MonthStatsScreen />);
   await screen.findByText('둘');
 
   await fireEvent(screen.getByTestId('expense-list'), 'endReached');
@@ -175,7 +173,7 @@ test('retries a failed next page only from the footer button', async () => {
 
 test('reloads from the first page when the screen regains focus', async () => {
   mockApi.getMonthExpenses.mockResolvedValue({ items: [row(1, '하나')], nextCursor: null });
-  await render(<MonthExpensesScreen />);
+  await render(<MonthStatsScreen />);
   await screen.findByText('하나');
 
   await act(async () => mockFocusEffect());
@@ -190,7 +188,7 @@ test('tapping a row opens its edit screen', async () => {
     items: [{ id: 2, amount: 12000, expenseDate: '2026-10-17', category: 'CAFE', memo: '라떼' }],
     nextCursor: null,
   });
-  await render(<MonthExpensesScreen />);
+  await render(<MonthStatsScreen />);
   await screen.findByText('라떼');
 
   await fireEvent.press(screen.getByRole('button', { name: '라떼, 10월 17일 · 카페, 12,000원' }));
@@ -203,11 +201,51 @@ test('shows rows with title, subtitle, and amount, then the end message', async 
     items: [{ id: 2, amount: 12000, expenseDate: '2026-10-17', category: 'CAFE', memo: '라떼' }],
     nextCursor: null,
   });
-  await render(<MonthExpensesScreen />);
+  await render(<MonthStatsScreen />);
 
   await screen.findByText('라떼');
   screen.getByText('10월 17일 · 카페');
   screen.getByText('12,000원');
   screen.getByText('전체 내역');
   screen.getByText('모든 내역을 불러왔어요');
+});
+
+test('a month param changing after mount loads that month', async () => {
+  const view = await render(<MonthStatsScreen />);
+  await screen.findByText('26,000원');
+
+  mockParams = { month: '2026-09' };
+  await view.rerender(<MonthStatsScreen />);
+
+  await screen.findByText(monthTitle('2026-09'));
+  expect(mockApi.getMonthStats).toHaveBeenLastCalledWith('2026-09');
+  expect(mockApi.getMonthExpenses).toHaveBeenLastCalledWith('2026-09', undefined);
+});
+
+test('the month param is consumed so the same month can be requested again', async () => {
+  mockParams = { month: '2026-09' };
+  const view = await render(<MonthStatsScreen />);
+  await screen.findByText(monthTitle('2026-09'));
+  expect(router.setParams).toHaveBeenCalledWith({ month: undefined });
+
+  mockParams = {};
+  await view.rerender(<MonthStatsScreen />);
+  await fireEvent.press(screen.getByRole('button', { name: '이전 달' }));
+  await screen.findByText(monthTitle('2026-08'));
+
+  mockParams = { month: '2026-09' };
+  await view.rerender(<MonthStatsScreen />);
+  await screen.findByText(monthTitle('2026-09'));
+  expect(mockApi.getMonthStats).toHaveBeenLastCalledWith('2026-09');
+});
+
+test('regaining focus reloads both APIs', async () => {
+  await render(<MonthStatsScreen />);
+  await screen.findByText('26,000원');
+
+  await act(async () => mockFocusEffect());
+
+  await screen.findByText('26,000원');
+  expect(mockApi.getMonthStats).toHaveBeenCalledTimes(2);
+  expect(mockApi.getMonthExpenses).toHaveBeenCalledTimes(2);
 });

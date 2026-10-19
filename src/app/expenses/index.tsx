@@ -1,5 +1,5 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
@@ -33,6 +33,10 @@ export default function MonthStatsScreen() {
     setSeenParam(paramMonth);
     if (paramMonth) setMonth(paramMonth);
   }
+  // Consume the param so a later navigation carrying the same month is a change again.
+  useEffect(() => {
+    if (monthParam) router.setParams({ month: undefined });
+  }, [monthParam]);
 
   const stats = useMonthStats(api, month);
   const list = useMonthExpenses(api, month);

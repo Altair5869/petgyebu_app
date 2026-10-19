@@ -3,9 +3,10 @@ import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import type { Provider } from '@/api/types';
-import { Button } from '@/components/button';
+import { SocialLoginButton } from '@/components/social-login-button';
 import { errorMessage } from '@/lib/error-message';
 import { useSession } from '@/session/session-provider';
+import { SocialLoginCancelledError } from '@/session/social-credential';
 
 export default function SignInScreen() {
   const { signIn } = useSession();
@@ -19,7 +20,8 @@ export default function SignInScreen() {
     try {
       await signIn(provider);
     } catch (e) {
-      setError(errorMessage(e));
+      // Closing the login window is the user's choice, not a failure.
+      if (!(e instanceof SocialLoginCancelledError)) setError(errorMessage(e));
       setPending(null);
     }
   }
@@ -31,14 +33,14 @@ export default function SignInScreen() {
         <Text style={styles.subtitle}>펫과 함께 예산을 지켜요</Text>
       </View>
       <View style={styles.actions}>
-        <Button
-          label="카카오로 시작하기"
+        <SocialLoginButton
+          provider="kakao"
           onPress={() => void handlePress('kakao')}
           loading={pending === 'kakao'}
           disabled={pending !== null}
         />
-        <Button
-          label="구글로 시작하기"
+        <SocialLoginButton
+          provider="google"
           onPress={() => void handlePress('google')}
           loading={pending === 'google'}
           disabled={pending !== null}

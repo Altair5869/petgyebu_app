@@ -5,4 +5,4 @@ env:
 ---
 - runFlow: ../subflows/open-app.yaml
 - extendedWaitUntil: { visible: "고양이 · 안정", timeout: 120000 }
-- assertNotVisible: "카카오로 시작하기"
+- assertNotVisible: "카카오 로그인"

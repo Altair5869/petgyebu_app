@@ -118,3 +118,16 @@ test('reloads from the first page when the screen regains focus', async () => {
   expect(mockApi.getMonthExpenses).toHaveBeenCalledTimes(2);
   expect(mockApi.getMonthExpenses).toHaveBeenLastCalledWith(currentMonth(), undefined);
 });
+
+test('tapping a row opens its edit screen', async () => {
+  mockApi.getMonthExpenses.mockResolvedValue({
+    items: [{ id: 2, amount: 12000, expenseDate: '2026-10-17', category: 'CAFE', memo: '라떼' }],
+    nextCursor: null,
+  });
+  await render(<MonthExpensesScreen />);
+  await screen.findByText('라떼');
+
+  await fireEvent.press(screen.getByRole('button', { name: '라떼, 12,000원' }));
+
+  expect(router.push).toHaveBeenCalledWith('/expenses/2');
+});

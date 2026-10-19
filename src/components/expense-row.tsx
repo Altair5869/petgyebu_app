@@ -1,21 +1,27 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { Expense } from '@/api/types';
 import { expenseRowText } from '@/lib/expense';
 import { formatWon } from '@/lib/money';
 
-export function ExpenseRow({ expense }: { expense: Expense }) {
+export function ExpenseRow({ expense, onPress }: { expense: Expense; onPress: () => void }) {
   const { title, subtitle } = expenseRowText(expense);
+  const amount = formatWon(expense.amount);
   return (
-    <View style={styles.row}>
+    <Pressable
+      style={styles.row}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${title}, ${amount}`}
+    >
       <View style={styles.text}>
         <Text style={styles.title} numberOfLines={1}>
           {title}
         </Text>
         <Text style={styles.subtitle}>{subtitle}</Text>
       </View>
-      <Text style={styles.amount}>{formatWon(expense.amount)}</Text>
-    </View>
+      <Text style={styles.amount}>{amount}</Text>
+    </Pressable>
   );
 }
 

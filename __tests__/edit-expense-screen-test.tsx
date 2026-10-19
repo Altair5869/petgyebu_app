@@ -4,7 +4,7 @@ import { Alert } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import EditExpenseScreen from '@/app/expenses/[id]';
-import { currentMonth, previousMonth, seoulDayToDate, todayInSeoul } from '@/lib/month';
+import { currentMonth, seoulDayToDate, todayInSeoul } from '@/lib/month';
 
 const mockApi = { getExpense: jest.fn(), updateExpense: jest.fn(), deleteExpense: jest.fn() };
 const mockPicker = jest.fn();

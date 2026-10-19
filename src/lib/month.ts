@@ -10,10 +10,6 @@ export function currentMonth(now: Date = new Date()): string {
   return toMonth(seoul.getUTCFullYear(), seoul.getUTCMonth() + 1);
 }
 
-export function firstDayOfMonthInSeoul(now: Date = new Date()): string {
-  return `${currentMonth(now)}-01`;
-}
-
 export function dateToSeoulDay(date: Date): string {
   const seoul = new Date(date.getTime() + SEOUL_OFFSET_MS);
   const day = String(seoul.getUTCDate()).padStart(2, '0');

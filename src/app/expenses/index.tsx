@@ -17,7 +17,7 @@ function Separator() {
   return <View style={styles.separator} />;
 }
 
-// Task 5 returns here with `month`; anything malformed or out of range is ignored.
+// The edit screen returns here with `month`; anything malformed or out of range is ignored.
 function validMonthParam(value: string | undefined): string | null {
   return value && /^\d{4}-\d{2}$/.test(value) && value >= '2000-01' && value <= currentMonth() ? value : null;
 }

@@ -3,7 +3,6 @@ import {
   canGoToPreviousMonth,
   currentMonth,
   dateToSeoulDay,
-  firstDayOfMonthInSeoul,
   formatDay,
   monthTitle,
   nextMonth,
@@ -57,13 +56,6 @@ describe('seoulDayToDate / dateToSeoulDay', () => {
 describe('formatDay', () => {
   test('formats a day without leading zeros', () => {
     expect(formatDay('2026-10-07')).toBe('10월 7일');
-  });
-});
-
-describe('firstDayOfMonthInSeoul', () => {
-  test('flips at Seoul midnight on the last day of the month', () => {
-    expect(firstDayOfMonthInSeoul(new Date('2026-10-31T14:59:59Z'))).toBe('2026-10-01');
-    expect(firstDayOfMonthInSeoul(new Date('2026-10-31T15:00:00Z'))).toBe('2026-11-01');
   });
 });
 

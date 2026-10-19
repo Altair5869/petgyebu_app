@@ -16,7 +16,7 @@ env:
 - waitForAnimationToEnd
 - tapOn: "저장"
 - extendedWaitUntil: { visible: "288,000원 남았어요", timeout: 20000 }
-- tapOn: "이번 달 내역 보기"
+- tapOn: "월별 통계"
 - extendedWaitUntil: { visible: "라떼, .*월 .*일 · 카페, 12,000원", timeout: 20000 }
 
 # 1. 내역에서 누르면 저장된 값이 채워지고 저장은 비활성
@@ -38,7 +38,7 @@ env:
 - extendedWaitUntil: { visible: "293,000원 남았어요", timeout: 20000 }
 
 # 3. 메모 지움 → 제목이 카테고리로
-- tapOn: "이번 달 내역 보기"
+- tapOn: "월별 통계"
 - extendedWaitUntil: { visible: "라떼, .*월 .*일 · 카페, 7,000원", timeout: 20000 }
 - tapOn: "라떼, .*월 .*일 · 카페, 7,000원"
 - extendedWaitUntil: { visible: "삭제", timeout: 20000 }
@@ -70,6 +70,6 @@ env:
 - tapOn: "삭제"
 - extendedWaitUntil: { visible: "이 지출을 삭제할까요?", timeout: 10000 }
 - tapOn: { text: "삭제", index: 0 }
-- extendedWaitUntil: { visible: "아직 기록한 지출이 없어요", timeout: 20000 }
+- extendedWaitUntil: { visible: "이 달에는 기록한 지출이 없어요", timeout: 20000 }
 - tapOn: "뒤로"
 - extendedWaitUntil: { visible: "300,000원 남았어요", timeout: 20000 }

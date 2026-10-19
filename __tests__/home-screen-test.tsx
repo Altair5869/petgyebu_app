@@ -130,13 +130,13 @@ describe('returning to the foreground', () => {
   });
 });
 
-test('links to expense entry and the month list', async () => {
+test('links to expense entry and monthly stats', async () => {
   mockApi.getHome.mockResolvedValue(HOME);
   await render(<HomeScreen />);
 
   await fireEvent.press(await screen.findByRole('button', { name: '지출 기록하기' }));
   expect(router.push).toHaveBeenCalledWith('/expenses/new');
-  await fireEvent.press(screen.getByRole('link', { name: '이번 달 내역 보기' }));
+  await fireEvent.press(screen.getByRole('link', { name: '월별 통계' }));
   expect(router.push).toHaveBeenCalledWith('/expenses');
 });
 

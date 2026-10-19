@@ -4,8 +4,10 @@ env:
   APP_URL: exp://127.0.0.1:8081
 ---
 - runFlow: ../subflows/open-app.yaml
-- extendedWaitUntil: { visible: "이번 달 내역 보기", timeout: 120000 }
-- tapOn: "이번 달 내역 보기"
+- extendedWaitUntil: { visible: "월별 통계", timeout: 120000 }
+- tapOn: "월별 통계"
+- extendedWaitUntil: { visible: "전체 내역", timeout: 20000 }
+- assertVisible: "25건"
 - extendedWaitUntil: { visible: "p25, .*월 .*일 · 기타, 1,000원", timeout: 20000 }
 - scrollUntilVisible:
     element: "모든 내역을 불러왔어요"

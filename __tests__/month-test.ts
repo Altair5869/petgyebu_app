@@ -1,9 +1,11 @@
 import {
+  canGoToNextMonth,
+  canGoToPreviousMonth,
   currentMonth,
   dateToSeoulDay,
-  firstDayOfMonthInSeoul,
   formatDay,
   monthTitle,
+  nextMonth,
   previousMonth,
   seoulDayToDate,
   todayInSeoul,
@@ -57,9 +59,38 @@ describe('formatDay', () => {
   });
 });
 
-describe('firstDayOfMonthInSeoul', () => {
-  test('flips at Seoul midnight on the last day of the month', () => {
-    expect(firstDayOfMonthInSeoul(new Date('2026-10-31T14:59:59Z'))).toBe('2026-10-01');
-    expect(firstDayOfMonthInSeoul(new Date('2026-10-31T15:00:00Z'))).toBe('2026-11-01');
+describe('nextMonth', () => {
+  test('goes forward one month', () => {
+    expect(nextMonth('2026-09')).toBe('2026-10');
+  });
+
+  test('wraps December to January of the next year', () => {
+    expect(nextMonth('2026-12')).toBe('2027-01');
+  });
+});
+
+describe('previousMonth boundary', () => {
+  test('wraps January to the previous December', () => {
+    expect(previousMonth('2027-01')).toBe('2026-12');
+  });
+});
+
+describe('canGoToPreviousMonth', () => {
+  test('stops at 2000-01', () => {
+    expect(canGoToPreviousMonth('2000-01')).toBe(false);
+    expect(canGoToPreviousMonth('2000-02')).toBe(true);
+  });
+});
+
+describe('canGoToNextMonth', () => {
+  test('never moves past the current Seoul month', () => {
+    const now = new Date('2026-10-19T00:00:00Z');
+    expect(canGoToNextMonth('2026-10', now)).toBe(false);
+    expect(canGoToNextMonth('2026-09', now)).toBe(true);
+  });
+
+  test('uses the Seoul month, so late October UTC is already November', () => {
+    // 2026-10-31 15:00 UTC is 2026-11-01 00:00 in Seoul
+    expect(canGoToNextMonth('2026-10', new Date('2026-10-31T15:00:00Z'))).toBe(true);
   });
 });

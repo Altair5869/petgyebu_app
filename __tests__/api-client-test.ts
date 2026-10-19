@@ -1,4 +1,4 @@
-import { ApiError, createApiClient, type TokenStore } from '@/api/client';
+import { ApiError, createApiClient, REQUEST_TIMEOUT_MS, RequestTimeoutError, type TokenStore } from '@/api/client';
 
 type Handler = (url: string, init: RequestInit) => Promise<Response> | Response;
 
@@ -281,4 +281,61 @@ test('gets monthly stats from the stats endpoint with the Bearer token', async (
   await api.restoreSession();
 
   await expect(api.getMonthStats('2026-09')).resolves.toEqual(stats);
+});
+
+describe('request timeout', () => {
+  // A server that accepts the connection but never answers; aborting rejects like real fetch.
+  function hangingFetch(url: string, init: RequestInit) {
+    return new Promise<Response>((_, reject) => {
+      init.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+    });
+  }
+
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => {
+    jest.useRealTimers();
+    fetchMock.mockImplementation((url: string, init: RequestInit) => Promise.resolve(handler(url, init)));
+  });
+
+  test('gives up after 10 seconds with a RequestTimeoutError', async () => {
+    fetchMock.mockImplementationOnce(hangingFetch);
+    const { api } = setup();
+    const result = api.getMe();
+    const assertion = expect(result).rejects.toBeInstanceOf(RequestTimeoutError);
+
+    await jest.advanceTimersByTimeAsync(REQUEST_TIMEOUT_MS - 1);
+    expect(fetchMock.mock.calls[0][1].signal.aborted).toBe(false);
+    await jest.advanceTimersByTimeAsync(1);
+    await assertion;
+  });
+
+  test('a response within the limit is returned and the timer is cleared', async () => {
+    handler = () => jsonResponse(200, ME);
+    const { api } = setup();
+
+    await expect(api.getMe()).resolves.toEqual(ME);
+    expect(jest.getTimerCount()).toBe(0);
+  });
+
+  test('other network errors are passed through unchanged', async () => {
+    fetchMock.mockImplementationOnce(() => Promise.reject(new TypeError('Network request failed')));
+    const { api } = setup();
+
+    await expect(api.getMe()).rejects.toThrow(TypeError);
+  });
+
+  test('the retry after a token refresh gets its own 10 seconds', async () => {
+    let calls = 0;
+    fetchMock.mockImplementation((url: string) => {
+      calls += 1;
+      if (url.endsWith('/auth/refresh')) return Promise.resolve(jsonResponse(200, REFRESH_OK));
+      if (calls === 1) return new Promise((resolve) => setTimeout(() => resolve(jsonResponse(401, { code: 'UNAUTHORIZED' })), 9000));
+      return new Promise((resolve) => setTimeout(() => resolve(jsonResponse(200, ME)), 9000));
+    });
+    const { api } = setup('r0');
+    const result = api.getMe();
+
+    await jest.advanceTimersByTimeAsync(18000);
+    await expect(result).resolves.toEqual(ME);
+  });
 });

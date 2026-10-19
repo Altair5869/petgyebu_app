@@ -1,0 +1,75 @@
+# 지출 수정 → 메모 지움 → 삭제 취소 → 삭제. 준비: first-login 직후(예산 300,000원, 지출 0건).
+appId: host.exp.Exponent
+env:
+  APP_URL: exp://127.0.0.1:8081
+---
+- runFlow: ../subflows/open-app.yaml
+- extendedWaitUntil: { visible: "고양이 · 안정", timeout: 120000 }
+- tapOn: "지출 기록하기"
+- extendedWaitUntil: { visible: "금액을 입력해 주세요", timeout: 20000 }
+- tapOn: "지출 금액"
+- inputText: "12000"
+- tapOn: "카페"
+# The label and the input are both named "메모"; tap the input's placeholder.
+- tapOn: "선택"
+- inputText: "라떼"
+- waitForAnimationToEnd
+- tapOn: "저장"
+- extendedWaitUntil: { visible: "288,000원 남았어요", timeout: 20000 }
+- tapOn: "이번 달 내역 보기"
+- extendedWaitUntil: { visible: "라떼, 12,000원", timeout: 20000 }
+
+# 1. 내역에서 누르면 저장된 값이 채워지고 저장은 비활성
+- tapOn: "라떼, 12,000원"
+- extendedWaitUntil: { visible: "삭제", timeout: 20000 }
+- assertVisible: "12,000"
+- assertVisible: "라떼"
+- assertVisible: { text: "저장", enabled: false }
+
+# 2. 금액 변경 → 내역과 홈 갱신
+- tapOn: "지출 금액"
+- eraseText: 10
+- inputText: "7000"
+- waitForAnimationToEnd
+- tapOn: "저장"
+- extendedWaitUntil: { visible: "라떼, 7,000원", timeout: 20000 }
+- assertNotVisible: "라떼, 12,000원"
+- tapOn: "뒤로"
+- extendedWaitUntil: { visible: "293,000원 남았어요", timeout: 20000 }
+
+# 3. 메모 지움 → 제목이 카테고리로
+- tapOn: "이번 달 내역 보기"
+- extendedWaitUntil: { visible: "라떼, 7,000원", timeout: 20000 }
+- tapOn: "라떼, 7,000원"
+- extendedWaitUntil: { visible: "삭제", timeout: 20000 }
+- tapOn: "라떼"
+- eraseText: 10
+- waitForAnimationToEnd
+- tapOn: "저장"
+- extendedWaitUntil: { visible: "카페, 7,000원", timeout: 20000 }
+- assertNotVisible: "라떼, 7,000원"
+
+# 4. 카테고리 칩을 다시 눌러도 선택 유지(저장 비활성 = 변경 없음)
+- tapOn: "카페, 7,000원"
+- extendedWaitUntil: { visible: "삭제", timeout: 20000 }
+- tapOn: "카페"
+- assertVisible: { text: "카페", selected: true }
+- assertVisible: { text: "저장", enabled: false }
+
+# 5. 삭제 → 확인창 취소
+- tapOn: "삭제"
+- extendedWaitUntil: { visible: "이 지출을 삭제할까요?", timeout: 10000 }
+- tapOn: "취소"
+- assertVisible: "지출 금액"
+- tapOn: "뒤로"
+- extendedWaitUntil: { visible: "카페, 7,000원", timeout: 20000 }
+
+# 6. 삭제 → 확인
+- tapOn: "카페, 7,000원"
+- extendedWaitUntil: { visible: "삭제", timeout: 20000 }
+- tapOn: "삭제"
+- extendedWaitUntil: { visible: "이 지출을 삭제할까요?", timeout: 10000 }
+- tapOn: { text: "삭제", index: 0 }
+- extendedWaitUntil: { visible: "아직 기록한 지출이 없어요", timeout: 20000 }
+- tapOn: "뒤로"
+- extendedWaitUntil: { visible: "300,000원 남았어요", timeout: 20000 }

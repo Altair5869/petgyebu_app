@@ -3,6 +3,11 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import { ApiError } from '@/api/client';
 import SignInScreen from '@/app/sign-in';
 
+jest.mock('@react-native-seoul/kakao-login', () => ({ login: jest.fn() }));
+jest.mock('@react-native-google-signin/google-signin', () => ({
+  GoogleSignin: { configure: jest.fn(), signIn: jest.fn() },
+}));
+
 const mockSignIn = jest.fn();
 
 jest.mock('@/session/session-provider', () => ({

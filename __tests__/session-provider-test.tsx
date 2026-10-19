@@ -5,6 +5,15 @@ import { REQUEST_TIMEOUT_MS, type TokenStore } from '@/api/client';
 import { SessionProvider, useSession } from '@/session/session-provider';
 
 jest.mock('expo-secure-store', () => ({}));
+jest.mock('@react-native-seoul/kakao-login', () => ({ login: jest.fn() }));
+jest.mock('@react-native-google-signin/google-signin', () => ({
+  GoogleSignin: { configure: jest.fn(), signIn: jest.fn() },
+}));
+jest.mock('@/config', () => ({
+  devLoginId: 'test-user',
+  googleIosClientId: null,
+  googleWebClientId: null,
+}));
 
 type Handler = (url: string) => Response | Promise<Response>;
 
@@ -163,7 +172,7 @@ test('signIn logs in with the dev credential and resolves the stage', async () =
 
   await screen.findByText('signedIn:pet');
   const body = bodies['http://api.test/api/v1/auth/login/kakao'];
-  expect(JSON.parse(body as string).credential).toMatch(/^ok:.+/);
+  expect(JSON.parse(body as string).credential).toBe('ok:test-user');
 });
 
 test('refreshStage re-resolves the stage from the server', async () => {

@@ -1,4 +1,5 @@
-import { CATEGORIES, CATEGORY_LABELS, expenseRowText, parseMemo } from '@/lib/expense';
+import type { ExpenseUpdate, NewExpense } from '@/api/types';
+import { CATEGORIES, CATEGORY_LABELS, expenseChanges, expenseRowText, parseMemo } from '@/lib/expense';
 
 test('lists the seven categories in the fixed code order with Korean names', () => {
   expect(CATEGORIES).toEqual(['FOOD', 'CAFE', 'TRANSPORT', 'SHOPPING', 'HEALTH', 'LIVING', 'OTHER']);
@@ -34,5 +35,25 @@ describe('expenseRowText', () => {
       title: '기타',
       subtitle: '10월 7일',
     });
+  });
+});
+
+describe('expenseChanges', () => {
+  const ORIGINAL: NewExpense = { amount: 12000, expenseDate: '2026-10-17', category: 'CAFE', memo: '라떼' };
+  test.each([
+    ['nothing', {}, {}],
+    ['amount', { amount: 7000 }, { amount: 7000 }],
+    ['date', { expenseDate: '2026-10-03' }, { expenseDate: '2026-10-03' }],
+    ['category', { category: 'FOOD' }, { category: 'FOOD' }],
+    ['memo text', { memo: '아이스 라떼' }, { memo: '아이스 라떼' }],
+    ['memo cleared', { memo: null }, { memo: null }],
+    ['trailing space is a change', { memo: '라떼 ' }, { memo: '라떼 ' }],
+  ] as [string, Partial<NewExpense>, ExpenseUpdate][])('%s', (_, edit, expected) => {
+    expect(expenseChanges(ORIGINAL, { ...ORIGINAL, ...edit })).toEqual(expected);
+  });
+
+  test('no memo before and after is no change', () => {
+    const noMemo = { ...ORIGINAL, memo: null };
+    expect(expenseChanges(noMemo, noMemo)).toEqual({});
   });
 });

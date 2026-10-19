@@ -39,4 +39,7 @@ export type Expense = {
 
 export type NewExpense = Omit<Expense, 'id'>;
 
+// PATCH body: only the changed fields.
+export type ExpenseUpdate = Partial<NewExpense>;
+
 export type ExpensePage = { items: Expense[]; nextCursor: string | null };

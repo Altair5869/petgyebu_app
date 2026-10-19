@@ -1,4 +1,4 @@
-import type { Expense, ExpenseCategory } from '@/api/types';
+import type { Expense, ExpenseCategory, ExpenseUpdate, NewExpense } from '@/api/types';
 
 import { formatDay } from './month';
 
@@ -29,4 +29,14 @@ export function expenseRowText(expense: Pick<Expense, 'expenseDate' | 'category'
   const day = formatDay(expense.expenseDate);
   const label = CATEGORY_LABELS[expense.category];
   return expense.memo ? { title: expense.memo, subtitle: `${day} · ${label}` } : { title: label, subtitle: day };
+}
+
+// `edited.memo` must already be normalized by parseMemo.
+export function expenseChanges(original: NewExpense, edited: NewExpense): ExpenseUpdate {
+  const changes: ExpenseUpdate = {};
+  if (edited.amount !== original.amount) changes.amount = edited.amount;
+  if (edited.expenseDate !== original.expenseDate) changes.expenseDate = edited.expenseDate;
+  if (edited.category !== original.category) changes.category = edited.category;
+  if (edited.memo !== original.memo) changes.memo = edited.memo;
+  return changes;
 }

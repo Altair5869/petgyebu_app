@@ -84,8 +84,8 @@ export default function HomeScreen() {
           <Text style={styles.sectionTitle}>지출 기록</Text>
           {home.spentAmount === 0 && <Text style={styles.body}>첫 지출을 기록해 보세요</Text>}
           <Button label="지출 기록하기" onPress={() => router.push('/expenses/new')} />
-          <Pressable accessibilityRole="link" accessibilityLabel="이번 달 내역 보기" onPress={() => router.push('/expenses')}>
-            <Text style={styles.link}>이번 달 내역 보기</Text>
+          <Pressable accessibilityRole="link" accessibilityLabel="월별 통계" onPress={() => router.push('/expenses')}>
+            <Text style={styles.link}>월별 통계</Text>
           </Pressable>
         </View>
       </ScrollView>

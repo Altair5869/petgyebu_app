@@ -1,30 +1,55 @@
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
+import { CategoryBreakdown } from '@/components/category-breakdown';
 import { ExpenseRow } from '@/components/expense-row';
-import { LoadingView, MessageView } from '@/components/message-view';
+import { MonthNavigator } from '@/components/month-navigator';
+import { MonthSummaryCard } from '@/components/month-summary-card';
 import { useMonthExpenses } from '@/hooks/use-month-expenses';
+import { useMonthStats } from '@/hooks/use-month-stats';
 import { CONNECTION_ERROR } from '@/lib/error-message';
-import { currentMonth, monthTitle } from '@/lib/month';
+import { currentMonth } from '@/lib/month';
 import { useSession } from '@/session/session-provider';
 
 function Separator() {
   return <View style={styles.separator} />;
 }
 
-export default function MonthExpensesScreen() {
+// Task 5 returns here with `month`; anything malformed or out of range is ignored.
+function validMonthParam(value: string | undefined): string | null {
+  return value && /^\d{4}-\d{2}$/.test(value) && value >= '2000-01' && value <= currentMonth() ? value : null;
+}
+
+export default function MonthStatsScreen() {
   const { api } = useSession();
-  const month = currentMonth();
+  const { month: monthParam } = useLocalSearchParams<{ month?: string }>();
+  const paramMonth = validMonthParam(monthParam);
+  const [month, setMonth] = useState(paramMonth ?? currentMonth());
+  // Adjust state while rendering when the param changes (no effect, no extra commit).
+  const [seenParam, setSeenParam] = useState(paramMonth);
+  if (paramMonth !== seenParam) {
+    setSeenParam(paramMonth);
+    if (paramMonth) setMonth(paramMonth);
+  }
+
+  const stats = useMonthStats(api, month);
   const list = useMonthExpenses(api, month);
+  const { reload: reloadStats } = stats;
+  const { reload: reloadList } = list;
+  const reload = useCallback(() => {
+    reloadStats();
+    reloadList();
+  }, [reloadStats, reloadList]);
 
-  // Back from the entry screen (or any return) → start over from the first page.
-  useFocusEffect(list.reload);
+  // Runs on first display, after a month change (reload identities change), and on every return.
+  useFocusEffect(reload);
 
-  if (list.status === 'loading') return <LoadingView />;
-  if (list.status === 'error') return <MessageView message={CONNECTION_ERROR} actionLabel="다시 시도" onAction={list.reload} />;
-
-  const openEntry = () => router.push('/expenses/new');
+  const failed = stats.status === 'error' || list.status === 'error';
+  // A response for the month just left can land before the reload resets state; never show it.
+  const ready = !failed && stats.status === 'ready' && list.status === 'ready' && stats.stats?.month === month;
+  const readyStats = ready ? stats.stats : null;
 
   return (
     <FlatList
@@ -32,19 +57,32 @@ export default function MonthExpensesScreen() {
       style={styles.list}
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={styles.content}
-      data={list.items}
+      data={ready ? list.items : []}
       keyExtractor={(item) => String(item.id)}
       renderItem={({ item }) => <ExpenseRow expense={item} onPress={() => router.push(`/expenses/${item.id}`)} />}
       ItemSeparatorComponent={Separator}
       ListHeaderComponent={
         <View style={styles.header}>
-          <Text style={styles.month}>{monthTitle(month)}</Text>
-          <Button label="지출 기록하기" onPress={openEntry} />
+          <MonthNavigator month={month} onChange={setMonth} />
+          {failed ? (
+            <View style={styles.state}>
+              <Text style={styles.message}>{CONNECTION_ERROR}</Text>
+              <Button label="다시 시도" onPress={reload} />
+            </View>
+          ) : readyStats ? (
+            <>
+              <MonthSummaryCard stats={readyStats} />
+              <CategoryBreakdown categories={readyStats.categories} />
+              {month === currentMonth() && <Button label="지출 기록하기" onPress={() => router.push('/expenses/new')} />}
+              <Text style={styles.section}>전체 내역</Text>
+            </>
+          ) : (
+            <ActivityIndicator style={styles.state} />
+          )}
         </View>
       }
-      ListEmptyComponent={<Text style={styles.message}>아직 기록한 지출이 없어요</Text>}
       ListFooterComponent={
-        list.loadingMore ? (
+        !ready ? undefined : list.loadingMore ? (
           <ActivityIndicator style={styles.footer} />
         ) : list.moreError ? (
           <View style={styles.footer}>
@@ -55,7 +93,7 @@ export default function MonthExpensesScreen() {
         ) : undefined
       }
       // After a failed page only the footer button retries, so layout changes can't loop requests.
-      onEndReached={list.moreError ? undefined : list.loadMore}
+      onEndReached={ready && !list.moreError ? list.loadMore : undefined}
       onEndReachedThreshold={0.5}
     />
   );
@@ -65,8 +103,9 @@ const styles = StyleSheet.create({
   list: { flex: 1, backgroundColor: '#fff' },
   content: { padding: 24 },
   header: { gap: 16, marginBottom: 8 },
-  month: { fontSize: 16, color: '#555' },
+  section: { fontSize: 16, fontWeight: '600', color: '#111' },
+  state: { gap: 16, marginTop: 24 },
   separator: { height: 1, backgroundColor: '#EEF0F3' },
-  message: { textAlign: 'center', color: '#666', marginTop: 24 },
+  message: { textAlign: 'center', color: '#666' },
   footer: { marginTop: 16 },
 });

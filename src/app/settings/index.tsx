@@ -45,6 +45,8 @@ export default function SettingsScreen() {
         if (!mounted.current) return;
         // An odd count means a save is in flight right now.
         const stalePet = petSaves.current !== startedAt || petSaves.current % 2 === 1;
+        // A fresh load replaces an earlier pet error; skip while a save is still in flight.
+        if (!stalePet) setError(null);
         setLoad((current) => ({
           status: 'ready',
           me: stalePet && current.status === 'ready' ? { ...me, petType: current.me.petType } : me,

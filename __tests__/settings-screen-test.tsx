@@ -88,6 +88,18 @@ test('reverts the pet and shows the error when saving fails', async () => {
   expect(screen.getByRole('radio', { name: '고양이' })).toBeEnabled();
 });
 
+test('clears an earlier error when the screen reloads on focus', async () => {
+  mockApi.putPet.mockRejectedValue(new TypeError('Network request failed'));
+  await render(<SettingsScreen />);
+  await screen.findByText('카카오로 로그인됨');
+  await fireEvent.press(screen.getByRole('radio', { name: '강아지' }));
+  await screen.findByText(CONNECTION_ERROR);
+
+  await act(async () => mockFocusEffect?.());
+
+  await waitFor(() => expect(screen.queryByText(CONNECTION_ERROR)).toBeNull());
+});
+
 test('opens the budget edit screen', async () => {
   await render(<SettingsScreen />);
 

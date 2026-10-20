@@ -19,9 +19,12 @@ export class SocialLoginUnavailableError extends Error {
 }
 
 // The Kakao iOS module rejects every failure with code "RNKakaoLogins"; a user cancel is only
-// visible as the "ClientFailed(Cancelled)" prefix of the message (RNKakaoLogins.swift `describe`).
+// visible as a message prefix (RNKakaoLogins.swift `describe`): "ClientFailed(Cancelled)" when the
+// login window is closed, "AuthFailed(AccessDenied)" when 취소 is tapped on the web consent page.
+const KAKAO_CANCEL_PREFIXES = ['ClientFailed(Cancelled)', 'AuthFailed(AccessDenied)'];
+
 function isKakaoCancel(error: unknown): boolean {
-  return error instanceof Error && error.message.startsWith('ClientFailed(Cancelled)');
+  return error instanceof Error && KAKAO_CANCEL_PREFIXES.some((prefix) => error.message.startsWith(prefix));
 }
 
 async function kakaoCredential(): Promise<string> {

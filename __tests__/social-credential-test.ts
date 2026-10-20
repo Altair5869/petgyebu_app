@@ -54,6 +54,14 @@ test('maps a Kakao user cancel to SocialLoginCancelledError', async () => {
   await expect(getSocialCredential('kakao', false, null)).rejects.toBeInstanceOf(SocialLoginCancelledError);
 });
 
+test('maps a Kakao consent-page cancel (AccessDenied) to SocialLoginCancelledError', async () => {
+  const denied = Object.assign(new Error('AuthFailed(AccessDenied): user denied consent'), {
+    code: 'RNKakaoLogins',
+  });
+  kakao.mockRejectedValue(denied);
+  await expect(getSocialCredential('kakao', false, null)).rejects.toBeInstanceOf(SocialLoginCancelledError);
+});
+
 test('rethrows other Kakao errors unchanged', async () => {
   const other = Object.assign(new Error('ApiFailed(InvalidParameter): bad request'), {
     code: 'RNKakaoLogins',

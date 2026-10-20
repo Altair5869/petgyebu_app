@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
 
 import { ApiError } from '@/api/client';
@@ -87,4 +87,24 @@ test('shows a retry when loading the budget fails', async () => {
   await fireEvent.press(screen.getByRole('button', { name: '다시 시도' }));
 
   await waitFor(() => expect(screen.getByLabelText('예산 금액')).toHaveDisplayValue('300,000'));
+});
+
+test('ignores a late response for the month that was open before the month changed', async () => {
+  let resolveOctober: (budget: { month: string; amount: number | null }) => void = () => {};
+  mockApi.getBudget.mockImplementation((month: string) =>
+    month === '2026-10'
+      ? new Promise((resolve) => {
+          resolveOctober = resolve;
+        })
+      : Promise.resolve({ month, amount: null }),
+  );
+  const view = await render(<SettingsBudgetScreen />);
+
+  jest.setSystemTime(new Date('2026-11-01T00:00:01+09:00'));
+  await view.rerender(<SettingsBudgetScreen />);
+  await waitFor(() => expect(mockApi.getBudget).toHaveBeenCalledWith('2026-11'));
+  await screen.findByLabelText('예산 금액');
+
+  await act(async () => resolveOctober({ month: '2026-10', amount: 300000 }));
+  expect(screen.getByLabelText('예산 금액')).toHaveDisplayValue('');
 });

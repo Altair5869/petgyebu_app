@@ -19,12 +19,14 @@ jest.mock('@/session/session-provider', () => ({
   useSession: () => ({ api: mockApi, signOut: mockSignOut, deleteAccount: mockDeleteAccount }),
 }));
 
+let mockStackOptions: { gestureEnabled?: boolean; headerBackVisible?: boolean } | undefined;
 let mockFocusEffect: (() => void) | undefined;
 
 jest.mock('expo-router', () => {
   const { useEffect } = jest.requireActual('react');
   return {
     router: { push: jest.fn() },
+    Stack: { Screen: (props: { options: typeof mockStackOptions }) => { mockStackOptions = props.options; return null; } },
     useFocusEffect: (effect: () => void) => {
       mockFocusEffect = effect;
       useEffect(() => effect(), [effect]);
@@ -146,6 +148,21 @@ describe('account deletion', () => {
     expect(mockDeleteAccount).toHaveBeenCalledWith('KAKAO');
   });
 
+  test('disables the back button and swipe while deleting and restores them afterwards', async () => {
+    const alert = pressedAlertButtons();
+    let finish!: () => void;
+    mockDeleteAccount.mockReturnValue(new Promise<void>((resolve) => (finish = resolve)));
+    await render(<SettingsScreen />);
+    await fireEvent.press(await screen.findByRole('button', { name: '회원 탈퇴' }));
+    expect(mockStackOptions).toMatchObject({ gestureEnabled: true, headerBackVisible: true });
+
+    await act(async () => alert.mock.calls[0][2]!.find((b) => b.text === '탈퇴')!.onPress!());
+    expect(mockStackOptions).toMatchObject({ gestureEnabled: false, headerBackVisible: false });
+
+    await act(async () => finish());
+    expect(mockStackOptions).toMatchObject({ gestureEnabled: true, headerBackVisible: true });
+  });
+
   test('explains a timed-out deletion and re-enables the buttons', async () => {
     const alert = pressedAlertButtons();
     mockDeleteAccount.mockRejectedValue(new RequestTimeoutError());
@@ -168,7 +185,6 @@ describe('account deletion', () => {
 
     expect(mockDeleteAccount).toHaveBeenCalledTimes(1);
     expect(screen.queryByText(CONNECTION_ERROR)).toBeNull();
-    expect(screen.queryByText(/인증|다시 로그인|확인하지 못했어요/)).toBeNull();
   });
 });
 

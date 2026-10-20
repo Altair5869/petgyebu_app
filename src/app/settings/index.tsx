@@ -1,4 +1,4 @@
-import { router, useFocusEffect } from 'expo-router';
+import { router, Stack, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -124,6 +124,7 @@ export default function SettingsScreen() {
   const locked = busy !== null;
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+      <Stack.Screen options={{ gestureEnabled: busy !== 'delete', headerBackVisible: busy !== 'delete' }} />
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.container}>
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>펫</Text>

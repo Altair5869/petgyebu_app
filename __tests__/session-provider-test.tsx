@@ -249,4 +249,45 @@ describe('leaving the session', () => {
     await screen.findByText('signedOut');
     expect(store.clear).toHaveBeenCalled();
   });
+
+  test('signOut reaches signedOut when the logout request fails and the store cannot clear', async () => {
+    const store = await signedIn();
+    store.clear.mockRejectedValueOnce(new Error('keychain failed'));
+    handler = () => {
+      throw new TypeError('Network request failed');
+    };
+
+    await fireEvent.press(screen.getByText('signOut'));
+
+    await screen.findByText('signedOut');
+  });
+
+  describe.each([
+    ['signOut', 'logout', 'kakao'],
+    ['delete', 'revokeAccess', 'google'],
+  ] as const)('%s while the native SDK never answers', (button, method, sdk) => {
+    test('still reaches signedOut', async () => {
+      const never = () => new Promise<void>(() => {});
+      const mock = (
+        sdk === 'kakao'
+          ? (require('@react-native-seoul/kakao-login') as Record<string, jest.Mock>)
+          : (require('@react-native-google-signin/google-signin') as { GoogleSignin: Record<string, jest.Mock> })
+              .GoogleSignin
+      )[method];
+      mock.mockImplementationOnce(never);
+      await signedIn();
+      handler = () => jsonResponse(204);
+      // Fake-login mode skips the SDK, so turn dev mode off to exercise the real path.
+      const g = globalThis as { __DEV__?: boolean };
+      const dev = g.__DEV__;
+      g.__DEV__ = false;
+      try {
+        await fireEvent.press(screen.getByText(button));
+        await screen.findByText('signedOut');
+        expect(mock).toHaveBeenCalled();
+      } finally {
+        g.__DEV__ = dev;
+      }
+    });
+  });
 });

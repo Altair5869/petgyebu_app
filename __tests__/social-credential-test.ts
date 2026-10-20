@@ -129,8 +129,8 @@ describe.each([
   });
 
   test.each(['kakao', 'google'] as const)('resolves when the %s SDK rejects', async (provider) => {
-    jest.mocked(kakaoSdk).mockRejectedValue(new Error('sdk failed'));
-    jest.mocked(googleSdk).mockRejectedValue(new Error('sdk failed'));
+    jest.mocked(kakaoSdk).mockRejectedValueOnce(new Error('sdk failed'));
+    jest.mocked(googleSdk).mockRejectedValueOnce(new Error('sdk failed'));
     await expect(fn(provider, false, null)).resolves.toBeUndefined();
   });
 

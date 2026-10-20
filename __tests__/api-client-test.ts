@@ -467,3 +467,43 @@ describe('deleteMe', () => {
     }
   });
 });
+
+describe('logout hardening', () => {
+  test('resolves even when the token store cannot clear', async () => {
+    handler = () => jsonResponse(204);
+    const { api, store } = setup('r1');
+    store.clear.mockRejectedValueOnce(new Error('keychain failed'));
+
+    await expect(api.logout()).resolves.toBeUndefined();
+  });
+
+  test('a refresh that finishes after logout started cannot save tokens', async () => {
+    const pending: Record<string, (r: Response) => void> = {};
+    const hold = (key: string) => new Promise<Response>((resolve) => (pending[key] = resolve));
+    let meCalls = 0;
+    fetchMock.mockImplementation((url: string) => {
+      if (url.endsWith('/auth/logout')) return hold('logout');
+      if (url.endsWith('/auth/refresh')) return hold('refresh');
+      meCalls += 1;
+      return Promise.resolve(jsonResponse(meCalls === 1 ? 401 : 200, ME));
+    });
+    const { api, store } = setup('r1');
+    const flush = () => new Promise<void>((r) => setImmediate(() => r()));
+
+    const loggingOut = api.logout();
+    await flush();
+    const me = api.getMe().catch(() => undefined);
+    await flush();
+    pending.logout(jsonResponse(204));
+    await loggingOut;
+    pending.refresh(jsonResponse(200, { accessToken: 'a2', refreshToken: 'r2', accessExpiresInSeconds: 900 }));
+    await me;
+
+    expect(store.peek()).toBeNull();
+    expect(store.setRefreshToken).not.toHaveBeenCalled();
+    fetchMock.mockClear();
+    await api.getMe().catch(() => undefined);
+    expect(bearer(fetchMock.mock.calls[0][1])).toBeUndefined();
+    fetchMock.mockImplementation((url: string, init: RequestInit) => Promise.resolve(handler(url, init)));
+  });
+});

@@ -87,9 +87,13 @@ export function SessionProvider({ baseUrl, tokenStore = secureTokenStore, childr
 
   const signOut = useCallback(
     async (provider: Me['provider']) => {
-      await api.logout();
-      await signOutSocial(toProvider(provider));
-      setState({ status: 'signedOut' });
+      try {
+        await api.logout();
+      } finally {
+        // The native SDK may hang, so it must not hold up the state change.
+        void signOutSocial(toProvider(provider));
+        setState({ status: 'signedOut' });
+      }
     },
     [api],
   );
@@ -97,7 +101,7 @@ export function SessionProvider({ baseUrl, tokenStore = secureTokenStore, childr
   const deleteAccount = useCallback(
     async (provider: Me['provider']) => {
       await api.deleteMe();
-      await unlinkSocial(toProvider(provider));
+      void unlinkSocial(toProvider(provider));
       setState({ status: 'signedOut' });
     },
     [api],

@@ -70,6 +70,8 @@ export function createApiClient({ baseUrl, tokenStore, onSessionExpired }: ApiCl
   // The access token lives only in memory; the refresh token is persisted by tokenStore.
   let accessToken: string | null = null;
   let refreshing: Promise<boolean> | null = null;
+  // Bumped when the session is ended locally; a refresh that started earlier must not save tokens.
+  let generation = 0;
 
   async function send(method: Method, path: string, body?: unknown, auth = true) {
     const headers: Record<string, string> = {};
@@ -109,9 +111,11 @@ export function createApiClient({ baseUrl, tokenStore, onSessionExpired }: ApiCl
   function refresh(): Promise<boolean> {
     refreshing ??= (async () => {
       try {
+        const startedAt = generation;
         const refreshToken = await tokenStore.getRefreshToken();
         if (!refreshToken) return false;
         const res = await send('POST', '/auth/refresh', { refreshToken }, false);
+        if (startedAt !== generation) return false;
         if (res.status === 401) {
           await expire();
           return false;
@@ -144,19 +148,28 @@ export function createApiClient({ baseUrl, tokenStore, onSessionExpired }: ApiCl
       await saveTokens(res);
     },
     restoreSession: refresh,
-    // Never fails: whatever the server says, the local session ends.
+    // Never fails: whatever the server or the token store says, the local session ends.
     async logout() {
       try {
+        // Let an in-flight refresh finish first so the server logout uses the latest token.
+        await refreshing?.catch(() => undefined);
+        generation += 1;
         const refreshToken = await tokenStore.getRefreshToken();
         if (refreshToken) await send('POST', '/auth/logout', { refreshToken }, false);
       } catch {
         // The refresh token may already be invalid or the server unreachable.
       }
+      generation += 1;
       accessToken = null;
-      await tokenStore.clear();
+      try {
+        await tokenStore.clear();
+      } catch {
+        // Nothing more can be done; the in-memory session is already gone.
+      }
     },
     async deleteMe() {
       await request<void>('DELETE', '/users/me');
+      generation += 1;
       accessToken = null;
       await tokenStore.clear();
     },

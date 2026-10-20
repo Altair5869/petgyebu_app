@@ -1,0 +1,13 @@
+# 로그아웃하면 로그인 화면, 다시 로그인하면 같은 계정의 홈. 준비: 홈이 보이는 계정.
+appId: com.altair.petgyebu
+env:
+  APP_URL: http://127.0.0.1:8081
+---
+- runFlow: ../subflows/open-app.yaml
+- extendedWaitUntil: { visible: "사용률.*", timeout: 120000 }
+- tapOn: "설정"
+- extendedWaitUntil: { visible: "로그아웃", timeout: 20000 }
+- tapOn: "로그아웃"
+- extendedWaitUntil: { visible: "카카오 로그인", timeout: 20000 }
+- tapOn: "카카오 로그인"
+- extendedWaitUntil: { visible: "사용률.*", timeout: 20000 }

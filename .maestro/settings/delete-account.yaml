@@ -1,0 +1,20 @@
+# 회원 탈퇴: 취소하면 그대로, 탈퇴하면 로그인 화면, 같은 개발용 ID로 다시 로그인하면 새 계정. 준비: 홈이 보이는 계정.
+appId: com.altair.petgyebu
+env:
+  APP_URL: http://127.0.0.1:8081
+---
+- runFlow: ../subflows/open-app.yaml
+- extendedWaitUntil: { visible: "사용률.*", timeout: 120000 }
+- tapOn: "설정"
+- extendedWaitUntil: { visible: "회원 탈퇴", timeout: 20000 }
+- tapOn: "회원 탈퇴"
+- extendedWaitUntil: { visible: "회원 탈퇴할까요?", timeout: 10000 }
+- tapOn: "취소"
+- assertNotVisible: "회원 탈퇴할까요?"
+- assertVisible: "카카오로 로그인됨"
+- tapOn: "회원 탈퇴"
+- extendedWaitUntil: { visible: "회원 탈퇴할까요?", timeout: 10000 }
+- tapOn: "탈퇴"
+- extendedWaitUntil: { visible: "카카오 로그인", timeout: 20000 }
+- tapOn: "카카오 로그인"
+- extendedWaitUntil: { visible: "함께할 펫을 골라 주세요", timeout: 20000 }

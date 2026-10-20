@@ -1,5 +1,5 @@
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import { login as kakaoLogin } from '@react-native-seoul/kakao-login';
+import { login as kakaoLogin, logout as kakaoLogout, unlink as kakaoUnlink } from '@react-native-seoul/kakao-login';
 
 import type { Provider } from '@/api/types';
 import { devLoginId, googleIosClientId, googleWebClientId, kakaoNativeAppKey } from '@/config';
@@ -56,4 +56,50 @@ export async function getSocialCredential(
 ): Promise<string> {
   if (isDev && devId) return `ok:${devId}`;
   return provider === 'kakao' ? kakaoCredential() : googleCredential();
+}
+
+// After a cold start the SDK is neither configured nor signed in, so signOut/revokeAccess would do
+// nothing. Configure it and restore the previous sign-in first.
+async function restoreGoogleSession(): Promise<void> {
+  if (!googleIosClientId || !googleWebClientId) return;
+  GoogleSignin.configure({ iosClientId: googleIosClientId, webClientId: googleWebClientId });
+  if (GoogleSignin.hasPreviousSignIn()) await GoogleSignin.signInSilently();
+}
+
+// The server session is already settled when these run, so SDK failures are swallowed.
+async function runSdk(
+  provider: Provider,
+  isDev: boolean,
+  devId: string | null,
+  kakao: () => Promise<unknown>,
+  google: () => Promise<unknown>,
+): Promise<void> {
+  if (isDev && devId) return;
+  try {
+    await (provider === 'kakao' ? kakao() : google());
+  } catch {
+    // Nothing to recover: the user is signed out of this app either way.
+  }
+}
+
+export function signOutSocial(
+  provider: Provider,
+  isDev: boolean = __DEV__,
+  devId: string | null = devLoginId,
+): Promise<void> {
+  return runSdk(provider, isDev, devId, kakaoLogout, async () => {
+    await restoreGoogleSession().catch(() => undefined);
+    await GoogleSignin.signOut();
+  });
+}
+
+export function unlinkSocial(
+  provider: Provider,
+  isDev: boolean = __DEV__,
+  devId: string | null = devLoginId,
+): Promise<void> {
+  return runSdk(provider, isDev, devId, kakaoUnlink, async () => {
+    await restoreGoogleSession().catch(() => undefined);
+    await GoogleSignin.revokeAccess();
+  });
 }

@@ -174,3 +174,12 @@ test('shows the new totals after a focus refetch', async () => {
   screen.getByText('138,000원 남았어요');
   screen.getByText('사용률 54%');
 });
+
+test('links to the settings screen', async () => {
+  mockApi.getHome.mockResolvedValue(HOME);
+  await render(<HomeScreen />);
+
+  await fireEvent.press(await screen.findByRole('link', { name: '설정' }));
+
+  expect(router.push).toHaveBeenCalledWith('/settings');
+});

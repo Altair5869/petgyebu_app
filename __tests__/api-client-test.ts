@@ -339,3 +339,247 @@ describe('request timeout', () => {
     await expect(result).resolves.toEqual(ME);
   });
 });
+
+describe('logout', () => {
+  test('posts the refresh token without an Authorization header and clears the store', async () => {
+    handler = () => jsonResponse(204);
+    const { api, store, onSessionExpired } = setup('r1');
+
+    await api.logout();
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe(`${BASE}/auth/logout`);
+    expect(init.method).toBe('POST');
+    expect(JSON.parse(init.body as string)).toEqual({ refreshToken: 'r1' });
+    expect(bearer(init)).toBeUndefined();
+    expect(store.clear).toHaveBeenCalledTimes(1);
+    expect(onSessionExpired).not.toHaveBeenCalled();
+  });
+
+  test('clears the store and does not throw when the server answers 401', async () => {
+    handler = () => jsonResponse(401, { code: 'UNAUTHORIZED' });
+    const { api, store } = setup('r1');
+
+    await expect(api.logout()).resolves.toBeUndefined();
+    expect(store.clear).toHaveBeenCalledTimes(1);
+  });
+
+  test('clears the store and does not throw on a network failure', async () => {
+    handler = () => {
+      throw new TypeError('Network request failed');
+    };
+    const { api, store } = setup('r1');
+
+    await expect(api.logout()).resolves.toBeUndefined();
+    expect(store.clear).toHaveBeenCalledTimes(1);
+  });
+
+  test('skips the request when no refresh token is stored', async () => {
+    const { api, store } = setup(null);
+
+    await api.logout();
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(store.clear).toHaveBeenCalledTimes(1);
+  });
+
+  test('drops the in-memory access token so later requests are unauthenticated', async () => {
+    handler = (url) => {
+      if (url.endsWith('/auth/login/kakao')) {
+        return jsonResponse(200, { accessToken: 'a1', refreshToken: 'r1', accessExpiresInSeconds: 900 });
+      }
+      return jsonResponse(204);
+    };
+    const { api } = setup();
+    await api.login('kakao', 'ok:dev');
+
+    await api.logout();
+    fetchMock.mockClear();
+    await api.getMe().catch(() => undefined);
+
+    expect(bearer(fetchMock.mock.calls[0][1])).toBeUndefined();
+  });
+
+  test('gives up after the request timeout and still signs out locally', async () => {
+    jest.useFakeTimers();
+    try {
+      fetchMock.mockImplementationOnce(
+        (_url: string, init: RequestInit) =>
+          new Promise<Response>((_, reject) => {
+            init.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+          }),
+      );
+      const { api, store } = setup('r1');
+      const done = api.logout();
+
+      await jest.advanceTimersByTimeAsync(REQUEST_TIMEOUT_MS);
+      await expect(done).resolves.toBeUndefined();
+      expect(store.clear).toHaveBeenCalledTimes(1);
+    } finally {
+      jest.useRealTimers();
+      fetchMock.mockImplementation((url: string, init: RequestInit) => Promise.resolve(handler(url, init)));
+    }
+  });
+});
+
+describe('deleteMe', () => {
+  test('sends DELETE /users/me and clears the store on 204', async () => {
+    handler = () => jsonResponse(204);
+    const { api, store, onSessionExpired } = setup('r1');
+
+    await expect(api.deleteMe()).resolves.toBeUndefined();
+
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe(`${BASE}/users/me`);
+    expect(init.method).toBe('DELETE');
+    expect(store.clear).toHaveBeenCalledTimes(1);
+    expect(onSessionExpired).not.toHaveBeenCalled();
+  });
+
+  test('throws ApiError and keeps the token on a server error', async () => {
+    handler = () => jsonResponse(500, { code: 'INTERNAL' });
+    const { api, store } = setup('r1');
+
+    await expect(api.deleteMe()).rejects.toMatchObject({ status: 500 });
+    expect(store.clear).not.toHaveBeenCalled();
+    expect(store.peek()).toBe('r1');
+  });
+
+  test('throws RequestTimeoutError and keeps the token on timeout', async () => {
+    jest.useFakeTimers();
+    try {
+      fetchMock.mockImplementationOnce(
+        (_url: string, init: RequestInit) =>
+          new Promise<Response>((_, reject) => {
+            init.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+          }),
+      );
+      const { api, store } = setup('r1');
+      const assertion = expect(api.deleteMe()).rejects.toBeInstanceOf(RequestTimeoutError);
+
+      await jest.advanceTimersByTimeAsync(REQUEST_TIMEOUT_MS);
+      await assertion;
+      expect(store.clear).not.toHaveBeenCalled();
+    } finally {
+      jest.useRealTimers();
+      fetchMock.mockImplementation((url: string, init: RequestInit) => Promise.resolve(handler(url, init)));
+    }
+  });
+});
+
+describe('logout hardening', () => {
+  test('resolves even when the token store cannot clear', async () => {
+    handler = () => jsonResponse(204);
+    const { api, store } = setup('r1');
+    store.clear.mockRejectedValueOnce(new Error('keychain failed'));
+
+    await expect(api.logout()).resolves.toBeUndefined();
+  });
+
+  test('a refresh that finishes after logout started cannot save tokens', async () => {
+    const pending: Record<string, (r: Response) => void> = {};
+    const hold = (key: string) => new Promise<Response>((resolve) => (pending[key] = resolve));
+    let meCalls = 0;
+    fetchMock.mockImplementation((url: string) => {
+      if (url.endsWith('/auth/logout')) return hold('logout');
+      if (url.endsWith('/auth/refresh')) return hold('refresh');
+      meCalls += 1;
+      return Promise.resolve(jsonResponse(meCalls === 1 ? 401 : 200, ME));
+    });
+    const { api, store } = setup('r1');
+    const flush = () => new Promise<void>((r) => setImmediate(() => r()));
+
+    const loggingOut = api.logout();
+    await flush();
+    const me = api.getMe().catch(() => undefined);
+    await flush();
+    pending.logout(jsonResponse(204));
+    await loggingOut;
+    pending.refresh(jsonResponse(200, { accessToken: 'a2', refreshToken: 'r2', accessExpiresInSeconds: 900 }));
+    await me;
+
+    expect(store.peek()).toBeNull();
+    expect(store.setRefreshToken).not.toHaveBeenCalled();
+    fetchMock.mockClear();
+    await api.getMe().catch(() => undefined);
+    expect(bearer(fetchMock.mock.calls[0][1])).toBeUndefined();
+    fetchMock.mockImplementation((url: string, init: RequestInit) => Promise.resolve(handler(url, init)));
+  });
+});
+
+describe('session end races', () => {
+  const flush = () => new Promise<void>((r) => setImmediate(() => r()));
+  const ROTATED = { accessToken: 'a2', refreshToken: 'r2', accessExpiresInSeconds: 900 };
+  const restore = () =>
+    fetchMock.mockImplementation((url: string, init: RequestInit) => Promise.resolve(handler(url, init)));
+  afterEach(restore);
+
+  test('a refresh whose body arrives after deleteMe finished cannot re-save tokens', async () => {
+    let releaseBody!: () => void;
+    const bodyGate = new Promise<void>((r) => (releaseBody = r));
+    let meCalls = 0;
+    fetchMock.mockImplementation((url: string, init: RequestInit) => {
+      if (url.endsWith('/auth/refresh')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => {
+            await bodyGate;
+            return ROTATED;
+          },
+        } as Response);
+      }
+      if (init.method === 'DELETE') return Promise.resolve(jsonResponse(204));
+      meCalls += 1;
+      return Promise.resolve(jsonResponse(meCalls === 1 ? 401 : 200, ME));
+    });
+    const { api, store } = setup('r1');
+
+    const me = api.getMe().catch(() => undefined);
+    await flush();
+    await api.deleteMe();
+    releaseBody();
+    await me;
+
+    expect(store.peek()).toBeNull();
+    expect(store.setRefreshToken).not.toHaveBeenCalled();
+  });
+
+  test('logout waits for an in-flight refresh and sends the rotated refresh token', async () => {
+    let releaseRefresh!: () => void;
+    const gate = new Promise<void>((r) => (releaseRefresh = r));
+    let meCalls = 0;
+    fetchMock.mockImplementation(async (url: string) => {
+      if (url.endsWith('/auth/refresh')) {
+        await gate;
+        return jsonResponse(200, ROTATED);
+      }
+      if (url.endsWith('/auth/logout')) return jsonResponse(204);
+      meCalls += 1;
+      return jsonResponse(meCalls === 1 ? 401 : 200, ME);
+    });
+    const { api, store } = setup('r1');
+
+    const me = api.getMe().catch(() => undefined);
+    await flush();
+    const loggingOut = api.logout();
+    await flush();
+    expect(fetchMock.mock.calls.some(([u]) => (u as string).endsWith('/auth/logout'))).toBe(false);
+    releaseRefresh();
+    await loggingOut;
+    await me;
+
+    const logoutCall = fetchMock.mock.calls.find(([u]) => (u as string).endsWith('/auth/logout'));
+    expect(JSON.parse(logoutCall?.[1].body as string)).toEqual({ refreshToken: 'r2' });
+    expect(store.peek()).toBeNull();
+  });
+
+  test('deleteMe still ends the session when the local clear fails after a 204', async () => {
+    handler = () => jsonResponse(204);
+    const { api, store } = setup('r1');
+    store.clear.mockRejectedValueOnce(new Error('keychain failed'));
+
+    await expect(api.deleteMe()).resolves.toBeUndefined();
+  });
+});

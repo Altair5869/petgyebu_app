@@ -62,14 +62,15 @@ maestro test -e APP_URL=http://127.0.0.1:8081 .maestro/onboarding/relaunch-home.
 | `expenses/edit-deleted.yaml` | 수정 화면 중 다른 경로로 지출이 삭제되면 저장 시 안내 | `first-login` 직후 + 아래 "수정 화면 중 지출 지우기" |
 | `stats/monthly-stats.yaml` | 이번 달 통계·카테고리 비중, 지난달(예산 없음), 지출 없는 달, 예산 초과 | `first-login` 직후 + 아래 "지난달 지출 넣기"(지난달 지출 1건, 7,000원·`old`) |
 | `stats/move-month.yaml` | 지난달 지출 수정 후 지난달 통계로 복귀, 이번 달 지출을 날짜 선택기로 지난달로 이동(이번 달에서 빠지고 홈 잔액 복원), 같은 화면에서 반복 | `first-login` 직후 + "지난달 지출 넣기"(금액 7,000원, 메모 `old`, 카테고리 `OTHER`). 다시 돌리려면 아래 "move-month 다시 돌리기 전 정리"를 실행하고 `old`를 7,000원으로 되돌린 뒤 이번 달 지출을 지운다 |
+| `settings/change-pet-and-budget.yaml` | 설정에서 펫을 강아지로, 이번 달 예산을 450,000원으로 바꾸고 홈에 반영 | `first-login` 직후 |
+| `settings/logout.yaml` | 로그아웃 → 로그인 화면 → 다시 로그인하면 홈 | 홈이 보이는 계정 |
+| `settings/delete-account.yaml` | 탈퇴 취소, 탈퇴 → 로그인 화면 → 같은 ID로 새 계정(펫 선택부터) | 홈이 보이는 계정 |
 | `expenses/validation.yaml` | 빈 금액·101자 메모는 저장 비활성 | 홈 |
 | `expenses/paging.yaml` | 25건 통계 화면 무한 스크롤 | 새 개발용 ID, 아래 "이번 달 지출 25건 넣기" |
 | `expenses/list-server-unavailable.yaml` | 백엔드가 꺼지면 월별 통계에서 오류와 다시 시도 | 홈이 열린 상태, 백엔드 중지 |
 | `expenses/request-timeout.yaml` | 서버가 응답 없이 멈추면 10초 뒤 연결 오류, 지출 저장은 "저장됐는지 확인하지 못했어요" | 홈이 열린 상태, 아래 "서버 응답 멈추기" |
 
-`stats/move-month.yaml`의 날짜 선택기 조작은 화면 비율 좌표 탭(이전 달 화살표, 9월 15일 칸, 헤더로 선택기 닫기)이라 iPhone 18 Pro 기준이고, 실행하는 달이 바뀌면 달력 배치가 달라 15일 칸 좌표를 다시 맞춰야 한다. 모든 기존 흐름은 `monthly-stats` → `move-month` → 나머지 순서로 같은 계정에서 이어 돌릴 수 있다. `move-month`는 `mv`(3,000원)·`mv2`(1,000원)를 지난달로 옮기므로, 다시 돌리기 전에는 아래 SQL로 지난달의 `mv`·`mv2`를 지우고 이번 달 지출을 앱에서 지우거나 `edit-deleted`의 DELETE(계정의 지출 전부 삭제)로 정리한다. 전부 지우면 `old`는 "지난달 지출 넣기"로 다시 넣는다.
-
-앱에 아직 로그아웃이 없어서, 다른 계정으로 시작하려면 먼저 앱 세션을 끊는다.
+`stats/move-month.yaml`의 날짜 선택기 조작은 화면 비율 좌표 탭(이전 달 화살표, 9월 15일 칸, 헤더로 선택기 닫기)이라 iPhone 18 Pro 기준이고, 실행하는 달이 바뀌면 달력 배치가 달라 15일 칸 좌표를 다시 맞춰야 한다. 모든 기존 흐름은 `monthly-stats` → `move-month` → 나머지 순서로 같은 계정에서 이어 돌릴 수 있다. 단 `settings/change-pet-and-budget`은 시드 데이터를 강아지·450,000원으로 바꾸고, `settings/delete-account`는 계정을 삭제하므로 맨 마지막에 돌리거나 그 뒤에 새 ID로 `first-login`을 다시 실행한다. `move-month`는 `mv`(3,000원)·`mv2`(1,000원)를 지난달로 옮기므로, 다시 돌리기 전에는 아래 SQL로 지난달의 `mv`·`mv2`를 지우고 이번 달 지출을 앱에서 지우거나 `edit-deleted`의 DELETE(계정의 지출 전부 삭제)로 정리한다. 전부 지우면 `old`는 "지난달 지출 넣기"로 다시 넣는다.
 
 ```bash
 # 앱 세션 끊기: 같은 계정으로 다른 곳에서 로그인하면 이전 로그인이 무효가 된다(bootTestRun 전용 가짜 로그인)

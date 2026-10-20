@@ -110,6 +110,61 @@ docker exec petgyebu_backend_renewal-postgres-1 psql -U petgyebu -d petgyebu -c 
 
 리프레시 토큰은 DB에 해시로 저장되므로 백엔드를 다시 시작해도(JWT 비밀값이 바뀌어도) 앱 세션은 유지된다.
 
+## 실제 로그인 확인 (카카오·구글)
+
+가짜 로그인 대신 실제 계정으로 `POST /auth/login/{provider}`까지 확인할 때의 절차다. 키 값은 대화·커밋·로그에 남기지 않는다.
+
+**키와 출처**
+
+| 키 | 출처 |
+|---|---|
+| `EXPO_PUBLIC_KAKAO_NATIVE_APP_KEY` | 카카오 개발자 콘솔 앱의 네이티브 앱 키. 플랫폼 iOS에 번들 ID `com.altair.petgyebu`를 등록하고 카카오 로그인을 켠다 |
+| `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` | 구글 클라우드 OAuth 클라이언트 "iOS"(번들 ID 동일) |
+| `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` | 구글 클라우드 OAuth 클라이언트 "웹 애플리케이션". ID 토큰의 `aud`가 된다 |
+| `PETGYEBU_KAKAO_APP_ID` | 카카오 콘솔의 숫자 앱 ID(백엔드용) |
+| `PETGYEBU_GOOGLE_CLIENT_IDS` | 웹 클라이언트 ID(백엔드용) |
+
+구글 OAuth 동의 화면은 테스트 상태로 두고 본인 계정을 테스트 사용자로 추가한다. 클라이언트를 만들 때 "AI 기반 에이전트에 이 클라이언트 사용"은 체크하지 않는다. 앞의 세 키는 번들에 들어가고, `PETGYEBU_*`는 `EXPO_PUBLIC_` 접두사가 없어 번들되지 않는다.
+
+**`.env.local`** (값은 자리표시자)
+
+```bash
+EXPO_PUBLIC_API_BASE_URL=http://localhost:8080/api/v1
+EXPO_PUBLIC_DEV_LOGIN_ID=
+EXPO_PUBLIC_KAKAO_NATIVE_APP_KEY=<카카오 네이티브 앱 키>
+EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=<구글 iOS 클라이언트 ID>
+EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=<구글 웹 클라이언트 ID>
+PETGYEBU_KAKAO_APP_ID=<카카오 앱 ID>
+PETGYEBU_GOOGLE_CLIENT_IDS=<구글 웹 클라이언트 ID>
+```
+
+`EXPO_PUBLIC_DEV_LOGIN_ID`가 비어 있어야 실제 로그인 버튼이 SDK를 쓴다.
+
+**앱 빌드**: 키를 넣거나 바꾼 뒤에는 `ios/`를 새로 만들어야 한다. `npx expo run:ios`는 `ios/`가 이미 있으면 다시 만들지 않아서, 키 없는 옛 `ios/`가 남으면 기기 로그에 "KAKAO_APP_KEY is missing from Info.plist"가 뜨고 카카오 버튼이 연결 오류를 보여 준다.
+
+```bash
+npx expo prebuild --platform ios --clean
+npx expo run:ios
+```
+
+**백엔드**: `bootRun`으로 띄운다(`bootTestRun`은 멈춘다). `PETGYEBU_JWT_SECRET`도 필요하다. 아래는 `.env.local`에서 두 변수만 내보낸다.
+
+```bash
+cd ~/Desktop/petgyebu_backend_renewal
+export $(grep -E '^PETGYEBU_(KAKAO_APP_ID|GOOGLE_CLIENT_IDS)=' ~/Desktop/petgyebu_app/.env.local | xargs)
+./gradlew bootRun
+```
+
+엉터리 토큰을 보내 401 `SOCIAL_LOGIN_FAILED`가 오면 설정이 로드된 것이고, 503 `SOCIAL_LOGIN_UNAVAILABLE`이면 설정이 빠진 것이다.
+
+**시뮬레이터**
+
+- iOS 27에서는 버튼을 누르면 먼저 "'petgyebuapp'이(가) 'kauth.kakao.com'(또는 'accounts.google.com')을(를) 사용하여 로그인하려고 합니다" 시스템 창이 뜬다. 여기서 취소하면 문구 없이 로그인 화면으로 돌아온다.
+- 계정 정보를 입력하려면 Simulator 앱 창이 열려 있어야 한다(Xcode → Open Developer Tool → Simulator). 하드웨어 키보드는 Mac 입력 소스를 따르므로 영문은 ABC로 바꿔서 입력한다.
+- 로그아웃 UI가 아직 없다. 계정을 바꾸려면 위 Maestro 준비 5번의 `terminate` + `keychain reset`을 쓴다.
+
+**가짜 로그인으로 되돌리기**: `EXPO_PUBLIC_DEV_LOGIN_ID`에 처음 쓰는 값을 넣고, 백엔드를 `bootTestRun`으로 바꾸고, `npx expo start --clear`로 Metro를 다시 시작한다. 자세한 순서는 위 "시뮬레이터 자동 확인 (Maestro)"의 준비를 따른다. 키 줄은 그대로 둬도 된다.
+
 ## Expo
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).

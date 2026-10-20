@@ -100,7 +100,15 @@ export function SessionProvider({ baseUrl, tokenStore = secureTokenStore, childr
 
   const deleteAccount = useCallback(
     async (provider: Me['provider']) => {
-      await api.deleteMe();
+      try {
+        await api.deleteMe();
+      } catch (error) {
+        if (!isUnauthorized(error)) throw error;
+        // The session is gone and cannot be refreshed; end it locally instead of failing silently.
+        await api.logout();
+        setState({ status: 'signedOut' });
+        return;
+      }
       void unlinkSocial(toProvider(provider));
       setState({ status: 'signedOut' });
     },

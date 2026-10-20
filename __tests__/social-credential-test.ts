@@ -15,7 +15,14 @@ import {
 
 jest.mock('@react-native-seoul/kakao-login', () => ({ login: jest.fn(), logout: jest.fn(), unlink: jest.fn() }));
 jest.mock('@react-native-google-signin/google-signin', () => ({
-  GoogleSignin: { configure: jest.fn(), signIn: jest.fn(), signOut: jest.fn(), revokeAccess: jest.fn() },
+  GoogleSignin: {
+    configure: jest.fn(),
+    signIn: jest.fn(),
+    signOut: jest.fn(),
+    revokeAccess: jest.fn(),
+    hasPreviousSignIn: jest.fn(),
+    signInSilently: jest.fn(),
+  },
 }));
 jest.mock('@/config', () => ({
   devLoginId: null,
@@ -129,9 +136,40 @@ describe.each([
   });
 
   test.each(['kakao', 'google'] as const)('resolves when the %s SDK rejects', async (provider) => {
-    jest.mocked(kakaoSdk).mockRejectedValueOnce(new Error('sdk failed'));
-    jest.mocked(googleSdk).mockRejectedValueOnce(new Error('sdk failed'));
+    jest.mocked(provider === 'kakao' ? kakaoSdk : googleSdk).mockRejectedValueOnce(new Error('sdk failed'));
     await expect(fn(provider, false, null)).resolves.toBeUndefined();
+  });
+
+  describe('google restore after a cold start', () => {
+    const order: string[] = [];
+    beforeEach(() => {
+      order.length = 0;
+      jest.mocked(GoogleSignin.configure).mockImplementation(() => void order.push('configure'));
+      jest.mocked(GoogleSignin.signInSilently).mockImplementation(async () => {
+        order.push('signInSilently');
+        return {} as never;
+      });
+      jest.mocked(googleSdk).mockImplementation((async () => void order.push('sdk')) as never);
+    });
+
+    test('configures and restores the previous sign-in before calling the SDK', async () => {
+      jest.mocked(GoogleSignin.hasPreviousSignIn).mockReturnValue(true);
+      await fn('google', false, null);
+      expect(order).toEqual(['configure', 'signInSilently', 'sdk']);
+      expect(GoogleSignin.configure).toHaveBeenCalledWith({ iosClientId: 'ios-client', webClientId: 'web-client' });
+    });
+
+    test('skips signInSilently without a previous sign-in but still calls the SDK', async () => {
+      jest.mocked(GoogleSignin.hasPreviousSignIn).mockReturnValue(false);
+      await fn('google', false, null);
+      expect(order).toEqual(['configure', 'sdk']);
+    });
+
+    test('resolves when signInSilently rejects', async () => {
+      jest.mocked(GoogleSignin.hasPreviousSignIn).mockReturnValue(true);
+      jest.mocked(GoogleSignin.signInSilently).mockRejectedValueOnce(new Error('silent failed'));
+      await expect(fn('google', false, null)).resolves.toBeUndefined();
+    });
   });
 
   test.each(['kakao', 'google'] as const)('calls no SDK in fake-login mode for %s', async (provider) => {

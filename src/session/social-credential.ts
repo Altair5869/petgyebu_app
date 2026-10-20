@@ -58,6 +58,14 @@ export async function getSocialCredential(
   return provider === 'kakao' ? kakaoCredential() : googleCredential();
 }
 
+// After a cold start the SDK is neither configured nor signed in, so signOut/revokeAccess would do
+// nothing. Configure it and restore the previous sign-in first.
+async function restoreGoogleSession(): Promise<void> {
+  if (!googleIosClientId || !googleWebClientId) return;
+  GoogleSignin.configure({ iosClientId: googleIosClientId, webClientId: googleWebClientId });
+  if (GoogleSignin.hasPreviousSignIn()) await GoogleSignin.signInSilently();
+}
+
 // The server session is already settled when these run, so SDK failures are swallowed.
 async function runSdk(
   provider: Provider,
@@ -79,7 +87,10 @@ export function signOutSocial(
   isDev: boolean = __DEV__,
   devId: string | null = devLoginId,
 ): Promise<void> {
-  return runSdk(provider, isDev, devId, kakaoLogout, () => GoogleSignin.signOut());
+  return runSdk(provider, isDev, devId, kakaoLogout, async () => {
+    await restoreGoogleSession();
+    await GoogleSignin.signOut();
+  });
 }
 
 export function unlinkSocial(
@@ -87,5 +98,8 @@ export function unlinkSocial(
   isDev: boolean = __DEV__,
   devId: string | null = devLoginId,
 ): Promise<void> {
-  return runSdk(provider, isDev, devId, kakaoUnlink, () => GoogleSignin.revokeAccess());
+  return runSdk(provider, isDev, devId, kakaoUnlink, async () => {
+    await restoreGoogleSession();
+    await GoogleSignin.revokeAccess();
+  });
 }

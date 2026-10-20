@@ -8,7 +8,14 @@ import { SessionProvider, useSession } from '@/session/session-provider';
 jest.mock('expo-secure-store', () => ({}));
 jest.mock('@react-native-seoul/kakao-login', () => ({ login: jest.fn(), logout: jest.fn(), unlink: jest.fn() }));
 jest.mock('@react-native-google-signin/google-signin', () => ({
-  GoogleSignin: { configure: jest.fn(), signIn: jest.fn(), signOut: jest.fn(), revokeAccess: jest.fn() },
+  GoogleSignin: {
+    configure: jest.fn(),
+    signIn: jest.fn(),
+    signOut: jest.fn(),
+    revokeAccess: jest.fn(),
+    hasPreviousSignIn: jest.fn(),
+    signInSilently: jest.fn(),
+  },
 }));
 jest.mock('@/config', () => ({
   devLoginId: 'test-user',
@@ -247,6 +254,29 @@ describe('leaving the session', () => {
     await fireEvent.press(screen.getByText('delete'));
 
     await screen.findByText('signedOut');
+    expect(store.clear).toHaveBeenCalled();
+  });
+
+  test('deleteAccount ends the session without throwing when the delete and the refresh both answer 401', async () => {
+    const store = await signedIn();
+    handler = () => jsonResponse(401, { code: 'UNAUTHORIZED' });
+
+    await fireEvent.press(screen.getByText('delete'));
+
+    await screen.findByText('signedOut');
+    expect(screen.queryByText('delete failed')).toBeNull();
+    expect(store.clear).toHaveBeenCalled();
+  });
+
+  test('deleteAccount ends the session without throwing when no refresh token is stored', async () => {
+    const store = await signedIn();
+    store.getRefreshToken.mockResolvedValue(null);
+    handler = () => jsonResponse(401, { code: 'UNAUTHORIZED' });
+
+    await fireEvent.press(screen.getByText('delete'));
+
+    await screen.findByText('signedOut');
+    expect(screen.queryByText('delete failed')).toBeNull();
     expect(store.clear).toHaveBeenCalled();
   });
 

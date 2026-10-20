@@ -66,7 +66,12 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.month}>{monthTitle(home.month)}</Text>
+        <View style={styles.header}>
+          <Text style={styles.month}>{monthTitle(home.month)}</Text>
+          <Pressable accessibilityRole="link" accessibilityLabel="설정" onPress={() => router.push('/settings')}>
+            <Text style={styles.settingsLink}>설정</Text>
+          </Pressable>
+        </View>
         <View style={styles.card}>
           <Text style={styles.petLine}>
             {PET_LABELS[home.petType]} · {petCopy.name}
@@ -96,6 +101,8 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#fff' },
   container: { padding: 24, gap: 16 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  settingsLink: { fontSize: 15, color: '#1565C0', paddingVertical: 8, paddingLeft: 16 },
   month: { fontSize: 16, color: '#555' },
   card: { borderRadius: 16, backgroundColor: '#F5F7FA', padding: 20, gap: 8 },
   petLine: { fontSize: 22, fontWeight: '700', color: '#111' },

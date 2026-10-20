@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiError } from '@/api/client';
@@ -67,7 +67,10 @@ export default function SettingsBudgetScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboardAvoiding}>
-        <View style={styles.container}>
+        <ScrollView
+          contentInsetAdjustmentBehavior="automatic"
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled">
           <Text style={styles.title}>{monthTitle(month)} 예산</Text>
           <BudgetForm
             text={text}
@@ -76,7 +79,7 @@ export default function SettingsBudgetScreen() {
             saving={saving}
             onSave={() => void save()}
           />
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -85,6 +88,6 @@ export default function SettingsBudgetScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#fff' },
   keyboardAvoiding: { flex: 1 },
-  container: { flex: 1, padding: 24, gap: 24 },
+  container: { padding: 24, gap: 24 },
   title: { fontSize: 20, fontWeight: '700', color: '#111' },
 });

@@ -50,6 +50,7 @@ test('shows pet state, balance, usage, and the first-record guide', async () => 
   await render(<HomeScreen />);
 
   await screen.findByText('고양이 · 안정');
+  screen.getByLabelText('고양이, 안정: 편안하게 지내고 있어요');
   screen.getByText('300,000원 남았어요');
   screen.getByText('사용률 0%');
   screen.getByText('300,000원 중 0원 사용');

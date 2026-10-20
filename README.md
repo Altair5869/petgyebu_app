@@ -162,9 +162,19 @@ set -a; source <(grep -E '^PETGYEBU_(KAKAO_APP_ID|GOOGLE_CLIENT_IDS)=' ~/Desktop
 
 - iOS 27에서는 버튼을 누르면 먼저 "'petgyebuapp'이(가) 'kauth.kakao.com'(또는 'accounts.google.com')을(를) 사용하여 로그인하려고 합니다" 시스템 창이 뜬다. 여기서 취소하면 문구 없이 로그인 화면으로 돌아온다.
 - 계정 정보를 입력하려면 Simulator 앱 창이 열려 있어야 한다(Xcode → Open Developer Tool → Simulator). 하드웨어 키보드는 Mac 입력 소스를 따르므로 영문은 ABC로 바꿔서 입력한다.
-- 로그아웃 UI가 아직 없다. 계정을 바꾸려면 위 Maestro 준비 5번의 `terminate` + `keychain reset`을 쓴다.
+- 계정을 바꾸려면 홈 → 설정 → 로그아웃을 쓴다. 키체인까지 비우려면 위 Maestro 준비 5번의 `terminate` + `keychain reset`을 쓴다.
 
 **가짜 로그인으로 되돌리기**: `EXPO_PUBLIC_DEV_LOGIN_ID`에 처음 쓰는 값을 넣고, 백엔드를 `bootTestRun`으로 바꾸고, `npx expo start --clear`로 Metro를 다시 시작한다. 자세한 순서는 위 "시뮬레이터 자동 확인 (Maestro)"의 준비를 따른다. 키 줄은 그대로 둬도 된다.
+
+## 펫 그림 넣기
+
+홈의 펫 그림은 아직 임시 상자(점선 테두리에 `CAT`·`STABLE`·"임시 그림")다. 진짜 그림은 한 장씩 바꿔 넣을 수 있다.
+
+1. 그림을 `assets/images/pets/{cat|dog}-{stable|caution|warning|budget-reached}.png`로 넣는다. 고해상도는 같은 이름에 `@2x`·`@3x`를 붙인다. 화면에는 120×120으로 보인다.
+2. `src/lib/pet-images.ts`의 `PET_IMAGES`에 등록한다. 예: `CAT: { STABLE: require('../../assets/images/pets/cat-stable.png') }`
+3. 등록하지 않은 펫·상태는 계속 임시 상자로 보인다. 화면 낭독기는 그림과 상자 모두 "고양이, 안정: 편안하게 지내고 있어요"처럼 읽는다.
+
+상태별 연출 기준(안정은 편안함, 주의는 커진 눈, 경고는 안절부절하는 시선과 앞발, 예산 도달은 빈 게이지를 보는 놀란 눈)은 `docs/01-prd.md` 5절에 있다. 비난·질병·처벌 이미지는 쓰지 않는다.
 
 ## Expo
 

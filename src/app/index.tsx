@@ -7,6 +7,7 @@ import { ApiError } from '@/api/client';
 import type { Home } from '@/api/types';
 import { Button } from '@/components/button';
 import { LoadingView, MessageView } from '@/components/message-view';
+import { PetImage } from '@/components/pet-image';
 import { CONNECTION_ERROR } from '@/lib/error-message';
 import { describeBalance, formatUsagePercent, formatWon } from '@/lib/money';
 import { monthTitle } from '@/lib/month';
@@ -73,6 +74,7 @@ export default function HomeScreen() {
           </Pressable>
         </View>
         <View style={styles.card}>
+          <PetImage petType={home.petType} petState={home.petState} />
           <Text style={styles.petLine}>
             {PET_LABELS[home.petType]} · {petCopy.name}
           </Text>

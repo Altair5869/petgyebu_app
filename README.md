@@ -170,7 +170,7 @@ set -a; source <(grep -E '^PETGYEBU_(KAKAO_APP_ID|GOOGLE_CLIENT_IDS)=' ~/Desktop
 
 홈의 펫 그림은 아직 임시 상자(점선 테두리에 `CAT`·`STABLE`·"임시 그림")다. 진짜 그림은 한 장씩 바꿔 넣을 수 있다.
 
-1. 그림을 `assets/images/pets/{cat|dog}-{stable|caution|warning|budget-reached}.png`로 넣는다. 고해상도는 같은 이름에 `@2x`·`@3x`를 붙인다. 화면에는 120×120으로 보인다.
+1. 그림을 `assets/images/pets/{cat|dog}-{stable|caution|warning|budget-reached}.png`로 넣는다. 고해상도 파일은 확장자 앞에 배율을 붙여 함께 둔다(예: `cat-stable.png`, `cat-stable@2x.png`, `cat-stable@3x.png`). `require`에는 항상 배율 없는 이름을 쓴다. 화면에는 120×120으로 보이고, 정사각형이 아니어도 잘리지 않게 맞춘다.
 2. `src/lib/pet-images.ts`의 `PET_IMAGES`에 등록한다. 예: `CAT: { STABLE: require('../../assets/images/pets/cat-stable.png') }`
 3. 등록하지 않은 펫·상태는 계속 임시 상자로 보인다. 화면 낭독기는 그림과 상자 모두 "고양이, 안정: 편안하게 지내고 있어요"처럼 읽는다.
 

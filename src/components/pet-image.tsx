@@ -21,7 +21,7 @@ export function PetImage({ petType, petState, images = PET_IMAGES }: PetImagePro
   const source = images[petType]?.[petState];
 
   if (source !== undefined) {
-    return <Image accessible accessibilityRole="image" accessibilityLabel={label} source={source} style={styles.frame} />;
+    return <Image accessible accessibilityRole="image" accessibilityLabel={label} source={source} contentFit="contain" style={styles.frame} />;
   }
   return (
     <View

@@ -1,12 +1,12 @@
 # 새 계정 첫 로그인 → 고양이 → 예산 300,000원 → 홈.
 # 준비: .env.local의 EXPO_PUBLIC_DEV_LOGIN_ID를 처음 쓰는 값으로 바꾸고 Metro 재시작, 앱은 로그인 화면 상태.
-appId: host.exp.Exponent
+appId: com.altair.petgyebu
 env:
-  APP_URL: exp://127.0.0.1:8081
+  APP_URL: http://127.0.0.1:8081
 ---
 - runFlow: ../subflows/open-app.yaml
-- extendedWaitUntil: { visible: "카카오로 시작하기", timeout: 120000 }
-- tapOn: "카카오로 시작하기"
+- extendedWaitUntil: { visible: "카카오 로그인", timeout: 120000 }
+- tapOn: "카카오 로그인"
 - extendedWaitUntil: { visible: "함께할 펫을 골라 주세요", timeout: 20000 }
 - tapOn: "고양이"
 - tapOn: "다음"

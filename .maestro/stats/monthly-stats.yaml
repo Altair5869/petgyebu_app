@@ -1,8 +1,8 @@
 # 월별 통계(이번 달 → 지난달 → 지출 없는 달 → 예산 초과). 준비: first-login 직후(예산 300,000원, 지출 0건)
 # + README "지난달 지출 넣기"(지난달 지출 1건, 예산 없음). 지난달 SQL은 이 흐름을 돌리기 전에 넣어 둔다.
-appId: host.exp.Exponent
+appId: com.altair.petgyebu
 env:
-  APP_URL: exp://127.0.0.1:8081
+  APP_URL: http://127.0.0.1:8081
 ---
 - runFlow: ../subflows/open-app.yaml
 - extendedWaitUntil: { visible: "고양이 · 안정", timeout: 120000 }

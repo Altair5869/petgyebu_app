@@ -1,5 +1,5 @@
 # 서버가 응답 없이 멈추면 10초 뒤 안내. 준비: 홈이 열린 상태에서 백엔드 프로세스 일시정지(README "서버 응답 멈추기").
-appId: host.exp.Exponent
+appId: com.altair.petgyebu
 ---
 - tapOn: "월별 통계"
 - extendedWaitUntil: { visible: "서버에 연결할 수 없어요. 다시 시도해 주세요.", timeout: 20000 }

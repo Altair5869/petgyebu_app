@@ -6,6 +6,11 @@ import { ApiError, RequestTimeoutError } from '@/api/client';
 import EditExpenseScreen from '@/app/expenses/[id]';
 import { currentMonth, seoulDayToDate, todayInSeoul } from '@/lib/month';
 
+jest.mock('@react-native-seoul/kakao-login', () => ({ login: jest.fn() }));
+jest.mock('@react-native-google-signin/google-signin', () => ({
+  GoogleSignin: { configure: jest.fn(), signIn: jest.fn() },
+}));
+
 const mockApi = { getExpense: jest.fn(), updateExpense: jest.fn(), deleteExpense: jest.fn() };
 const mockPicker = jest.fn();
 let mockPickedDay: string | null = null;

@@ -1,8 +1,8 @@
 # 지난달 지출 수정 → 지난달 통계로 복귀. 준비: first-login 직후 + README "지난달 지출 넣기"(지난달 지출 1건: 금액 7,000원, 메모 'old').
 # 후반부는 이번 달 지출의 날짜를 날짜 선택기로 지난달로 바꾼다(iPhone 18 Pro 기준 좌표 탭: 화면 비율).
-appId: host.exp.Exponent
+appId: com.altair.petgyebu
 env:
-  APP_URL: exp://127.0.0.1:8081
+  APP_URL: http://127.0.0.1:8081
 ---
 - runFlow: ../subflows/open-app.yaml
 - extendedWaitUntil: { visible: "고양이 · 안정", timeout: 120000 }

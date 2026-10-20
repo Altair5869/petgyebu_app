@@ -1,13 +1,18 @@
 import { ApiError, RequestTimeoutError } from '@/api/client';
 import { CONNECTION_ERROR, errorMessage } from '@/lib/error-message';
-import { SocialLoginNotReadyError } from '@/session/social-credential';
+import { SocialLoginUnavailableError } from '@/session/social-credential';
+
+jest.mock('@react-native-seoul/kakao-login', () => ({ login: jest.fn() }));
+jest.mock('@react-native-google-signin/google-signin', () => ({
+  GoogleSignin: { configure: jest.fn(), signIn: jest.fn() },
+}));
 
 test('maps social login errors to app copy', () => {
   expect(errorMessage(new ApiError(401, 'SOCIAL_LOGIN_FAILED'))).toBe('로그인에 실패했어요. 다시 시도해 주세요.');
   expect(errorMessage(new ApiError(503, 'SOCIAL_LOGIN_UNAVAILABLE'))).toBe(
     '지금은 로그인할 수 없어요. 잠시 후 다시 시도해 주세요.',
   );
-  expect(errorMessage(new SocialLoginNotReadyError('kakao'))).toBe('아직 준비 중인 로그인이에요.');
+  expect(errorMessage(new SocialLoginUnavailableError('kakao'))).toBe('지금은 로그인할 수 없어요. 잠시 후 다시 시도해 주세요.');
 });
 
 test('falls back to the connection message for network and server errors', () => {

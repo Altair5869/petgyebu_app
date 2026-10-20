@@ -4,6 +4,11 @@ import { router } from 'expo-router';
 import MonthStatsScreen from '@/app/expenses';
 import { currentMonth, monthTitle, previousMonth } from '@/lib/month';
 
+jest.mock('@react-native-seoul/kakao-login', () => ({ login: jest.fn() }));
+jest.mock('@react-native-google-signin/google-signin', () => ({
+  GoogleSignin: { configure: jest.fn(), signIn: jest.fn() },
+}));
+
 let mockFocusEffect: () => void = () => {};
 let mockParams: { month?: string } = {};
 const mockApi = { getMonthExpenses: jest.fn(), getMonthStats: jest.fn() };

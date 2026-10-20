@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-
 import { router } from 'expo-router';
 import { Alert } from 'react-native';
 
-import { RequestTimeoutError } from '@/api/client';
+import { ApiError, RequestTimeoutError } from '@/api/client';
 import SettingsScreen from '@/app/settings/index';
 import { CONNECTION_ERROR } from '@/lib/error-message';
 
@@ -19,11 +19,16 @@ jest.mock('@/session/session-provider', () => ({
   useSession: () => ({ api: mockApi, signOut: mockSignOut, deleteAccount: mockDeleteAccount }),
 }));
 
+let mockFocusEffect: (() => void) | undefined;
+
 jest.mock('expo-router', () => {
   const { useEffect } = jest.requireActual('react');
   return {
     router: { push: jest.fn() },
-    useFocusEffect: (effect: () => void) => useEffect(() => effect(), [effect]),
+    useFocusEffect: (effect: () => void) => {
+      mockFocusEffect = effect;
+      useEffect(() => effect(), [effect]);
+    },
   };
 });
 
@@ -153,19 +158,50 @@ describe('account deletion', () => {
     expect(screen.getByRole('button', { name: '로그아웃' })).toBeEnabled();
   });
 
-  test('does not set state after the screen unmounted mid-deletion', async () => {
+  test('shows no error when the session already ended with a 401', async () => {
     const alert = pressedAlertButtons();
-    const error = jest.spyOn(console, 'error').mockImplementation(() => {});
-    let reject: (e: unknown) => void = () => {};
-    mockDeleteAccount.mockReturnValue(new Promise((_, r) => (reject = r)));
-    const view = await render(<SettingsScreen />);
+    mockDeleteAccount.mockRejectedValue(new ApiError(401, 'UNAUTHORIZED'));
+    await render(<SettingsScreen />);
     await fireEvent.press(await screen.findByRole('button', { name: '회원 탈퇴' }));
+
     await act(async () => alert.mock.calls[0][2]!.find((b) => b.text === '탈퇴')!.onPress!());
 
-    await view.unmount();
-    await act(async () => reject(new RequestTimeoutError()));
+    expect(mockDeleteAccount).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText(CONNECTION_ERROR)).toBeNull();
+    expect(screen.queryByText(/인증|다시 로그인|확인하지 못했어요/)).toBeNull();
+  });
+});
 
-    expect(error).not.toHaveBeenCalled();
+describe('pet save racing a focus refetch', () => {
+  test('keeps the optimistic pet when a refetch started before the save resolves with the old one', async () => {
+    let resolvePut: (value: unknown) => void = () => {};
+    mockApi.putPet.mockReturnValue(new Promise((r) => (resolvePut = r)));
+    await render(<SettingsScreen />);
+    await screen.findByText('카카오로 로그인됨');
+    await fireEvent.press(screen.getByRole('radio', { name: '강아지' }));
+
+    await act(async () => mockFocusEffect?.()); // getMe still answers CAT
+    await act(async () => resolvePut({ id: 1, provider: 'KAKAO', petType: 'DOG' }));
+
+    await waitFor(() => expect(screen.getByRole('radio', { name: '강아지' })).toBeEnabled());
+    expect(screen.getByRole('radio', { name: '강아지' })).toBeSelected();
+  });
+
+  test('reverts only the pet when the save fails after a refetch changed the budget', async () => {
+    let rejectPut: (e: unknown) => void = () => {};
+    mockApi.putPet.mockReturnValue(new Promise((_, r) => (rejectPut = r)));
+    await render(<SettingsScreen />);
+    await screen.findByText('300,000원');
+    await fireEvent.press(screen.getByRole('radio', { name: '강아지' }));
+
+    mockApi.getBudget.mockResolvedValue({ month: '2026-10', amount: 450000 });
+    await act(async () => mockFocusEffect?.());
+    await screen.findByText('450,000원');
+    await act(async () => rejectPut(new TypeError('Network request failed')));
+
+    await screen.findByText(CONNECTION_ERROR);
+    expect(screen.getByRole('radio', { name: '고양이' })).toBeSelected();
+    screen.getByText('450,000원');
   });
 });
 

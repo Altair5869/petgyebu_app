@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { RequestTimeoutError } from '@/api/client';
+import { ApiError, RequestTimeoutError } from '@/api/client';
 import type { Me, PetType } from '@/api/types';
 import { Button } from '@/components/button';
 import { LoadingView, MessageView } from '@/components/message-view';
@@ -35,10 +35,21 @@ export default function SettingsScreen() {
     };
   }, []);
 
+  // Bumped when a pet save starts and ends; a fetch that overlapped a save may carry a stale pet.
+  const petSaves = useRef(0);
+
   const fetchAll = useCallback(() => {
+    const startedAt = petSaves.current;
     Promise.all([api.getMe(), api.getBudget(month)]).then(
       ([me, budget]) => {
-        if (mounted.current) setLoad({ status: 'ready', me, budgetAmount: budget.amount });
+        if (!mounted.current) return;
+        // An odd count means a save is in flight right now.
+        const stalePet = petSaves.current !== startedAt || petSaves.current % 2 === 1;
+        setLoad((current) => ({
+          status: 'ready',
+          me: stalePet && current.status === 'ready' ? { ...me, petType: current.me.petType } : me,
+          budgetAmount: budget.amount,
+        }));
       },
       () => {
         if (mounted.current) setLoad((current) => (current.status === 'ready' ? current : { status: 'error' }));
@@ -63,13 +74,18 @@ export default function SettingsScreen() {
     setLoad({ ...load, me: { ...previous, petType: next } });
     setBusy('pet');
     setError(null);
+    petSaves.current += 1;
     try {
       await api.putPet(next);
     } catch (e) {
-      if (!mounted.current) return;
-      setLoad({ ...load, me: previous });
-      setError(errorMessage(e));
+      if (mounted.current) {
+        setLoad((current) =>
+          current.status === 'ready' ? { ...current, me: { ...current.me, petType: previous.petType } } : current,
+        );
+        setError(errorMessage(e));
+      }
     }
+    petSaves.current += 1;
     if (mounted.current) setBusy(null);
   }
 
@@ -86,8 +102,10 @@ export default function SettingsScreen() {
     try {
       await deleteAccount(provider);
     } catch (e) {
-      if (!mounted.current) return;
-      setError(e instanceof RequestTimeoutError ? DELETE_TIMEOUT : errorMessage(e));
+      // 401: the session is already ending and routes to sign-in; show nothing on top of it.
+      if (mounted.current && !(e instanceof ApiError && e.status === 401)) {
+        setError(e instanceof RequestTimeoutError ? DELETE_TIMEOUT : errorMessage(e));
+      }
     }
     if (mounted.current) setBusy(null);
   }

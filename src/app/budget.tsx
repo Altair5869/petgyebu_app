@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiError } from '@/api/client';
-import { Button } from '@/components/button';
+import { BudgetForm } from '@/components/budget-form';
 import { errorMessage } from '@/lib/error-message';
 import { formatAmountInput, parseBudgetInput } from '@/lib/money';
 import { currentMonth, monthTitle, previousMonth } from '@/lib/month';
@@ -66,25 +66,14 @@ export default function BudgetScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboardAvoiding}>
         <View style={styles.container}>
           <Text style={styles.title}>{monthTitle(month)} 예산</Text>
-          <View style={styles.field}>
-            <View style={styles.inputRow}>
-              <TextInput
-                accessibilityLabel="예산 금액"
-                keyboardType="number-pad"
-                value={text}
-                onChangeText={handleChange}
-                placeholder="0"
-                style={styles.input}
-              />
-              <Text style={styles.unit}>원</Text>
-            </View>
-            {suggested && <Text style={styles.hint}>지난달 예산을 불러왔어요</Text>}
-            {!parsed.ok && <Text style={styles.hint}>{parsed.error}</Text>}
-            {serverError && <Text style={styles.error}>{serverError}</Text>}
-          </View>
-          <View style={styles.footer}>
-            <Button label="저장" onPress={() => void save()} disabled={!parsed.ok} loading={saving} />
-          </View>
+          <BudgetForm
+            text={text}
+            onChangeText={handleChange}
+            hint={suggested ? '지난달 예산을 불러왔어요' : null}
+            serverError={serverError}
+            saving={saving}
+            onSave={() => void save()}
+          />
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -96,11 +85,4 @@ const styles = StyleSheet.create({
   keyboardAvoiding: { flex: 1 },
   container: { flex: 1, padding: 24, gap: 24 },
   title: { fontSize: 24, fontWeight: '700', color: '#111', marginTop: 24 },
-  field: { gap: 8 },
-  inputRow: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: 2, borderColor: '#208AEF' },
-  input: { flex: 1, fontSize: 28, paddingVertical: 8, color: '#111' },
-  unit: { fontSize: 24, color: '#111' },
-  hint: { color: '#555' },
-  error: { color: '#D93025' },
-  footer: { marginTop: 'auto' },
 });

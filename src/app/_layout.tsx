@@ -47,6 +47,7 @@ function RootNavigator() {
         <Stack.Screen name="expenses/new" options={{ headerShown: true, title: '지출 기록', headerBackTitle: '뒤로' }} />
         <Stack.Screen name="expenses/index" options={{ headerShown: true, title: '월별 통계', headerBackTitle: '뒤로' }} />
         <Stack.Screen name="expenses/[id]" options={{ headerShown: true, title: '지출 수정', headerBackTitle: '뒤로' }} />
+        <Stack.Screen name="settings/budget" options={{ headerShown: true, title: '예산 변경', headerBackTitle: '뒤로' }} />
       </Stack.Protected>
     </Stack>
   );

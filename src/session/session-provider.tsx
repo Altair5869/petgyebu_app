@@ -1,11 +1,11 @@
 import { createContext, use, useCallback, useEffect, useState, type PropsWithChildren } from 'react';
 
 import { ApiError, createApiClient, type ApiClient, type TokenStore } from '@/api/client';
-import type { Provider } from '@/api/types';
+import type { Me, Provider } from '@/api/types';
 import { currentMonth } from '@/lib/month';
 import { resolveStage, type Stage } from '@/lib/onboarding-stage';
 
-import { getSocialCredential } from './social-credential';
+import { getSocialCredential, signOutSocial, unlinkSocial } from './social-credential';
 import { secureTokenStore } from './token-store';
 
 export type SessionState =
@@ -19,6 +19,8 @@ type SessionContextValue = {
   api: ApiClient;
   signIn: (provider: Provider) => Promise<void>;
   refreshStage: () => Promise<void>;
+  signOut: (provider: Me['provider']) => Promise<void>;
+  deleteAccount: (provider: Me['provider']) => Promise<void>;
   retry: () => void;
 };
 
@@ -39,6 +41,10 @@ async function loadStage(api: ApiClient): Promise<Stage> {
 
 function isUnauthorized(error: unknown): boolean {
   return error instanceof ApiError && error.status === 401;
+}
+
+function toProvider(provider: Me['provider']): Provider {
+  return provider === 'KAKAO' ? 'kakao' : 'google';
 }
 
 type SessionProviderProps = PropsWithChildren<{ baseUrl: string; tokenStore?: TokenStore }>;
@@ -79,10 +85,28 @@ export function SessionProvider({ baseUrl, tokenStore = secureTokenStore, childr
     setState({ status: 'signedIn', stage: await loadStage(api) });
   }, [api]);
 
+  const signOut = useCallback(
+    async (provider: Me['provider']) => {
+      await api.logout();
+      await signOutSocial(toProvider(provider));
+      setState({ status: 'signedOut' });
+    },
+    [api],
+  );
+
+  const deleteAccount = useCallback(
+    async (provider: Me['provider']) => {
+      await api.deleteMe();
+      await unlinkSocial(toProvider(provider));
+      setState({ status: 'signedOut' });
+    },
+    [api],
+  );
+
   const retry = useCallback(() => {
     setState({ status: 'loading' });
     setBootAttempt((n) => n + 1);
   }, []);
 
-  return <SessionContext value={{ state, api, signIn, refreshStage, retry }}>{children}</SessionContext>;
+  return <SessionContext value={{ state, api, signIn, refreshStage, signOut, deleteAccount, retry }}>{children}</SessionContext>;
 }

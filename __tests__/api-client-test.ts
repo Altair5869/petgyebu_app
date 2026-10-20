@@ -339,3 +339,131 @@ describe('request timeout', () => {
     await expect(result).resolves.toEqual(ME);
   });
 });
+
+describe('logout', () => {
+  test('posts the refresh token without an Authorization header and clears the store', async () => {
+    handler = () => jsonResponse(204);
+    const { api, store, onSessionExpired } = setup('r1');
+
+    await api.logout();
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe(`${BASE}/auth/logout`);
+    expect(init.method).toBe('POST');
+    expect(JSON.parse(init.body as string)).toEqual({ refreshToken: 'r1' });
+    expect(bearer(init)).toBeUndefined();
+    expect(store.clear).toHaveBeenCalledTimes(1);
+    expect(onSessionExpired).not.toHaveBeenCalled();
+  });
+
+  test('clears the store and does not throw when the server answers 401', async () => {
+    handler = () => jsonResponse(401, { code: 'UNAUTHORIZED' });
+    const { api, store } = setup('r1');
+
+    await expect(api.logout()).resolves.toBeUndefined();
+    expect(store.clear).toHaveBeenCalledTimes(1);
+  });
+
+  test('clears the store and does not throw on a network failure', async () => {
+    handler = () => {
+      throw new TypeError('Network request failed');
+    };
+    const { api, store } = setup('r1');
+
+    await expect(api.logout()).resolves.toBeUndefined();
+    expect(store.clear).toHaveBeenCalledTimes(1);
+  });
+
+  test('skips the request when no refresh token is stored', async () => {
+    const { api, store } = setup(null);
+
+    await api.logout();
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(store.clear).toHaveBeenCalledTimes(1);
+  });
+
+  test('drops the in-memory access token so later requests are unauthenticated', async () => {
+    handler = (url) => {
+      if (url.endsWith('/auth/login/kakao')) {
+        return jsonResponse(200, { accessToken: 'a1', refreshToken: 'r1', accessExpiresInSeconds: 900 });
+      }
+      return jsonResponse(204);
+    };
+    const { api } = setup();
+    await api.login('kakao', 'ok:dev');
+
+    await api.logout();
+    fetchMock.mockClear();
+    await api.getMe().catch(() => undefined);
+
+    expect(bearer(fetchMock.mock.calls[0][1])).toBeUndefined();
+  });
+
+  test('gives up after the request timeout and still signs out locally', async () => {
+    jest.useFakeTimers();
+    try {
+      fetchMock.mockImplementationOnce(
+        (_url: string, init: RequestInit) =>
+          new Promise<Response>((_, reject) => {
+            init.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+          }),
+      );
+      const { api, store } = setup('r1');
+      const done = api.logout();
+
+      await jest.advanceTimersByTimeAsync(REQUEST_TIMEOUT_MS);
+      await expect(done).resolves.toBeUndefined();
+      expect(store.clear).toHaveBeenCalledTimes(1);
+    } finally {
+      jest.useRealTimers();
+      fetchMock.mockImplementation((url: string, init: RequestInit) => Promise.resolve(handler(url, init)));
+    }
+  });
+});
+
+describe('deleteMe', () => {
+  test('sends DELETE /users/me and clears the store on 204', async () => {
+    handler = () => jsonResponse(204);
+    const { api, store, onSessionExpired } = setup('r1');
+
+    await expect(api.deleteMe()).resolves.toBeUndefined();
+
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe(`${BASE}/users/me`);
+    expect(init.method).toBe('DELETE');
+    expect(store.clear).toHaveBeenCalledTimes(1);
+    expect(onSessionExpired).not.toHaveBeenCalled();
+  });
+
+  test('throws ApiError and keeps the token on a server error', async () => {
+    handler = () => jsonResponse(500, { code: 'INTERNAL' });
+    const { api, store } = setup('r1');
+
+    await expect(api.deleteMe()).rejects.toMatchObject({ status: 500 });
+    expect(store.clear).not.toHaveBeenCalled();
+    expect(store.peek()).toBe('r1');
+  });
+
+  test('throws RequestTimeoutError and keeps the token on timeout', async () => {
+    jest.useFakeTimers();
+    try {
+      fetchMock.mockImplementationOnce(
+        (_url: string, init: RequestInit) =>
+          new Promise<Response>((_, reject) => {
+            init.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+          }),
+      );
+      const { api, store } = setup('r1');
+      const assertion = expect(api.deleteMe()).rejects.toBeInstanceOf(RequestTimeoutError);
+
+      await jest.advanceTimersByTimeAsync(REQUEST_TIMEOUT_MS);
+      await assertion;
+      expect(store.clear).not.toHaveBeenCalled();
+    } finally {
+      jest.useRealTimers();
+      fetchMock.mockImplementation((url: string, init: RequestInit) => Promise.resolve(handler(url, init)));
+    }
+  });
+});

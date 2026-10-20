@@ -144,6 +144,22 @@ export function createApiClient({ baseUrl, tokenStore, onSessionExpired }: ApiCl
       await saveTokens(res);
     },
     restoreSession: refresh,
+    // Never fails: whatever the server says, the local session ends.
+    async logout() {
+      try {
+        const refreshToken = await tokenStore.getRefreshToken();
+        if (refreshToken) await send('POST', '/auth/logout', { refreshToken }, false);
+      } catch {
+        // The refresh token may already be invalid or the server unreachable.
+      }
+      accessToken = null;
+      await tokenStore.clear();
+    },
+    async deleteMe() {
+      await request<void>('DELETE', '/users/me');
+      accessToken = null;
+      await tokenStore.clear();
+    },
     getMe: () => request<Me>('GET', '/users/me'),
     putPet: (petType: PetType) => request<Me>('PUT', '/users/me/pet', { petType }),
     getBudget: (month: string) => request<Budget>('GET', `/months/${month}/budget`),

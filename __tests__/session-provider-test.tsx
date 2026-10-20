@@ -1,13 +1,14 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { useState } from 'react';
 import { Pressable, Text } from 'react-native';
 
 import { REQUEST_TIMEOUT_MS, type TokenStore } from '@/api/client';
 import { SessionProvider, useSession } from '@/session/session-provider';
 
 jest.mock('expo-secure-store', () => ({}));
-jest.mock('@react-native-seoul/kakao-login', () => ({ login: jest.fn() }));
+jest.mock('@react-native-seoul/kakao-login', () => ({ login: jest.fn(), logout: jest.fn(), unlink: jest.fn() }));
 jest.mock('@react-native-google-signin/google-signin', () => ({
-  GoogleSignin: { configure: jest.fn(), signIn: jest.fn() },
+  GoogleSignin: { configure: jest.fn(), signIn: jest.fn(), signOut: jest.fn(), revokeAccess: jest.fn() },
 }));
 jest.mock('@/config', () => ({
   devLoginId: 'test-user',
@@ -41,7 +42,8 @@ function storeWith(token: string | null) {
 }
 
 function Probe() {
-  const { state, signIn, refreshStage, retry } = useSession();
+  const { state, signIn, refreshStage, retry, signOut, deleteAccount } = useSession();
+  const [deleteError, setDeleteError] = useState('');
   return (
     <>
       <Text>{state.status === 'signedIn' ? `signedIn:${state.stage}` : state.status}</Text>
@@ -54,6 +56,13 @@ function Probe() {
       <Pressable onPress={() => refreshStage()}>
         <Text>refresh</Text>
       </Pressable>
+      <Pressable onPress={() => signOut('KAKAO')}>
+        <Text>signOut</Text>
+      </Pressable>
+      <Pressable onPress={() => deleteAccount('GOOGLE').catch(() => setDeleteError('delete failed'))}>
+        <Text>delete</Text>
+      </Pressable>
+      <Text>{deleteError}</Text>
     </>
   );
 }
@@ -191,4 +200,53 @@ test('refreshStage re-resolves the stage from the server', async () => {
   await fireEvent.press(screen.getByText('refresh'));
 
   await screen.findByText('signedIn:ready');
+});
+
+describe('leaving the session', () => {
+  async function signedIn() {
+    handler = (url) => {
+      if (url.endsWith('/auth/refresh')) return jsonResponse(200, TOKENS);
+      return jsonResponse(200, { id: 1, provider: 'KAKAO', petType: null });
+    };
+    const store = storeWith('r0');
+    await renderSession(store);
+    await screen.findByText('signedIn:pet');
+    return store;
+  }
+
+  test('signOut calls the server logout, clears the token and signs out', async () => {
+    const store = await signedIn();
+    const urls: string[] = [];
+    handler = (url) => {
+      urls.push(url);
+      return jsonResponse(204);
+    };
+
+    await fireEvent.press(screen.getByText('signOut'));
+
+    await screen.findByText('signedOut');
+    expect(urls).toContain('http://api.test/api/v1/auth/logout');
+    expect(store.clear).toHaveBeenCalled();
+  });
+
+  test('deleteAccount keeps the session and throws when the server fails', async () => {
+    const store = await signedIn();
+    handler = () => jsonResponse(500, { code: 'INTERNAL' });
+
+    await fireEvent.press(screen.getByText('delete'));
+
+    await screen.findByText('delete failed');
+    expect(screen.getByText('signedIn:pet')).toBeTruthy();
+    expect(store.clear).not.toHaveBeenCalled();
+  });
+
+  test('deleteAccount signs out after the server answers 204', async () => {
+    const store = await signedIn();
+    handler = () => jsonResponse(204);
+
+    await fireEvent.press(screen.getByText('delete'));
+
+    await screen.findByText('signedOut');
+    expect(store.clear).toHaveBeenCalled();
+  });
 });

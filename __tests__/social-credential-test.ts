@@ -1,15 +1,21 @@
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import { login as kakaoLogin } from '@react-native-seoul/kakao-login';
+import {
+  login as kakaoLogin,
+  logout as kakaoLogout,
+  unlink as kakaoUnlink,
+} from '@react-native-seoul/kakao-login';
 
 import {
   getSocialCredential,
+  signOutSocial,
+  unlinkSocial,
   SocialLoginCancelledError,
   SocialLoginUnavailableError,
 } from '@/session/social-credential';
 
-jest.mock('@react-native-seoul/kakao-login', () => ({ login: jest.fn() }));
+jest.mock('@react-native-seoul/kakao-login', () => ({ login: jest.fn(), logout: jest.fn(), unlink: jest.fn() }));
 jest.mock('@react-native-google-signin/google-signin', () => ({
-  GoogleSignin: { configure: jest.fn(), signIn: jest.fn() },
+  GoogleSignin: { configure: jest.fn(), signIn: jest.fn(), signOut: jest.fn(), revokeAccess: jest.fn() },
 }));
 jest.mock('@/config', () => ({
   devLoginId: null,
@@ -103,5 +109,34 @@ describe('without login keys', () => {
       mod.SocialLoginUnavailableError,
     );
     expect(google.GoogleSignin.signIn).not.toHaveBeenCalled();
+  });
+});
+
+describe.each([
+  ['signOutSocial', signOutSocial, kakaoLogout, GoogleSignin.signOut],
+  ['unlinkSocial', unlinkSocial, kakaoUnlink, GoogleSignin.revokeAccess],
+] as const)('%s', (_name, fn, kakaoSdk, googleSdk) => {
+  test('calls only the Kakao SDK for kakao', async () => {
+    await fn('kakao', false, null);
+    expect(kakaoSdk).toHaveBeenCalledTimes(1);
+    expect(googleSdk).not.toHaveBeenCalled();
+  });
+
+  test('calls only the Google SDK for google', async () => {
+    await fn('google', false, null);
+    expect(googleSdk).toHaveBeenCalledTimes(1);
+    expect(kakaoSdk).not.toHaveBeenCalled();
+  });
+
+  test.each(['kakao', 'google'] as const)('resolves when the %s SDK rejects', async (provider) => {
+    jest.mocked(kakaoSdk).mockRejectedValue(new Error('sdk failed'));
+    jest.mocked(googleSdk).mockRejectedValue(new Error('sdk failed'));
+    await expect(fn(provider, false, null)).resolves.toBeUndefined();
+  });
+
+  test.each(['kakao', 'google'] as const)('calls no SDK in fake-login mode for %s', async (provider) => {
+    await fn(provider, true, 'u1');
+    expect(kakaoSdk).not.toHaveBeenCalled();
+    expect(googleSdk).not.toHaveBeenCalled();
   });
 });

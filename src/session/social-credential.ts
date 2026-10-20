@@ -88,7 +88,7 @@ export function signOutSocial(
   devId: string | null = devLoginId,
 ): Promise<void> {
   return runSdk(provider, isDev, devId, kakaoLogout, async () => {
-    await restoreGoogleSession();
+    await restoreGoogleSession().catch(() => undefined);
     await GoogleSignin.signOut();
   });
 }
@@ -99,7 +99,7 @@ export function unlinkSocial(
   devId: string | null = devLoginId,
 ): Promise<void> {
   return runSdk(provider, isDev, devId, kakaoUnlink, async () => {
-    await restoreGoogleSession();
+    await restoreGoogleSession().catch(() => undefined);
     await GoogleSignin.revokeAccess();
   });
 }

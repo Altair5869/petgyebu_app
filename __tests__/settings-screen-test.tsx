@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-
 import { router } from 'expo-router';
 import { Alert } from 'react-native';
 
-import { ApiError, RequestTimeoutError } from '@/api/client';
+import { RequestTimeoutError } from '@/api/client';
 import SettingsScreen from '@/app/settings/index';
 import { CONNECTION_ERROR } from '@/lib/error-message';
 
@@ -173,18 +173,6 @@ describe('account deletion', () => {
 
     await screen.findByText('탈퇴됐는지 확인하지 못했어요. 다시 시도해 주세요.');
     expect(screen.getByRole('button', { name: '로그아웃' })).toBeEnabled();
-  });
-
-  test('shows no error when the session already ended with a 401', async () => {
-    const alert = pressedAlertButtons();
-    mockDeleteAccount.mockRejectedValue(new ApiError(401, 'UNAUTHORIZED'));
-    await render(<SettingsScreen />);
-    await fireEvent.press(await screen.findByRole('button', { name: '회원 탈퇴' }));
-
-    await act(async () => alert.mock.calls[0][2]!.find((b) => b.text === '탈퇴')!.onPress!());
-
-    expect(mockDeleteAccount).toHaveBeenCalledTimes(1);
-    expect(screen.queryByText(CONNECTION_ERROR)).toBeNull();
   });
 });
 

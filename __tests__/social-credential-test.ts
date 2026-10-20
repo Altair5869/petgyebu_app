@@ -169,6 +169,7 @@ describe.each([
       jest.mocked(GoogleSignin.hasPreviousSignIn).mockReturnValue(true);
       jest.mocked(GoogleSignin.signInSilently).mockRejectedValueOnce(new Error('silent failed'));
       await expect(fn('google', false, null)).resolves.toBeUndefined();
+      expect(googleSdk).toHaveBeenCalledTimes(1);
     });
   });
 

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ApiError, RequestTimeoutError } from '@/api/client';
+import { RequestTimeoutError } from '@/api/client';
 import type { Me, PetType } from '@/api/types';
 import { Button } from '@/components/button';
 import { LoadingView, MessageView } from '@/components/message-view';
@@ -102,8 +102,7 @@ export default function SettingsScreen() {
     try {
       await deleteAccount(provider);
     } catch (e) {
-      // 401: the session is already ending and routes to sign-in; show nothing on top of it.
-      if (mounted.current && !(e instanceof ApiError && e.status === 401)) {
+      if (mounted.current) {
         setError(e instanceof RequestTimeoutError ? DELETE_TIMEOUT : errorMessage(e));
       }
     }

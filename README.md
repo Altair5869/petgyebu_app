@@ -147,11 +147,11 @@ npx expo prebuild --platform ios --clean
 npx expo run:ios
 ```
 
-**백엔드**: `bootRun`으로 띄운다(`bootTestRun`은 멈춘다). `PETGYEBU_JWT_SECRET`도 필요하다. 아래는 `.env.local`에서 두 변수만 내보낸다.
+**백엔드**: `bootRun`으로 띄운다(`bootTestRun`은 멈춘다). `PETGYEBU_JWT_SECRET`도 필요하며, 값과 만드는 방법은 백엔드 저장소 `petgyebu_backend_renewal/README.md`의 로컬 실행 부분에 있다. 아래는 `.env.local`에서 두 변수만 내보낸다.
 
 ```bash
 cd ~/Desktop/petgyebu_backend_renewal
-export $(grep -E '^PETGYEBU_(KAKAO_APP_ID|GOOGLE_CLIENT_IDS)=' ~/Desktop/petgyebu_app/.env.local | xargs)
+set -a; source <(grep -E '^PETGYEBU_(KAKAO_APP_ID|GOOGLE_CLIENT_IDS)=' ~/Desktop/petgyebu_app/.env.local); set +a
 ./gradlew bootRun
 ```
 

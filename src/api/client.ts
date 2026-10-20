@@ -55,13 +55,12 @@ const EXPENSE_PAGE_SIZE = 20;
 
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
-async function toApiError(res: Response): Promise<ApiError> {
-  try {
-    const body = (await res.json()) as ErrorBody;
-    return new ApiError(res.status, body.code ?? 'UNKNOWN', body.fields ?? []);
-  } catch {
-    return new ApiError(res.status, 'UNKNOWN');
-  }
+// A response whose JSON body (if any) was already read within the request time limit.
+type Reply = { ok: boolean; status: number; body: unknown };
+
+function toApiError(res: Reply): ApiError {
+  const body = (res.body ?? {}) as Partial<ErrorBody>;
+  return new ApiError(res.status, body.code ?? 'UNKNOWN', body.fields ?? []);
 }
 
 export type ApiClient = ReturnType<typeof createApiClient>;
@@ -73,20 +72,30 @@ export function createApiClient({ baseUrl, tokenStore, onSessionExpired }: ApiCl
   // Bumped when the session is ended locally; a refresh that started earlier must not save tokens.
   let generation = 0;
 
-  async function send(method: Method, path: string, body?: unknown, auth = true) {
+  async function send(method: Method, path: string, body?: unknown, auth = true): Promise<Reply> {
     const headers: Record<string, string> = {};
     if (body !== undefined) headers['Content-Type'] = 'application/json';
     if (auth && accessToken) headers.Authorization = `Bearer ${accessToken}`;
-    // The limit covers the wait for the response headers; bodies here are small JSON.
+    // The limit covers the whole exchange, body included. A body read may ignore the abort
+    // signal, so race it against the timer too.
     const controller = new AbortController();
+    const timedOut = new Promise<never>((_, reject) => {
+      controller.signal.addEventListener('abort', () => reject(new RequestTimeoutError()));
+    });
     const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     try {
-      return await fetch(`${baseUrl}${path}`, {
-        method,
-        headers,
-        body: body === undefined ? undefined : JSON.stringify(body),
-        signal: controller.signal,
-      });
+      const res = await Promise.race([
+        fetch(`${baseUrl}${path}`, {
+          method,
+          headers,
+          body: body === undefined ? undefined : JSON.stringify(body),
+          signal: controller.signal,
+        }),
+        timedOut,
+      ]);
+      // Empty (204) or non-JSON bodies read as undefined.
+      const parsed = await Promise.race([res.json().catch(() => undefined), timedOut]);
+      return { ok: res.ok, status: res.status, body: parsed };
     } catch (e) {
       if (controller.signal.aborted) throw new RequestTimeoutError();
       throw e;
@@ -95,9 +104,9 @@ export function createApiClient({ baseUrl, tokenStore, onSessionExpired }: ApiCl
     }
   }
 
-  // `startedAt` is set by refresh: if the session ended while the body was read, drop the tokens.
-  async function saveTokens(res: Response, startedAt?: number) {
-    const tokens = (await res.json()) as TokenResponse;
+  // `startedAt` is set by refresh: if the session ended while the refresh was in flight, drop the tokens.
+  async function saveTokens(res: Reply, startedAt?: number) {
+    const tokens = res.body as TokenResponse;
     if (startedAt !== undefined && startedAt !== generation) return false;
     accessToken = tokens.accessToken;
     await tokenStore.setRefreshToken(tokens.refreshToken);
@@ -123,7 +132,7 @@ export function createApiClient({ baseUrl, tokenStore, onSessionExpired }: ApiCl
           await expire();
           return false;
         }
-        if (!res.ok) throw await toApiError(res);
+        if (!res.ok) throw toApiError(res);
         return await saveTokens(res, startedAt);
       } finally {
         refreshing = null;
@@ -138,15 +147,15 @@ export function createApiClient({ baseUrl, tokenStore, onSessionExpired }: ApiCl
       if (!(await refresh())) throw new ApiError(401, 'UNAUTHORIZED');
       res = await send(method, path, body);
     }
-    if (!res.ok) throw await toApiError(res);
+    if (!res.ok) throw toApiError(res);
     if (res.status === 204) return undefined as T;
-    return (await res.json()) as T;
+    return res.body as T;
   }
 
   return {
     async login(provider: Provider, credential: string) {
       const res = await send('POST', `/auth/login/${provider}`, { credential }, false);
-      if (!res.ok) throw await toApiError(res);
+      if (!res.ok) throw toApiError(res);
       await saveTokens(res);
     },
     restoreSession: refresh,

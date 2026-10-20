@@ -2,12 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react-nativ
 
 import { ApiError } from '@/api/client';
 import SignInScreen from '@/app/sign-in';
-import { SocialLoginCancelledError } from '@/session/social-credential';
-
-jest.mock('@react-native-seoul/kakao-login', () => ({ login: jest.fn() }));
-jest.mock('@react-native-google-signin/google-signin', () => ({
-  GoogleSignin: { configure: jest.fn(), signIn: jest.fn() },
-}));
+import { SocialLoginCancelledError } from '@/session/social-login-errors';
 
 const mockSignIn = jest.fn();
 

@@ -6,7 +6,7 @@ import type { Provider } from '@/api/types';
 import { SocialLoginButton } from '@/components/social-login-button';
 import { errorMessage } from '@/lib/error-message';
 import { useSession } from '@/session/session-provider';
-import { SocialLoginCancelledError } from '@/session/social-credential';
+import { SocialLoginCancelledError } from '@/session/social-login-errors';
 
 export default function SignInScreen() {
   const { signIn } = useSession();

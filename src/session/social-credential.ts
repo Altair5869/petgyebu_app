@@ -4,19 +4,7 @@ import { login as kakaoLogin, logout as kakaoLogout, unlink as kakaoUnlink } fro
 import type { Provider } from '@/api/types';
 import { devLoginId, googleIosClientId, googleWebClientId, kakaoNativeAppKey } from '@/config';
 
-export class SocialLoginCancelledError extends Error {
-  constructor() {
-    super('social login was cancelled');
-    this.name = 'SocialLoginCancelledError';
-  }
-}
-
-export class SocialLoginUnavailableError extends Error {
-  constructor(provider: Provider) {
-    super(`${provider} login is not configured`);
-    this.name = 'SocialLoginUnavailableError';
-  }
-}
+import { SocialLoginCancelledError, SocialLoginUnavailableError } from './social-login-errors';
 
 // The Kakao iOS module rejects every failure with code "RNKakaoLogins"; a user cancel is only
 // visible as a message prefix (RNKakaoLogins.swift `describe`): "ClientFailed(Cancelled)" when the

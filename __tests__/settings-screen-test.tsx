@@ -6,11 +6,6 @@ import { RequestTimeoutError } from '@/api/client';
 import SettingsScreen from '@/app/settings/index';
 import { CONNECTION_ERROR } from '@/lib/error-message';
 
-jest.mock('@react-native-seoul/kakao-login', () => ({ login: jest.fn() }));
-jest.mock('@react-native-google-signin/google-signin', () => ({
-  GoogleSignin: { configure: jest.fn(), signIn: jest.fn() },
-}));
-
 const mockApi = { getMe: jest.fn(), putPet: jest.fn(), getBudget: jest.fn() };
 const mockSignOut = jest.fn();
 const mockDeleteAccount = jest.fn();

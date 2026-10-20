@@ -20,3 +20,24 @@ test('shows total and the three cells', async () => {
     expect(screen.getByText(text)).toBeOnTheScreen();
   }
 });
+
+test('keeps each cell value on one line, shrinking long amounts to fit', async () => {
+  await render(
+    <MonthSummaryCard
+      stats={{
+        month: '2026-10',
+        budgetAmount: 300000,
+        spentAmount: 12345678,
+        expenseCount: 4,
+        usagePercent: 4115.2,
+        budgetBalanceAmount: -12045678,
+        categories: [],
+      }}
+    />,
+  );
+  for (const text of ['4건', '4115.2%', '12,045,678원']) {
+    const value = screen.getByText(text);
+    expect(value.props.numberOfLines).toBe(1);
+    expect(value.props.adjustsFontSizeToFit).toBe(true);
+  }
+});

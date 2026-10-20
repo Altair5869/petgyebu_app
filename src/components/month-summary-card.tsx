@@ -13,7 +13,10 @@ export function MonthSummaryCard({ stats }: { stats: MonthStats }) {
         {summaryCells(stats).map((cell) => (
           <View key={cell.label} style={styles.cell}>
             <Text style={styles.cellLabel}>{cell.label}</Text>
-            <Text style={styles.cellValue}>{cell.value}</Text>
+            {/* Three cells share one row; a long amount shrinks instead of wrapping. */}
+            <Text style={styles.cellValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
+              {cell.value}
+            </Text>
           </View>
         ))}
       </View>

@@ -95,10 +95,13 @@ export function createApiClient({ baseUrl, tokenStore, onSessionExpired }: ApiCl
     }
   }
 
-  async function saveTokens(res: Response) {
+  // `startedAt` is set by refresh: if the session ended while the body was read, drop the tokens.
+  async function saveTokens(res: Response, startedAt?: number) {
     const tokens = (await res.json()) as TokenResponse;
+    if (startedAt !== undefined && startedAt !== generation) return false;
     accessToken = tokens.accessToken;
     await tokenStore.setRefreshToken(tokens.refreshToken);
+    return true;
   }
 
   async function expire() {
@@ -121,8 +124,7 @@ export function createApiClient({ baseUrl, tokenStore, onSessionExpired }: ApiCl
           return false;
         }
         if (!res.ok) throw await toApiError(res);
-        await saveTokens(res);
-        return true;
+        return await saveTokens(res, startedAt);
       } finally {
         refreshing = null;
       }
@@ -169,9 +171,14 @@ export function createApiClient({ baseUrl, tokenStore, onSessionExpired }: ApiCl
     },
     async deleteMe() {
       await request<void>('DELETE', '/users/me');
+      // The account is gone on the server: end the local session even if the clear fails.
       generation += 1;
       accessToken = null;
-      await tokenStore.clear();
+      try {
+        await tokenStore.clear();
+      } catch {
+        // Nothing more can be done locally.
+      }
     },
     getMe: () => request<Me>('GET', '/users/me'),
     putPet: (petType: PetType) => request<Me>('PUT', '/users/me/pet', { petType }),

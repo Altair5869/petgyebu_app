@@ -507,3 +507,79 @@ describe('logout hardening', () => {
     fetchMock.mockImplementation((url: string, init: RequestInit) => Promise.resolve(handler(url, init)));
   });
 });
+
+describe('session end races', () => {
+  const flush = () => new Promise<void>((r) => setImmediate(() => r()));
+  const ROTATED = { accessToken: 'a2', refreshToken: 'r2', accessExpiresInSeconds: 900 };
+  const restore = () =>
+    fetchMock.mockImplementation((url: string, init: RequestInit) => Promise.resolve(handler(url, init)));
+  afterEach(restore);
+
+  test('a refresh whose body arrives after deleteMe finished cannot re-save tokens', async () => {
+    let releaseBody!: () => void;
+    const bodyGate = new Promise<void>((r) => (releaseBody = r));
+    let meCalls = 0;
+    fetchMock.mockImplementation((url: string, init: RequestInit) => {
+      if (url.endsWith('/auth/refresh')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => {
+            await bodyGate;
+            return ROTATED;
+          },
+        } as Response);
+      }
+      if (init.method === 'DELETE') return Promise.resolve(jsonResponse(204));
+      meCalls += 1;
+      return Promise.resolve(jsonResponse(meCalls === 1 ? 401 : 200, ME));
+    });
+    const { api, store } = setup('r1');
+
+    const me = api.getMe().catch(() => undefined);
+    await flush();
+    await api.deleteMe();
+    releaseBody();
+    await me;
+
+    expect(store.peek()).toBeNull();
+    expect(store.setRefreshToken).not.toHaveBeenCalled();
+  });
+
+  test('logout waits for an in-flight refresh and sends the rotated refresh token', async () => {
+    let releaseRefresh!: () => void;
+    const gate = new Promise<void>((r) => (releaseRefresh = r));
+    let meCalls = 0;
+    fetchMock.mockImplementation(async (url: string) => {
+      if (url.endsWith('/auth/refresh')) {
+        await gate;
+        return jsonResponse(200, ROTATED);
+      }
+      if (url.endsWith('/auth/logout')) return jsonResponse(204);
+      meCalls += 1;
+      return jsonResponse(meCalls === 1 ? 401 : 200, ME);
+    });
+    const { api, store } = setup('r1');
+
+    const me = api.getMe().catch(() => undefined);
+    await flush();
+    const loggingOut = api.logout();
+    await flush();
+    expect(fetchMock.mock.calls.some(([u]) => (u as string).endsWith('/auth/logout'))).toBe(false);
+    releaseRefresh();
+    await loggingOut;
+    await me;
+
+    const logoutCall = fetchMock.mock.calls.find(([u]) => (u as string).endsWith('/auth/logout'));
+    expect(JSON.parse(logoutCall?.[1].body as string)).toEqual({ refreshToken: 'r2' });
+    expect(store.peek()).toBeNull();
+  });
+
+  test('deleteMe still ends the session when the local clear fails after a 204', async () => {
+    handler = () => jsonResponse(204);
+    const { api, store } = setup('r1');
+    store.clear.mockRejectedValueOnce(new Error('keychain failed'));
+
+    await expect(api.deleteMe()).resolves.toBeUndefined();
+  });
+});

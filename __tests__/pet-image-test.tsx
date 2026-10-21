@@ -2,6 +2,7 @@ import { isHiddenFromAccessibility, render, screen } from '@testing-library/reac
 
 import type { PetState, PetType } from '@/api/types';
 import { PetImage } from '@/components/pet-image';
+import { PET_IMAGES } from '@/lib/pet-images';
 
 const CASES: [PetType, PetState][] = [
   ['CAT', 'STABLE'],
@@ -38,4 +39,8 @@ test('falls back to the placeholder for a state without an image', async () => {
   await render(<PetImage petType="DOG" petState="STABLE" images={{ DOG: { WARNING: 1 } }} />);
 
   screen.getByText('임시 그림', SEEN);
+});
+
+test.each(CASES)('registers the real %s %s image', (petType, petState) => {
+  expect(PET_IMAGES[petType]?.[petState]).toBeDefined();
 });

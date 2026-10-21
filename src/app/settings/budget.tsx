@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -16,24 +16,31 @@ export default function SettingsBudgetScreen() {
   const month = currentMonth();
   const [text, setText] = useState('');
   const [loadState, setLoadState] = useState<'loading' | 'error' | 'ready'>('loading');
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [saving, setSaving] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
-  const load = useCallback(() => {
+  // Reloads when the month rolls over or on retry; a response for an earlier load is ignored.
+  useEffect(() => {
+    let active = true;
     api.getBudget(month).then(
       (budget) => {
+        if (!active) return;
         setText(budget.amount === null ? '' : formatAmountInput(String(budget.amount)));
         setLoadState('ready');
       },
-      () => setLoadState('error'),
+      () => {
+        if (active) setLoadState('error');
+      },
     );
-  }, [api, month]);
-
-  useEffect(load, [load]);
+    return () => {
+      active = false;
+    };
+  }, [api, month, loadAttempt]);
 
   function retry() {
     setLoadState('loading');
-    load();
+    setLoadAttempt((n) => n + 1);
   }
 
   const parsed = parseBudgetInput(text);

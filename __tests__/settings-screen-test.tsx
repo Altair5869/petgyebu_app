@@ -6,11 +6,6 @@ import { RequestTimeoutError } from '@/api/client';
 import SettingsScreen from '@/app/settings/index';
 import { CONNECTION_ERROR } from '@/lib/error-message';
 
-jest.mock('@react-native-seoul/kakao-login', () => ({ login: jest.fn() }));
-jest.mock('@react-native-google-signin/google-signin', () => ({
-  GoogleSignin: { configure: jest.fn(), signIn: jest.fn() },
-}));
-
 const mockApi = { getMe: jest.fn(), putPet: jest.fn(), getBudget: jest.fn() };
 const mockSignOut = jest.fn();
 const mockDeleteAccount = jest.fn();
@@ -93,6 +88,18 @@ test('reverts the pet and shows the error when saving fails', async () => {
   expect(screen.getByRole('radio', { name: '고양이' })).toBeEnabled();
 });
 
+test('clears an earlier error when the screen reloads on focus', async () => {
+  mockApi.putPet.mockRejectedValue(new TypeError('Network request failed'));
+  await render(<SettingsScreen />);
+  await screen.findByText('카카오로 로그인됨');
+  await fireEvent.press(screen.getByRole('radio', { name: '강아지' }));
+  await screen.findByText(CONNECTION_ERROR);
+
+  await act(async () => mockFocusEffect?.());
+
+  await waitFor(() => expect(screen.queryByText(CONNECTION_ERROR)).toBeNull());
+});
+
 test('opens the budget edit screen', async () => {
   await render(<SettingsScreen />);
 
@@ -173,6 +180,23 @@ describe('account deletion', () => {
 
     await screen.findByText('탈퇴됐는지 확인하지 못했어요. 다시 시도해 주세요.');
     expect(screen.getByRole('button', { name: '로그아웃' })).toBeEnabled();
+  });
+
+  test('keeps a deletion error when a slower focus reload lands afterwards', async () => {
+    const alert = pressedAlertButtons();
+    mockDeleteAccount.mockRejectedValue(new RequestTimeoutError());
+    await render(<SettingsScreen />);
+    await screen.findByRole('button', { name: '회원 탈퇴' });
+
+    let resolveMe: (value: unknown) => void = () => {};
+    mockApi.getMe.mockReturnValueOnce(new Promise((r) => (resolveMe = r)));
+    await act(async () => mockFocusEffect?.());
+    await fireEvent.press(screen.getByRole('button', { name: '회원 탈퇴' }));
+    await act(async () => alert.mock.calls[0][2]!.find((b) => b.text === '탈퇴')!.onPress!());
+    await screen.findByText('탈퇴됐는지 확인하지 못했어요. 다시 시도해 주세요.');
+
+    await act(async () => resolveMe({ id: 1, provider: 'KAKAO', petType: 'CAT' }));
+    expect(screen.getByText('탈퇴됐는지 확인하지 못했어요. 다시 시도해 주세요.')).toBeOnTheScreen();
   });
 });
 

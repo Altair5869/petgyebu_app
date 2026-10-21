@@ -1,5 +1,5 @@
 import { ApiError, RequestTimeoutError } from '@/api/client';
-import { SocialLoginUnavailableError } from '@/session/social-credential';
+import { SocialLoginUnavailableError } from '@/session/social-login-errors';
 
 export const CONNECTION_ERROR = '서버에 연결할 수 없어요. 다시 시도해 주세요.';
 const LOGIN_UNAVAILABLE = '지금은 로그인할 수 없어요. 잠시 후 다시 시도해 주세요.';

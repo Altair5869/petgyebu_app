@@ -6,11 +6,6 @@ import { AppState } from 'react-native';
 import { ApiError } from '@/api/client';
 import HomeScreen from '@/app/index';
 
-jest.mock('@react-native-seoul/kakao-login', () => ({ login: jest.fn() }));
-jest.mock('@react-native-google-signin/google-signin', () => ({
-  GoogleSignin: { configure: jest.fn(), signIn: jest.fn() },
-}));
-
 const mockApi = { getHome: jest.fn() };
 const mockRefreshStage = jest.fn();
 let mockFocusEffect: (() => void) | undefined;

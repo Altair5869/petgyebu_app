@@ -59,6 +59,8 @@ export default function SettingsScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      // Clear on focus, not when the load lands, so a later error (e.g. a failed deletion) stays visible.
+      setError(null);
       fetchAll();
     }, [fetchAll]),
   );

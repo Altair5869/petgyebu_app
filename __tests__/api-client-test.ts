@@ -309,6 +309,22 @@ describe('request timeout', () => {
     await assertion;
   });
 
+  test('also gives up when the headers arrive but the body never finishes', async () => {
+    handler = () => ({ ok: true, status: 200, json: () => new Promise(() => {}) }) as unknown as Response;
+    const { api } = setup();
+    const assertion = expect(api.getMe()).rejects.toBeInstanceOf(RequestTimeoutError);
+
+    await jest.advanceTimersByTimeAsync(REQUEST_TIMEOUT_MS);
+    await assertion;
+  });
+
+  test('a success response whose body is not JSON fails instead of resolving empty', async () => {
+    handler = () => ({ ok: true, status: 200, json: () => Promise.reject(new SyntaxError('bad json')) }) as unknown as Response;
+    const { api } = setup();
+
+    await expect(api.getMe()).rejects.toBeInstanceOf(SyntaxError);
+  });
+
   test('a response within the limit is returned and the timer is cleared', async () => {
     handler = () => jsonResponse(200, ME);
     const { api } = setup();

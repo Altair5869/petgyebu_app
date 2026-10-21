@@ -9,7 +9,10 @@
     "userInterfaceStyle": "light",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.altair.petgyebu"
+      "bundleIdentifier": "com.altair.petgyebu",
+      "infoPlist": {
+        "CFBundleDisplayName": "펫계부"
+      }
     },
     "android": {
       "adaptiveIcon": {

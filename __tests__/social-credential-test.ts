@@ -5,13 +5,8 @@ import {
   unlink as kakaoUnlink,
 } from '@react-native-seoul/kakao-login';
 
-import {
-  getSocialCredential,
-  signOutSocial,
-  unlinkSocial,
-  SocialLoginCancelledError,
-  SocialLoginUnavailableError,
-} from '@/session/social-credential';
+import { getSocialCredential, signOutSocial, unlinkSocial } from '@/session/social-credential';
+import { SocialLoginCancelledError, SocialLoginUnavailableError } from '@/session/social-login-errors';
 
 jest.mock('@react-native-seoul/kakao-login', () => ({ login: jest.fn(), logout: jest.fn(), unlink: jest.fn() }));
 jest.mock('@react-native-google-signin/google-signin', () => ({
@@ -102,18 +97,20 @@ describe('without login keys', () => {
 
   test('Kakao is unavailable and never opens the SDK', async () => {
     const mod = require('@/session/social-credential') as typeof import('@/session/social-credential');
+    const errors = require('@/session/social-login-errors') as typeof import('@/session/social-login-errors');
     const kakaoSdk = require('@react-native-seoul/kakao-login') as typeof import('@react-native-seoul/kakao-login');
     await expect(mod.getSocialCredential('kakao', false, null)).rejects.toBeInstanceOf(
-      mod.SocialLoginUnavailableError,
+      errors.SocialLoginUnavailableError,
     );
     expect(kakaoSdk.login).not.toHaveBeenCalled();
   });
 
   test('is unavailable and never opens Google', async () => {
     const mod = require('@/session/social-credential') as typeof import('@/session/social-credential');
+    const errors = require('@/session/social-login-errors') as typeof import('@/session/social-login-errors');
     const google = require('@react-native-google-signin/google-signin') as typeof import('@react-native-google-signin/google-signin');
     await expect(mod.getSocialCredential('google', false, null)).rejects.toBeInstanceOf(
-      mod.SocialLoginUnavailableError,
+      errors.SocialLoginUnavailableError,
     );
     expect(google.GoogleSignin.signIn).not.toHaveBeenCalled();
   });

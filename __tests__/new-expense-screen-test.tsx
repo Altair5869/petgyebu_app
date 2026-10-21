@@ -5,11 +5,6 @@ import { ApiError, RequestTimeoutError } from '@/api/client';
 import NewExpenseScreen from '@/app/expenses/new';
 import { todayInSeoul } from '@/lib/month';
 
-jest.mock('@react-native-seoul/kakao-login', () => ({ login: jest.fn() }));
-jest.mock('@react-native-google-signin/google-signin', () => ({
-  GoogleSignin: { configure: jest.fn(), signIn: jest.fn() },
-}));
-
 const mockApi = { createExpense: jest.fn() };
 
 jest.mock('@/session/session-provider', () => ({

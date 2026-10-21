@@ -3,7 +3,13 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import type { PetState, PetType } from '@/api/types';
 import { PET_IMAGES, type PetImages } from '@/lib/pet-images';
-import { PET_LABELS, PET_STATE_COPY } from '@/lib/pet';
+
+// The home card's text right below already says the pet and its state, so the picture is hidden
+// from screen readers instead of being read as a second copy of it.
+const HIDDEN_FROM_SCREEN_READER = {
+  accessibilityElementsHidden: true,
+  importantForAccessibility: 'no-hide-descendants',
+} as const;
 
 // Soft tints only: no red, nothing that reads as blame (docs/01 §5).
 const PLACEHOLDER_TINTS: Record<PetState, string> = {
@@ -16,18 +22,15 @@ const PLACEHOLDER_TINTS: Record<PetState, string> = {
 type PetImageProps = { petType: PetType; petState: PetState; images?: PetImages };
 
 export function PetImage({ petType, petState, images = PET_IMAGES }: PetImageProps) {
-  const copy = PET_STATE_COPY[petState];
-  const label = `${PET_LABELS[petType]}, ${copy.name}: ${copy.description}`;
   const source = images[petType]?.[petState];
 
   if (source !== undefined) {
-    return <Image accessible accessibilityRole="image" accessibilityLabel={label} source={source} contentFit="contain" style={styles.frame} />;
+    return <Image {...HIDDEN_FROM_SCREEN_READER} testID="pet-image" source={source} contentFit="contain" style={styles.frame} />;
   }
   return (
     <View
-      accessible
-      accessibilityRole="image"
-      accessibilityLabel={label}
+      {...HIDDEN_FROM_SCREEN_READER}
+      testID="pet-image"
       style={[styles.frame, styles.placeholder, { backgroundColor: PLACEHOLDER_TINTS[petState] }]}>
       <Text style={styles.type}>{petType}</Text>
       <Text style={styles.state}>{petState}</Text>

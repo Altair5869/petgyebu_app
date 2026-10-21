@@ -25,7 +25,7 @@ export function PetImage({ petType, petState, images = PET_IMAGES }: PetImagePro
   const source = images[petType]?.[petState];
 
   if (source !== undefined) {
-    return <Image {...HIDDEN_FROM_SCREEN_READER} testID="pet-image" source={source} contentFit="contain" style={styles.frame} />;
+    return <Image {...HIDDEN_FROM_SCREEN_READER} testID="pet-image" source={source} contentFit="contain" style={styles.art} />;
   }
   return (
     <View
@@ -40,6 +40,8 @@ export function PetImage({ petType, petState, images = PET_IMAGES }: PetImagePro
 }
 
 const styles = StyleSheet.create({
+  // Artwork is exported bottom-aligned at this size so the paws rest on the budget gauge below.
+  art: { width: 124, height: 96, alignSelf: 'center' },
   frame: { width: 120, height: 120, borderRadius: 16, alignSelf: 'center' },
   placeholder: {
     borderWidth: 2,

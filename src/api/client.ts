@@ -72,8 +72,14 @@ export function createApiClient({ baseUrl, tokenStore, onSessionExpired }: ApiCl
   // Bumped when the session is ended locally; a refresh that started earlier must not save tokens.
   let generation = 0;
 
-  async function send(method: Method, path: string, body?: unknown, auth = true): Promise<Reply> {
-    const headers: Record<string, string> = {};
+  async function send(
+    method: Method,
+    path: string,
+    body?: unknown,
+    auth = true,
+    extraHeaders: Record<string, string> = {},
+  ): Promise<Reply> {
+    const headers: Record<string, string> = { ...extraHeaders };
     if (body !== undefined) headers['Content-Type'] = 'application/json';
     if (auth && accessToken) headers.Authorization = `Bearer ${accessToken}`;
     // The limit covers the whole exchange, body included. A body read may ignore the abort
@@ -143,11 +149,16 @@ export function createApiClient({ baseUrl, tokenStore, onSessionExpired }: ApiCl
     return refreshing;
   }
 
-  async function request<T>(method: Method, path: string, body?: unknown): Promise<T> {
-    let res = await send(method, path, body);
+  async function request<T>(
+    method: Method,
+    path: string,
+    body?: unknown,
+    extraHeaders?: Record<string, string>,
+  ): Promise<T> {
+    let res = await send(method, path, body, true, extraHeaders);
     if (res.status === 401) {
       if (!(await refresh())) throw new ApiError(401, 'UNAUTHORIZED');
-      res = await send(method, path, body);
+      res = await send(method, path, body, true, extraHeaders);
     }
     if (!res.ok) throw toApiError(res);
     if (res.status === 204) return undefined as T;
@@ -197,7 +208,9 @@ export function createApiClient({ baseUrl, tokenStore, onSessionExpired }: ApiCl
     putBudget: (month: string, amount: number) =>
       request<Budget>('PUT', `/months/${month}/budget`, { amount }),
     getHome: () => request<Home>('GET', '/home'),
-    createExpense: (body: NewExpense) => request<Expense>('POST', '/expenses', body),
+    // The same key makes a retried save record once on the server.
+    createExpense: (body: NewExpense, idempotencyKey: string) =>
+      request<Expense>('POST', '/expenses', body, { 'Idempotency-Key': idempotencyKey }),
     getExpense: (id: number) => request<Expense>('GET', `/expenses/${id}`),
     updateExpense: (id: number, body: ExpenseUpdate) =>
       request<Expense>('PATCH', `/expenses/${id}`, body),

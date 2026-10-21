@@ -6,6 +6,9 @@ import NewExpenseScreen from '@/app/expenses/new';
 import { todayInSeoul } from '@/lib/month';
 
 const mockApi = { createExpense: jest.fn() };
+const mockRandomUUID = jest.fn();
+
+jest.mock('expo-crypto', () => ({ randomUUID: () => mockRandomUUID() }));
 
 jest.mock('@/session/session-provider', () => ({
   useSession: () => ({ api: mockApi }),
@@ -40,6 +43,8 @@ jest.mock('@expo/ui/community/datetime-picker', () => {
 beforeEach(() => {
   jest.clearAllMocks();
   mockApi.createExpense.mockResolvedValue({ id: 1 });
+  let n = 0;
+  mockRandomUUID.mockImplementation(() => `k${++n}`);
 });
 
 async function fillAmount(value: string) {
@@ -51,12 +56,10 @@ test('saves today as OTHER with a null memo by default and goes back', async () 
   await fillAmount('12000');
   await fireEvent.press(screen.getByRole('button', { name: '저장' }));
 
-  expect(mockApi.createExpense).toHaveBeenCalledWith({
-    amount: 12000,
-    expenseDate: todayInSeoul(),
-    category: 'OTHER',
-    memo: null,
-  });
+  expect(mockApi.createExpense).toHaveBeenCalledWith(
+    { amount: 12000, expenseDate: todayInSeoul(), category: 'OTHER', memo: null },
+    'k1',
+  );
   expect(router.back).toHaveBeenCalledTimes(1);
 });
 
@@ -66,7 +69,7 @@ test('sends the chosen category and memo', async () => {
   await fireEvent.press(screen.getByRole('radio', { name: '카페' }));
   await fireEvent.changeText(screen.getByLabelText('메모'), '라떼');
   await fireEvent.press(screen.getByRole('button', { name: '저장' }));
-  expect(mockApi.createExpense).toHaveBeenLastCalledWith(expect.objectContaining({ category: 'CAFE', memo: '라떼' }));
+  expect(mockApi.createExpense).toHaveBeenLastCalledWith(expect.objectContaining({ category: 'CAFE', memo: '라떼' }), expect.any(String));
 });
 
 test('sends OTHER after a category is selected and then unselected', async () => {
@@ -75,7 +78,7 @@ test('sends OTHER after a category is selected and then unselected', async () =>
   await fireEvent.press(screen.getByRole('radio', { name: '카페' }));
   await fireEvent.press(screen.getByRole('radio', { name: '카페' }));
   await fireEvent.press(screen.getByRole('button', { name: '저장' }));
-  expect(mockApi.createExpense).toHaveBeenLastCalledWith(expect.objectContaining({ category: 'OTHER' }));
+  expect(mockApi.createExpense).toHaveBeenLastCalledWith(expect.objectContaining({ category: 'OTHER' }), expect.any(String));
 });
 
 test('sends a whitespace-only memo as null', async () => {
@@ -84,7 +87,7 @@ test('sends a whitespace-only memo as null', async () => {
   await fireEvent.changeText(screen.getByLabelText('메모'), '   ');
   await fireEvent.press(screen.getByRole('button', { name: '저장' }));
 
-  expect(mockApi.createExpense).toHaveBeenCalledWith(expect.objectContaining({ memo: null }));
+  expect(mockApi.createExpense).toHaveBeenCalledWith(expect.objectContaining({ memo: null }), expect.any(String));
 });
 
 test('disables saving for an empty amount or a 101-character memo', async () => {
@@ -127,7 +130,7 @@ test('a timeout says the save could not be confirmed and keeps the input', async
   await fillAmount('12000');
   await fireEvent.press(screen.getByRole('button', { name: '저장' }));
 
-  await screen.findByText('저장됐는지 확인하지 못했어요. 월별 통계에서 확인해 주세요.');
+  await screen.findByText('저장됐는지 확인하지 못했어요. 다시 저장해도 한 번만 기록돼요.');
   expect(screen.getByLabelText('지출 금액')).toHaveDisplayValue('12,000');
   expect(screen.getByRole('button', { name: '저장' })).toBeEnabled();
   expect(router.back).not.toHaveBeenCalled();
@@ -150,7 +153,7 @@ test('sends the day chosen in the date picker', async () => {
   await fireEvent.press(screen.getByTestId('expense-date'));
   await fireEvent.press(screen.getByRole('button', { name: '저장' }));
 
-  expect(mockApi.createExpense).toHaveBeenCalledWith(expect.objectContaining({ expenseDate: '2026-09-30' }));
+  expect(mockApi.createExpense).toHaveBeenCalledWith(expect.objectContaining({ expenseDate: '2026-09-30' }), expect.any(String));
 });
 
 test('clears a server field error when that field is edited', async () => {
@@ -174,4 +177,38 @@ test('shows the generic message when the server reports only unknown fields', as
 
   await screen.findByText('서버에 연결할 수 없어요. 다시 시도해 주세요.');
   expect(screen.queryByText('x')).toBeNull();
+});
+
+test('retrying the same input after a timeout reuses the key', async () => {
+  mockApi.createExpense.mockRejectedValueOnce(new RequestTimeoutError());
+  await render(<NewExpenseScreen />);
+  await fillAmount('12000');
+  await fireEvent.press(screen.getByRole('button', { name: '저장' }));
+  await screen.findByText('저장됐는지 확인하지 못했어요. 다시 저장해도 한 번만 기록돼요.');
+  await fireEvent.press(screen.getByRole('button', { name: '저장' }));
+
+  expect(mockApi.createExpense).toHaveBeenCalledTimes(2);
+  expect(mockApi.createExpense.mock.calls.map((c) => c[1])).toEqual(['k1', 'k1']);
+});
+
+test('changing the amount after a timeout uses a new key', async () => {
+  mockApi.createExpense.mockRejectedValueOnce(new RequestTimeoutError());
+  await render(<NewExpenseScreen />);
+  await fillAmount('12000');
+  await fireEvent.press(screen.getByRole('button', { name: '저장' }));
+  await screen.findByText('저장됐는지 확인하지 못했어요. 다시 저장해도 한 번만 기록돼요.');
+  await fillAmount('13000');
+  await fireEvent.press(screen.getByRole('button', { name: '저장' }));
+
+  expect(mockApi.createExpense.mock.calls.map((c) => c[1])).toEqual(['k1', 'k2']);
+});
+
+test('a reused-key conflict shows the conflict copy', async () => {
+  mockApi.createExpense.mockRejectedValue(new ApiError(409, 'IDEMPOTENCY_KEY_REUSED'));
+  await render(<NewExpenseScreen />);
+  await fillAmount('12000');
+  await fireEvent.press(screen.getByRole('button', { name: '저장' }));
+
+  await screen.findByText('이미 저장된 기록과 내용이 달라요. 월별 통계에서 확인해 주세요.');
+  expect(router.back).not.toHaveBeenCalled();
 });

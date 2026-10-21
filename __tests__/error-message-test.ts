@@ -22,3 +22,9 @@ test('a timeout uses the caller-supplied message, or the connection message by d
   );
   expect(errorMessage(new TypeError('Network request failed'), '다른 문구')).toBe(CONNECTION_ERROR);
 });
+
+test('maps a reused idempotency key to the conflict copy', () => {
+  expect(errorMessage(new ApiError(409, 'IDEMPOTENCY_KEY_REUSED'))).toBe(
+    '이미 저장된 기록과 내용이 달라요. 월별 통계에서 확인해 주세요.',
+  );
+});

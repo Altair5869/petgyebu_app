@@ -146,7 +146,11 @@
 ### POST `/expenses`
 
 - 요청: `{ "amount", "expenseDate", "category"?, "memo"? }`
+- 헤더 `Idempotency-Key`(선택): UUID(36자, 대소문자 무관). 앱은 같은 입력의 재시도에 같은 키를, 입력이 바뀌면 새 키를 보낸다.
 - 응답 201: 지출 객체
+- 응답 200: 같은 사용자·같은 키·같은 본문(정규화 후 `amount`, `expenseDate`, `category`, `memo`)의 재요청. 기존 지출 객체
+- 응답 409 `IDEMPOTENCY_KEY_REUSED`: 같은 키에 다른 본문
+- 응답 400 `INVALID_REQUEST`: 키 형식 오류(field `Idempotency-Key`). 본문 검증이 키 조회보다 먼저다
 
 ### GET `/months/{month}/expenses?limit=20&cursor=...`
 

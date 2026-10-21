@@ -1,5 +1,6 @@
+import { randomUUID } from 'expo-crypto';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -29,6 +30,8 @@ export default function NewExpenseScreen() {
   const [saving, setSaving] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
+  // The last attempted input and its key: a retry of the same input reuses the key so the server records it once.
+  const attempt = useRef<{ input: string; key: string } | null>(null);
 
   function clearError(field?: ExpenseField) {
     setFormError(null);
@@ -44,12 +47,15 @@ export default function NewExpenseScreen() {
     setFieldErrors({});
     setFormError(null);
     try {
-      await api.createExpense({
+      const body = {
         amount: amount.amount,
         expenseDate: draft.day,
         category: draft.category ?? 'OTHER',
         memo: memo.memo,
-      });
+      };
+      const input = JSON.stringify(body);
+      if (attempt.current?.input !== input) attempt.current = { input, key: randomUUID() };
+      await api.createExpense(body, attempt.current.key);
       router.back();
     } catch (e) {
       const fields = e instanceof ApiError ? e.fields : [];

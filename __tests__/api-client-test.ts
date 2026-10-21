@@ -172,7 +172,18 @@ test('creates an expense with the given body', async () => {
   const { api } = setup('r0');
   await api.restoreSession();
 
-  await expect(api.createExpense(body)).resolves.toEqual({ id: 42, ...body });
+  await expect(api.createExpense(body, 'k1')).resolves.toEqual({ id: 42, ...body });
+});
+
+test('createExpense sends the Idempotency-Key header', async () => {
+  let sent: Record<string, string> = {};
+  handler = (_url, init) => {
+    sent = init.headers as Record<string, string>;
+    return jsonResponse(201, { id: 42 });
+  };
+  const { api } = setup();
+  await api.createExpense({ amount: 1, expenseDate: '2026-10-01', category: 'OTHER', memo: null }, 'k1');
+  expect(sent['Idempotency-Key']).toBe('k1');
 });
 
 test('requests a month page with limit 20 and an encoded cursor', async () => {

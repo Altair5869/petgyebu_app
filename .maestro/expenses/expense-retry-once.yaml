@@ -1,0 +1,12 @@
+# 시간 초과 뒤 같은 입력으로 다시 저장해도 한 번만 기록된다.
+# 준비: request-timeout.yaml 직후(등록 화면에 4321 입력, 시간 초과 안내 표시), 서버는 재개(kill -CONT)한 상태.
+# 멈췄던 첫 요청이 서버에서 처리된 뒤 같은 키로 다시 저장한다.
+appId: com.altair.petgyebu
+---
+- assertVisible: "저장됐는지 확인하지 못했어요. 다시 저장해도 한 번만 기록돼요."
+- tapOn: "저장"
+- extendedWaitUntil: { visible: "295,679원 남았어요", timeout: 20000 }
+- tapOn: "월별 통계"
+- extendedWaitUntil: { visible: "전체 내역", timeout: 20000 }
+- assertVisible: "4,321원"
+- assertVisible: "1건"

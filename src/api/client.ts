@@ -93,8 +93,10 @@ export function createApiClient({ baseUrl, tokenStore, onSessionExpired }: ApiCl
         }),
         timedOut,
       ]);
-      // Empty (204) or non-JSON bodies read as undefined.
-      const parsed = await Promise.race([res.json().catch(() => undefined), timedOut]);
+      // A success body must parse (a 200 HTML page is a failure); 204 and error bodies may be empty or non-JSON.
+      const reading: Promise<unknown> =
+        res.status === 204 ? Promise.resolve(undefined) : res.ok ? res.json() : res.json().catch(() => undefined);
+      const parsed = await Promise.race([reading, timedOut]);
       return { ok: res.ok, status: res.status, body: parsed };
     } catch (e) {
       if (controller.signal.aborted) throw new RequestTimeoutError();

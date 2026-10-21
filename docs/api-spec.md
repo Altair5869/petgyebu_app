@@ -25,7 +25,7 @@
 | 월 경계 | `Asia/Seoul` 기준 `[월 1일, 다음 달 1일)` |
 | 금액 | 원화 정수, 1 ~ 100,000,000 |
 | 날짜 | `YYYY-MM-DD` |
-| 성공 코드 | 지출 생성 201, 지출 삭제·로그아웃·탈퇴 204(본문 없음), 나머지 200 |
+| 성공 코드 | 지출 생성 201(같은 `Idempotency-Key` 재시도는 200), 지출 삭제·로그아웃·탈퇴 204(본문 없음), 나머지 200 |
 
 ### 오류 응답 형식
 
@@ -314,6 +314,7 @@ curl -X DELETE "$BASE/expenses/42" -H "Authorization: Bearer $TOKEN"
 | 404 | `EXPENSE_NOT_FOUND` | 없거나 다른 사용자의 지출 | 목록 새로고침 |
 | 404 | `NOT_FOUND` | 없는 경로 | - |
 | 405 | `METHOD_NOT_ALLOWED` | 지원하지 않는 메서드(`Allow` 헤더 포함) | - |
+| 409 | `IDEMPOTENCY_KEY_REUSED` | 같은 `Idempotency-Key`에 다른 본문 | 충돌 안내 문구와 월별 통계 확인 안내 |
 | 409 | `PET_REQUIRED` | 펫 미선택 상태에서 홈 호출 | 펫 선택 화면 |
 | 409 | `BUDGET_REQUIRED` | 현재 월 예산 없이 홈 호출 | 예산 설정 화면 |
 | 415 | `UNSUPPORTED_MEDIA_TYPE` | JSON이 아닌 본문 | - |

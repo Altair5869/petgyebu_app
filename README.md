@@ -71,7 +71,7 @@ maestro test -e APP_URL=http://127.0.0.1:8081 .maestro/onboarding/relaunch-home.
 | `expenses/request-timeout.yaml` | 서버가 응답 없이 멈추면 10초 뒤 연결 오류, 지출 저장은 "저장됐는지 확인하지 못했어요. 다시 저장해도 한 번만 기록돼요." | `first-login` 직후 홈이 열린 상태, 아래 "서버 응답 멈추기" |
 | `expenses/expense-retry-once.yaml` | 시간 초과 뒤 서버를 재개하고 같은 입력으로 다시 저장해도 월별 통계에 4,321원 1건 | `request-timeout` 직후(등록 화면 유지), 서버 재개 |
 
-`stats/move-month.yaml`의 날짜 선택기 조작은 화면 비율 좌표 탭(이전 달 화살표, 9월 15일 칸, 헤더로 선택기 닫기)이라 iPhone 18 Pro 기준이고, 실행하는 달이 바뀌면 달력 배치가 달라 15일 칸 좌표를 다시 맞춰야 한다. 모든 기존 흐름은 `monthly-stats` → `move-month` → 나머지 순서로 같은 계정에서 이어 돌릴 수 있다. 단 `settings/change-pet-and-budget`은 시드 데이터를 강아지·450,000원으로 바꾸고, `settings/delete-account`는 계정을 삭제하므로 맨 마지막에 돌리거나 그 뒤에 새 ID로 `first-login`을 다시 실행한다. `move-month`는 `mv`(3,000원)·`mv2`(1,000원)를 지난달로 옮기므로, 다시 돌리기 전에는 아래 SQL로 지난달의 `mv`·`mv2`를 지우고 이번 달 지출을 앱에서 지우거나 `edit-deleted`의 DELETE(계정의 지출 전부 삭제)로 정리한다. 전부 지우면 `old`는 "지난달 지출 넣기"로 다시 넣는다.
+`stats/move-month.yaml`의 날짜 선택기 조작은 화면 비율 좌표 탭(이전 달 화살표, 9월 15일 칸, 헤더로 선택기 닫기)이라 iPhone 18 Pro 기준이고, 실행하는 달이 바뀌면 달력 배치가 달라 15일 칸 좌표를 다시 맞춰야 한다. 모든 기존 흐름은 `monthly-stats` → `move-month` → 나머지 순서로 같은 계정에서 이어 돌릴 수 있다(단 `expenses/expense-retry-once`는 절대값 4,321원 1건을 검증하므로 새 `first-login` 계정이 필요하다). 단 `settings/change-pet-and-budget`은 시드 데이터를 강아지·450,000원으로 바꾸고, `settings/delete-account`는 계정을 삭제하므로 맨 마지막에 돌리거나 그 뒤에 새 ID로 `first-login`을 다시 실행한다. `move-month`는 `mv`(3,000원)·`mv2`(1,000원)를 지난달로 옮기므로, 다시 돌리기 전에는 아래 SQL로 지난달의 `mv`·`mv2`를 지우고 이번 달 지출을 앱에서 지우거나 `edit-deleted`의 DELETE(계정의 지출 전부 삭제)로 정리한다. 전부 지우면 `old`는 "지난달 지출 넣기"로 다시 넣는다.
 
 ```bash
 # 앱 세션 끊기: 같은 계정으로 다른 곳에서 로그인하면 이전 로그인이 무효가 된다(bootTestRun 전용 가짜 로그인)
@@ -102,8 +102,11 @@ docker exec petgyebu_backend_renewal-postgres-1 psql -U petgyebu -d petgyebu -c 
 # 서버 응답 멈추기(request-timeout.yaml): 백엔드 프로세스를 일시정지해 요청이 응답 없이 걸리게 한다. 끝나면 반드시 재개
 kill -STOP $(lsof -tiTCP:8080 -sTCP:LISTEN)   # 멈추기
 kill -CONT $(lsof -tiTCP:8080 -sTCP:LISTEN)   # 재개. 시간 초과된 저장이 재개 뒤 실제로 기록될 수 있다
-# 중복 저장 확인 순서: request-timeout.yaml(끝나면 서버 멈춘 채 등록 화면) → kill -CONT → expense-retry-once.yaml
-# (같은 Idempotency-Key로 다시 저장해 지출 한 건만 남는다. DB 확인: select count(*) from expenses where amount=4321)
+# 중복 저장 확인 순서: request-timeout.yaml(끝나면 서버 멈춘 채 등록 화면) → kill -CONT → 아래 count 확인 → expense-retry-once.yaml → count 다시 확인
+# 재개 직후 count: 1이면 멈췄던 요청이 저장된 것이라 재시도는 200 재생 경로, 0이면 요청이 버려진 것이라 재시도가 새로 만든다(201)
+# 플로우 뒤 count는 어느 쪽이든 1이어야 한다(같은 Idempotency-Key로 다시 저장해도 지출 한 건만 남는다)
+docker exec petgyebu_backend_renewal-postgres-1 psql -U petgyebu -d petgyebu -tAc \
+  "select count(*) from expenses where amount=4321 and user_id=(select id from users where provider='KAKAO' and provider_user_id='<개발용 ID>')"
 
 # 이번 달 지출 25건 넣기: 로컬 개발 DB에만 실행
 docker exec petgyebu_backend_renewal-postgres-1 psql -U petgyebu -d petgyebu -c \

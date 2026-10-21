@@ -181,6 +181,23 @@ describe('account deletion', () => {
     await screen.findByText('탈퇴됐는지 확인하지 못했어요. 다시 시도해 주세요.');
     expect(screen.getByRole('button', { name: '로그아웃' })).toBeEnabled();
   });
+
+  test('keeps a deletion error when a slower focus reload lands afterwards', async () => {
+    const alert = pressedAlertButtons();
+    mockDeleteAccount.mockRejectedValue(new RequestTimeoutError());
+    await render(<SettingsScreen />);
+    await screen.findByRole('button', { name: '회원 탈퇴' });
+
+    let resolveMe: (value: unknown) => void = () => {};
+    mockApi.getMe.mockReturnValueOnce(new Promise((r) => (resolveMe = r)));
+    await act(async () => mockFocusEffect?.());
+    await fireEvent.press(screen.getByRole('button', { name: '회원 탈퇴' }));
+    await act(async () => alert.mock.calls[0][2]!.find((b) => b.text === '탈퇴')!.onPress!());
+    await screen.findByText('탈퇴됐는지 확인하지 못했어요. 다시 시도해 주세요.');
+
+    await act(async () => resolveMe({ id: 1, provider: 'KAKAO', petType: 'CAT' }));
+    expect(screen.getByText('탈퇴됐는지 확인하지 못했어요. 다시 시도해 주세요.')).toBeOnTheScreen();
+  });
 });
 
 describe('pet save racing a focus refetch', () => {

@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
 import { router } from 'expo-router';
-import { AppState } from 'react-native';
+import { AppState, StyleSheet } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import HomeScreen from '@/app/index';
@@ -66,6 +66,7 @@ test('shows the over-budget amount', async () => {
 
   await screen.findByText('10,000원 초과했어요');
   screen.getByText('사용률 103.3%');
+  expect(screen.queryByTestId('budget-gauge-fill', { includeHiddenElements: true })).toBeNull();
   expect(screen.queryByText('첫 지출을 기록해 보세요')).toBeNull();
 });
 
@@ -155,6 +156,11 @@ test('refetches on focus without replacing the loaded home with a spinner', asyn
   screen.getByText('고양이 · 안정');
 });
 
+function gaugeWidth() {
+  const fill = screen.getByTestId('budget-gauge-fill', { includeHiddenElements: true });
+  return StyleSheet.flatten(fill.props.style).width;
+}
+
 test('shows the new totals after a focus refetch', async () => {
   mockApi.getHome.mockResolvedValueOnce(HOME).mockResolvedValueOnce({
     ...HOME,
@@ -165,12 +171,14 @@ test('shows the new totals after a focus refetch', async () => {
   });
   await render(<HomeScreen />);
   await screen.findByText('300,000원 남았어요');
+  expect(gaugeWidth()).toBe('100%');
 
   await act(async () => mockFocusEffect?.());
 
   await screen.findByText('고양이 · 주의');
   screen.getByText('138,000원 남았어요');
   screen.getByText('사용률 54%');
+  expect(gaugeWidth()).toBe('46%');
 });
 
 test('links to the settings screen', async () => {

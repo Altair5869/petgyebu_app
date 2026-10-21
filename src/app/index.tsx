@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiError } from '@/api/client';
 import type { Home } from '@/api/types';
+import { BudgetGauge } from '@/components/budget-gauge';
 import { Button } from '@/components/button';
 import { LoadingView, MessageView } from '@/components/message-view';
 import { PetImage } from '@/components/pet-image';
@@ -74,7 +75,14 @@ export default function HomeScreen() {
           </Pressable>
         </View>
         <View style={styles.card}>
-          <PetImage petType={home.petType} petState={home.petState} />
+          <View>
+            <PetImage petType={home.petType} petState={home.petState} />
+            <BudgetGauge
+              petState={home.petState}
+              budgetAmount={home.budgetAmount}
+              budgetBalanceAmount={home.budgetBalanceAmount}
+            />
+          </View>
           <Text style={styles.petLine}>
             {PET_LABELS[home.petType]} · {petCopy.name}
           </Text>

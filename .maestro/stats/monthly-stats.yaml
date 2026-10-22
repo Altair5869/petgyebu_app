@@ -5,7 +5,7 @@ env:
   APP_URL: http://127.0.0.1:8081
 ---
 - runFlow: ../subflows/open-app.yaml
-- extendedWaitUntil: { visible: "고양이 · 안정", timeout: 120000 }
+- extendedWaitUntil: { visible: "고양이, 안정", timeout: 120000 }
 
 # 1. 카페 12,000·카페 4,000·식비 8,000·기타 2,000 기록
 - tapOn: "지출 기록하기"

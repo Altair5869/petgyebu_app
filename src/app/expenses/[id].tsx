@@ -18,6 +18,7 @@ import { CONNECTION_ERROR, DELETE_UNCONFIRMED, UPDATE_UNCONFIRMED, errorMessage 
 import { expenseChanges, parseMemo } from '@/lib/expense';
 import { formatAmountInput, parseAmountInput } from '@/lib/money';
 import { useSession } from '@/session/session-provider';
+import { colors, contentWidth, fonts } from '@/theme';
 
 type Screen =
   | { status: 'loading' }
@@ -162,7 +163,7 @@ export default function EditExpenseScreen() {
             accessibilityLabel="삭제"
             disabled={busy !== null}
             onPress={confirmDelete}
-            style={[styles.delete, busy !== null && styles.inactive]}>
+            style={({ pressed }) => [styles.delete, busy !== null && styles.inactive, pressed && styles.pressed]}>
             <Text style={styles.deleteLabel}>삭제</Text>
           </Pressable>
         </View>
@@ -172,12 +173,13 @@ export default function EditExpenseScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#fff' },
+  safeArea: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
-  form: { padding: 24, gap: 24 },
-  error: { color: '#D93025' },
-  footer: { paddingHorizontal: 24, paddingBottom: 16, gap: 8 },
-  delete: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  form: { ...contentWidth, padding: 24, gap: 24 },
+  error: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, color: colors.danger },
+  footer: { ...contentWidth, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 16, gap: 8 },
+  delete: { minHeight: 48, padding: 12, alignItems: 'center', justifyContent: 'center' },
   inactive: { opacity: 0.4 },
-  deleteLabel: { color: '#D93025', fontSize: 16, fontWeight: '600' },
+  pressed: { opacity: 0.8 },
+  deleteLabel: { color: colors.danger, fontSize: 16, fontFamily: fonts.bold },
 });

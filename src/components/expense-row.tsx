@@ -3,13 +3,14 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { Expense } from '@/api/types';
 import { expenseRowText } from '@/lib/expense';
 import { formatWon } from '@/lib/money';
+import { colors, fonts } from '@/theme';
 
 export function ExpenseRow({ expense, onPress }: { expense: Expense; onPress: () => void }) {
   const { title, subtitle } = expenseRowText(expense);
   const amount = formatWon(expense.amount);
   return (
     <Pressable
-      style={styles.row}
+      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${title}, ${subtitle}, ${amount}`}
@@ -26,9 +27,10 @@ export function ExpenseRow({ expense, onPress }: { expense: Expense; onPress: ()
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 },
-  text: { flex: 1, gap: 4 },
-  title: { fontSize: 16, color: '#111' },
-  subtitle: { fontSize: 13, color: '#666' },
-  amount: { fontSize: 16, fontWeight: '600', color: '#111' },
+  row: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 12, padding: 16, borderRadius: 16, backgroundColor: colors.surface },
+  text: { flexGrow: 1, flexShrink: 1, flexBasis: 120, gap: 4 },
+  title: { fontFamily: fonts.regular, fontSize: 16, color: colors.text },
+  subtitle: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, color: colors.muted },
+  amount: { maxWidth: '100%', marginLeft: 'auto', fontSize: 16, fontFamily: fonts.bold, color: colors.text, fontVariant: ['tabular-nums'] },
+  pressed: { opacity: 0.8 },
 });

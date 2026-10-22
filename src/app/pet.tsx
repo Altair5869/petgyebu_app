@@ -7,6 +7,7 @@ import { Button } from '@/components/button';
 import { errorMessage } from '@/lib/error-message';
 import { PET_LABELS } from '@/lib/pet';
 import { useSession } from '@/session/session-provider';
+import { colors, fonts } from '@/theme';
 
 const PET_TYPES: PetType[] = ['CAT', 'DOG'];
 
@@ -39,7 +40,7 @@ export default function PetScreen() {
             accessibilityRole="radio"
             accessibilityState={{ selected: selected === type }}
             onPress={() => setSelected(type)}
-            style={[styles.card, selected === type && styles.cardSelected]}>
+            style={({ pressed }) => [styles.card, selected === type && styles.cardSelected, pressed && styles.pressed]}>
             <Text style={styles.cardLabel}>{PET_LABELS[type]}</Text>
           </Pressable>
         ))}
@@ -53,20 +54,22 @@ export default function PetScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, gap: 24, backgroundColor: '#fff' },
-  title: { fontSize: 24, fontWeight: '700', color: '#111', marginTop: 24 },
+  container: { flex: 1, padding: 24, gap: 24, backgroundColor: colors.background },
+  title: { fontSize: 24, fontFamily: fonts.bold, color: colors.text, marginTop: 24 },
   cards: { flexDirection: 'row', gap: 12 },
   card: {
     flex: 1,
     aspectRatio: 1,
-    borderRadius: 16,
+    borderRadius: 24,
     borderWidth: 2,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cardSelected: { borderColor: '#208AEF', backgroundColor: '#EAF4FE' },
-  cardLabel: { fontSize: 20, fontWeight: '600', color: '#111' },
+  cardSelected: { borderColor: colors.primary, backgroundColor: colors.secondary },
+  cardLabel: { fontSize: 20, fontFamily: fonts.bold, color: colors.text },
+  pressed: { opacity: 0.8 },
   footer: { marginTop: 'auto', gap: 12 },
-  error: { color: '#D93025', textAlign: 'center' },
+  error: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, color: colors.danger, textAlign: 'center' },
 });

@@ -141,3 +141,13 @@ test('saves the current month and refreshes the stage', async () => {
   await waitFor(() => expect(mockRefreshStage).toHaveBeenCalledTimes(1));
   expect(mockApi.putBudget).toHaveBeenCalledWith(currentMonth(), 300000);
 });
+
+test('names the amount once for screen readers, on the input', async () => {
+  mockApi.getBudget.mockResolvedValue({ month: '2026-09', amount: null });
+  await render(<BudgetScreen />);
+
+  // The visible caption repeats the input's label, so it stays out of the accessibility tree.
+  expect(screen.getByLabelText('예산 금액')).toHaveDisplayValue('');
+  expect(screen.queryByText('예산 금액')).toBeNull();
+  screen.getByText('예산 금액', { includeHiddenElements: true });
+});

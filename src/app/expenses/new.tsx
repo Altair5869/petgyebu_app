@@ -18,6 +18,7 @@ import { parseMemo } from '@/lib/expense';
 import { parseAmountInput } from '@/lib/money';
 import { todayInSeoul } from '@/lib/month';
 import { useSession } from '@/session/session-provider';
+import { colors, contentWidth, fonts } from '@/theme';
 
 export default function NewExpenseScreen() {
   const { api } = useSession();
@@ -94,9 +95,9 @@ export default function NewExpenseScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#fff' },
+  safeArea: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
-  form: { padding: 24, gap: 24 },
-  error: { color: '#D93025' },
-  footer: { paddingHorizontal: 24, paddingBottom: 16, gap: 8 },
+  form: { ...contentWidth, padding: 24, gap: 24 },
+  error: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, color: colors.danger },
+  footer: { ...contentWidth, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 16, gap: 8 },
 });

@@ -21,7 +21,7 @@ test('shows total and the three cells', async () => {
   }
 });
 
-test('keeps each cell value on one line, shrinking long amounts to fit', async () => {
+test('shows long cell values in full at their own size, wrapping instead of shrinking', async () => {
   await render(
     <MonthSummaryCard
       stats={{
@@ -37,7 +37,7 @@ test('keeps each cell value on one line, shrinking long amounts to fit', async (
   );
   for (const text of ['4건', '4115.2%', '12,045,678원']) {
     const value = screen.getByText(text);
-    expect(value.props.numberOfLines).toBe(1);
-    expect(value.props.adjustsFontSizeToFit).toBe(true);
+    expect(value.props.numberOfLines).toBeUndefined();
+    expect(value.props.adjustsFontSizeToFit).toBeFalsy();
   }
 });

@@ -4,6 +4,7 @@ import type { CategoryStat } from '@/api/types';
 import { CATEGORY_LABELS } from '@/lib/expense';
 import { formatWon } from '@/lib/money';
 import { CATEGORY_COLORS } from '@/lib/stats';
+import { colors, fonts } from '@/theme';
 
 export function CategoryBreakdown({ categories }: { categories: CategoryStat[] }) {
   if (categories.length === 0) {
@@ -33,12 +34,12 @@ export function CategoryBreakdown({ categories }: { categories: CategoryStat[] }
 }
 
 const styles = StyleSheet.create({
-  section: { gap: 12 },
-  label: { fontSize: 13, color: '#666' },
-  bar: { flexDirection: 'row', height: 14, borderRadius: 7, overflow: 'hidden', backgroundColor: '#EEF1F5' },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  section: { gap: 16, padding: 24, borderRadius: 24, backgroundColor: colors.surface },
+  label: { fontSize: 16, fontFamily: fonts.bold, color: colors.text },
+  bar: { flexDirection: 'row', height: 16, borderRadius: 8, overflow: 'hidden', backgroundColor: colors.border },
+  row: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
   dot: { width: 10, height: 10, borderRadius: 5 },
-  name: { flex: 1, fontSize: 15, color: '#111' },
-  value: { fontSize: 15, color: '#444' },
-  empty: { fontSize: 14, color: '#666', textAlign: 'center', paddingVertical: 24 },
+  name: { flexGrow: 1, flexBasis: 72, fontFamily: fonts.regular, fontSize: 15, color: colors.text },
+  value: { maxWidth: '100%', marginLeft: 'auto', fontFamily: fonts.regular, fontSize: 15, color: colors.text, fontVariant: ['tabular-nums'] },
+  empty: { fontFamily: fonts.regular, fontSize: 16, lineHeight: 24, color: colors.muted, textAlign: 'center', padding: 24, borderRadius: 24, backgroundColor: colors.surface },
 });

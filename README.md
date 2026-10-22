@@ -52,6 +52,8 @@ maestro test -e APP_URL=http://127.0.0.1:8081 .maestro/onboarding/relaunch-home.
 |---|---|---|
 | `onboarding/first-login.yaml` | 로그인 → 고양이 → 예산 300,000원 → 홈 | 새 개발용 ID, 로그인 화면 |
 | `onboarding/relaunch-home.yaml` | 재실행 시 로그인 없이 홈 | `first-login` 이후 |
+| `home/budget-states.yaml` | 고양이 홈에서 0·49.9·50·80·100·103.3% 사용률, 지출 후 갱신·통계 확인 및 화면 캡처 | 새 테스트 계정의 `first-login` 직후. 지출 310,000원(5건)을 생성하므로 `record-and-list`와 같은 초기 데이터에서 연이어 실행하지 않는다 |
+| `home/dog-budget-states.yaml` | 강아지로 변경 후 예산 수정으로 네 표정·초과·긴 금액 확인 및 화면 캡처 | `home/budget-states` 직후. 완료 시 강아지·예산 100,000,000원·지출 310,000원 |
 | `onboarding/relaunch-sign-in.yaml` | 세션이 끊기면 로그인 화면 | 아래 "앱 세션 끊기" |
 | `onboarding/pet-only-relaunch.yaml` | 펫만 고르고 재실행하면 예산 화면부터 | 새 개발용 ID, 로그인 화면 |
 | `onboarding/budget-range.yaml` | 0원·1억 원 초과면 저장 비활성 | 예산 화면이 열린 상태 |

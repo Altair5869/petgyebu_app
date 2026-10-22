@@ -8,7 +8,11 @@ env:
 - tapOn: "월별 통계"
 - extendedWaitUntil: { visible: "전체 내역", timeout: 20000 }
 - assertVisible: "25건"
-- extendedWaitUntil: { visible: "p25, .*월 .*일 · 기타, 1,000원", timeout: 20000 }
+# The summary cells wrap onto two rows, so the list starts below the first screen.
+- scrollUntilVisible:
+    element: "p25, .*월 .*일 · 기타, 1,000원"
+    direction: DOWN
+    timeout: 20000
 - scrollUntilVisible:
     element: "모든 내역을 불러왔어요"
     direction: DOWN

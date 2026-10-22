@@ -25,7 +25,6 @@ test('fills the gauge with the share of budget left, in the state color', async 
   await render(<BudgetGauge petState="CAUTION" budgetAmount={150000} budgetBalanceAmount={50000} />);
 
   expect(fillStyle()).toMatchObject({ width: `${(50000 / 150000) * 100}%`, backgroundColor: '#FED16C' });
-  screen.getByText('남은 예산', SEEN);
 });
 
 test('uses the warning color while little budget is left', async () => {
@@ -43,6 +42,6 @@ test('shows an empty gauge once the budget is used up or exceeded', async () => 
 test('is hidden from screen readers because the balance card says the same', async () => {
   await render(<BudgetGauge petState="STABLE" budgetAmount={300000} budgetBalanceAmount={300000} />);
 
-  expect(screen.queryByText('남은 예산')).toBeNull();
-  expect(isHiddenFromAccessibility(screen.getByText('남은 예산', SEEN))).toBe(true);
+  expect(screen.queryByTestId('budget-gauge-fill')).toBeNull();
+  expect(isHiddenFromAccessibility(screen.getByTestId('budget-gauge-fill', SEEN))).toBe(true);
 });

@@ -4,7 +4,7 @@ env:
   APP_URL: http://127.0.0.1:8081
 ---
 - runFlow: ../subflows/open-app.yaml
-- extendedWaitUntil: { visible: "고양이 · 안정", timeout: 120000 }
+- extendedWaitUntil: { visible: "고양이, 안정", timeout: 120000 }
 - tapOn: "설정"
 - extendedWaitUntil: { visible: "카카오로 로그인됨", timeout: 20000 }
 - assertVisible: "300,000원"
@@ -28,5 +28,5 @@ env:
 - tapOn: "저장"
 - extendedWaitUntil: { visible: "450,000원", timeout: 20000 }
 - tapOn: "뒤로"
-- extendedWaitUntil: { visible: "강아지 · 안정", timeout: 20000 }
+- extendedWaitUntil: { visible: "강아지, 안정", timeout: 20000 }
 - assertVisible: "450,000원 남았어요"

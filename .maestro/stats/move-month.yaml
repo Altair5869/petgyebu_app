@@ -5,7 +5,7 @@ env:
   APP_URL: http://127.0.0.1:8081
 ---
 - runFlow: ../subflows/open-app.yaml
-- extendedWaitUntil: { visible: "고양이 · 안정", timeout: 120000 }
+- extendedWaitUntil: { visible: "고양이, 안정", timeout: 120000 }
 - tapOn: "월별 통계"
 - extendedWaitUntil: { visible: "전체 내역", timeout: 20000 }
 - tapOn: "이전 달"
@@ -24,7 +24,7 @@ env:
 - assertNotVisible: "지출 기록하기"
 # 뒤로 한 번이면 홈
 - tapOn: "뒤로"
-- extendedWaitUntil: { visible: "고양이 · 안정", timeout: 20000 }
+- extendedWaitUntil: { visible: "고양이, 안정", timeout: 20000 }
 
 # 이번 달 지출 기록 → 홈 잔액 확인
 - tapOn: "지출 기록하기"

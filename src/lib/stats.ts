@@ -19,13 +19,14 @@ export function summaryCells(stats: MonthStats): [SummaryCell, SummaryCell, Summ
   ];
 }
 
+// Warm, light accents on cream/white surfaces; labels and values remain dark for readability.
 // Fixed per category code so a category keeps its color across months.
 export const CATEGORY_COLORS: Record<ExpenseCategory, string> = {
-  FOOD: '#208AEF',
-  CAFE: '#F59E0B',
-  TRANSPORT: '#10B981',
-  SHOPPING: '#EC4899',
-  HEALTH: '#EF4444',
-  LIVING: '#8B5CF6',
-  OTHER: '#94A3B8',
+  FOOD: '#E9A06D',
+  CAFE: '#D6B458',
+  TRANSPORT: '#7EB8C6',
+  SHOPPING: '#E8A0AE',
+  HEALTH: '#9EBB81',
+  LIVING: '#B4A1D4',
+  OTHER: '#C6B39C',
 };

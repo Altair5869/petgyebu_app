@@ -1,0 +1,123 @@
+# 준비: bootTestRun 연결, home/budget-states.yaml 직후 CAT 계정(예산300,000원, 지출310,000원).
+# 펫을 DOG로 바꾸고 현재 월 예산만 변경해 네 상태와 초과·긴 금액을 검증한다.
+# 테스트 완료 후 DOG, 예산100,000,000원, 지출310,000원이 남는다.
+appId: com.altair.petgyebu
+env:
+  APP_URL: ${APP_URL || 'http://127.0.0.1:8081'}
+---
+- runFlow: ../subflows/open-app.yaml
+- extendedWaitUntil: { visible: "고양이, 예산 도달", timeout: 120000 }
+- tapOn: "설정"
+- extendedWaitUntil: { visible: "카카오로 로그인됨", timeout: 20000 }
+- tapOn: "강아지"
+- extendedWaitUntil:
+    visible:
+      text: "변경"
+      enabled: true
+    timeout: 20000
+- tapOn: "변경"
+- extendedWaitUntil: { visible: "예산 금액", timeout: 20000 }
+- waitForAnimationToEnd
+- tapOn: "예산 금액"
+- waitForAnimationToEnd
+- eraseText: 20
+- inputText: "1000000"
+- waitForAnimationToEnd
+- tapOn: "저장"
+- extendedWaitUntil: { visible: "카카오로 로그인됨", timeout: 20000 }
+- tapOn: "뒤로"
+- extendedWaitUntil: { visible: "690,000원 남았어요", timeout: 20000 }
+- assertVisible: "강아지, 안정"
+- assertVisible: "사용률 31%"
+- assertVisible: "지출 기록하기"
+- takeScreenshot: home-dog-stable
+- tapOn: "설정"
+- extendedWaitUntil: { visible: "카카오로 로그인됨", timeout: 20000 }
+- tapOn: "변경"
+- extendedWaitUntil: { visible: "예산 금액", timeout: 20000 }
+- waitForAnimationToEnd
+- tapOn: "예산 금액"
+- waitForAnimationToEnd
+- eraseText: 20
+- inputText: "620000"
+- waitForAnimationToEnd
+- tapOn: "저장"
+- extendedWaitUntil: { visible: "카카오로 로그인됨", timeout: 20000 }
+- tapOn: "뒤로"
+- extendedWaitUntil: { visible: "310,000원 남았어요", timeout: 20000 }
+- assertVisible: "강아지, 주의"
+- assertVisible: "사용률 50%"
+- assertVisible: "지출 기록하기"
+- takeScreenshot: home-dog-caution
+- tapOn: "설정"
+- extendedWaitUntil: { visible: "카카오로 로그인됨", timeout: 20000 }
+- tapOn: "변경"
+- extendedWaitUntil: { visible: "예산 금액", timeout: 20000 }
+- waitForAnimationToEnd
+- tapOn: "예산 금액"
+- waitForAnimationToEnd
+- eraseText: 20
+- inputText: "387500"
+- waitForAnimationToEnd
+- tapOn: "저장"
+- extendedWaitUntil: { visible: "카카오로 로그인됨", timeout: 20000 }
+- tapOn: "뒤로"
+- extendedWaitUntil: { visible: "77,500원 남았어요", timeout: 20000 }
+- assertVisible: "강아지, 경고"
+- assertVisible: "사용률 80%"
+- assertVisible: "지출 기록하기"
+- takeScreenshot: home-dog-warning
+- tapOn: "설정"
+- extendedWaitUntil: { visible: "카카오로 로그인됨", timeout: 20000 }
+- tapOn: "변경"
+- extendedWaitUntil: { visible: "예산 금액", timeout: 20000 }
+- waitForAnimationToEnd
+- tapOn: "예산 금액"
+- waitForAnimationToEnd
+- eraseText: 20
+- inputText: "310000"
+- waitForAnimationToEnd
+- tapOn: "저장"
+- extendedWaitUntil: { visible: "카카오로 로그인됨", timeout: 20000 }
+- tapOn: "뒤로"
+- extendedWaitUntil: { visible: "예산을 모두 사용했어요, 남은 예산 0원", timeout: 20000 }
+- assertVisible: "강아지, 예산 도달"
+- assertVisible: "사용률 100%"
+- assertVisible: "지출 기록하기"
+- takeScreenshot: home-dog-reached
+- tapOn: "설정"
+- extendedWaitUntil: { visible: "카카오로 로그인됨", timeout: 20000 }
+- tapOn: "변경"
+- extendedWaitUntil: { visible: "예산 금액", timeout: 20000 }
+- waitForAnimationToEnd
+- tapOn: "예산 금액"
+- waitForAnimationToEnd
+- eraseText: 20
+- inputText: "300000"
+- waitForAnimationToEnd
+- tapOn: "저장"
+- extendedWaitUntil: { visible: "카카오로 로그인됨", timeout: 20000 }
+- tapOn: "뒤로"
+- extendedWaitUntil: { visible: "10,000원 초과했어요", timeout: 20000 }
+- assertVisible: "강아지, 예산 도달"
+- assertVisible: "사용률 103.3%"
+- assertVisible: "지출 기록하기"
+- takeScreenshot: home-dog-over
+- tapOn: "설정"
+- extendedWaitUntil: { visible: "카카오로 로그인됨", timeout: 20000 }
+- tapOn: "변경"
+- extendedWaitUntil: { visible: "예산 금액", timeout: 20000 }
+- waitForAnimationToEnd
+- tapOn: "예산 금액"
+- waitForAnimationToEnd
+- eraseText: 20
+- inputText: "100000000"
+- waitForAnimationToEnd
+- tapOn: "저장"
+- extendedWaitUntil: { visible: "카카오로 로그인됨", timeout: 20000 }
+- tapOn: "뒤로"
+- extendedWaitUntil: { visible: "99,690,000원 남았어요", timeout: 20000 }
+- assertVisible: "강아지, 안정"
+- assertVisible: "사용률 0.3%"
+- assertVisible: "지출 기록하기"
+- takeScreenshot: home-dog-large

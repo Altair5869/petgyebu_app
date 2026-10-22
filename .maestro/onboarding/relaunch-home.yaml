@@ -4,5 +4,5 @@ env:
   APP_URL: http://127.0.0.1:8081
 ---
 - runFlow: ../subflows/open-app.yaml
-- extendedWaitUntil: { visible: "고양이 · 안정", timeout: 120000 }
+- extendedWaitUntil: { visible: "고양이, 안정", timeout: 120000 }
 - assertNotVisible: "카카오 로그인"

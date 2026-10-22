@@ -12,6 +12,7 @@ import { formatWon } from '@/lib/money';
 import { currentMonth, monthTitle } from '@/lib/month';
 import { PET_LABELS } from '@/lib/pet';
 import { useSession } from '@/session/session-provider';
+import { colors, contentWidth, fonts } from '@/theme';
 
 const PET_TYPES: PetType[] = ['CAT', 'DOG'];
 const PROVIDER_LABELS: Record<Me['provider'], string> = { KAKAO: '카카오로 로그인됨', GOOGLE: 'Google로 로그인됨' };
@@ -138,7 +139,7 @@ export default function SettingsScreen() {
                 accessibilityState={{ selected: me.petType === type, disabled: locked }}
                 disabled={locked}
                 onPress={() => void changePet(type)}
-                style={[styles.pet, me.petType === type && styles.petSelected]}>
+                style={({ pressed }) => [styles.pet, me.petType === type && styles.petSelected, locked && styles.inactive, pressed && styles.pressed]}>
                 <Text style={styles.petLabel}>{PET_LABELS[type]}</Text>
               </Pressable>
             ))}
@@ -147,18 +148,18 @@ export default function SettingsScreen() {
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>{monthTitle(month)} 예산</Text>
           <Text style={styles.amount}>{budgetAmount === null ? '설정 안 됨' : formatWon(budgetAmount)}</Text>
-          <Button label="변경" onPress={() => router.push('/settings/budget')} disabled={locked} />
+          <Button label="변경" onPress={() => router.push('/settings/budget')} disabled={locked} variant="secondary" />
         </View>
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>계정</Text>
           <Text style={styles.body}>{PROVIDER_LABELS[me.provider]}</Text>
-          <Button label="로그아웃" onPress={() => void handleSignOut(me.provider)} loading={busy === 'signOut'} disabled={locked} />
+          <Button label="로그아웃" onPress={() => void handleSignOut(me.provider)} loading={busy === 'signOut'} disabled={locked} variant="secondary" />
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="회원 탈퇴"
             disabled={locked}
             onPress={() => confirmDelete(me.provider)}
-            style={locked && styles.inactive}>
+            style={({ pressed }) => [styles.dangerTarget, locked && styles.inactive, pressed && styles.pressed]}>
             <Text style={styles.danger}>회원 탈퇴</Text>
           </Pressable>
         </View>
@@ -169,17 +170,19 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#fff' },
-  container: { padding: 24, gap: 16 },
-  card: { borderRadius: 16, backgroundColor: '#F5F7FA', padding: 20, gap: 12 },
-  sectionTitle: { fontSize: 18, fontWeight: '600', color: '#111' },
+  safeArea: { flex: 1, backgroundColor: colors.background },
+  container: { ...contentWidth, padding: 24, gap: 24 },
+  card: { borderRadius: 24, backgroundColor: colors.surface, padding: 24, gap: 16 },
+  sectionTitle: { fontSize: 18, fontFamily: fonts.bold, color: colors.text },
   pets: { flexDirection: 'row', gap: 12 },
-  pet: { flex: 1, paddingVertical: 16, borderRadius: 12, borderWidth: 2, borderColor: '#E5E7EB', alignItems: 'center', backgroundColor: '#fff' },
-  petSelected: { borderColor: '#208AEF', backgroundColor: '#EAF4FE' },
-  petLabel: { fontSize: 18, fontWeight: '600', color: '#111' },
-  amount: { fontSize: 24, fontWeight: '700', color: '#111' },
-  body: { fontSize: 16, color: '#333' },
-  danger: { fontSize: 16, color: '#D93025', textAlign: 'center', paddingVertical: 8 },
+  pet: { flex: 1, minHeight: 56, padding: 12, borderRadius: 16, borderWidth: 2, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface },
+  petSelected: { borderColor: colors.primary, backgroundColor: colors.secondary },
+  petLabel: { fontSize: 17, fontFamily: fonts.bold, color: colors.text, textAlign: 'center' },
+  amount: { fontSize: 28, fontFamily: fonts.bold, color: colors.text, fontVariant: ['tabular-nums'] },
+  body: { fontFamily: fonts.regular, fontSize: 16, lineHeight: 24, color: colors.muted },
+  dangerTarget: { minHeight: 48, padding: 12, alignItems: 'center', justifyContent: 'center' },
+  danger: { fontFamily: fonts.regular, fontSize: 16, color: colors.danger, textAlign: 'center' },
   inactive: { opacity: 0.4 },
-  error: { color: '#D93025', textAlign: 'center' },
+  pressed: { opacity: 0.8 },
+  error: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, color: colors.danger, textAlign: 'center' },
 });

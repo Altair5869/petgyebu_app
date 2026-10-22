@@ -5,6 +5,7 @@ import type { ExpenseCategory } from '@/api/types';
 import { CATEGORIES, CATEGORY_LABELS, parseMemo } from '@/lib/expense';
 import { formatAmountInput, parseAmountInput } from '@/lib/money';
 import { dateToSeoulDay, seoulDayToDate, todayInSeoul } from '@/lib/month';
+import { colors, fonts } from '@/theme';
 
 export type ExpenseDraft = {
   amountText: string;
@@ -34,7 +35,7 @@ export function ExpenseForm({ value, onChange, fieldErrors, minDay, allowCategor
 
   return (
     <>
-      <View style={styles.field}>
+      <View style={styles.amountCard}>
         <Text style={styles.label}>금액</Text>
         <View style={styles.inputRow}>
           <TextInput
@@ -43,6 +44,8 @@ export function ExpenseForm({ value, onChange, fieldErrors, minDay, allowCategor
             value={amountText}
             onChangeText={(t) => onChange({ ...value, amountText: formatAmountInput(t) }, 'amount')}
             placeholder="0"
+            placeholderTextColor={colors.muted}
+            selectionColor={colors.primary}
             style={styles.amountInput}
           />
           <Text style={styles.unit}>원</Text>
@@ -79,7 +82,7 @@ export function ExpenseForm({ value, onChange, fieldErrors, minDay, allowCategor
               onPress={() =>
                 onChange({ ...value, category: category === c && allowCategoryClear ? null : c }, 'category')
               }
-              style={[styles.chip, category === c && styles.chipSelected]}>
+              style={({ pressed }) => [styles.chip, category === c && styles.chipSelected, pressed && styles.pressed]}>
               <Text style={[styles.chipLabel, category === c && styles.chipLabelSelected]}>
                 {CATEGORY_LABELS[c]}
               </Text>
@@ -96,6 +99,8 @@ export function ExpenseForm({ value, onChange, fieldErrors, minDay, allowCategor
           value={memoText}
           onChangeText={(t) => onChange({ ...value, memoText: t }, 'memo')}
           placeholder="선택"
+          placeholderTextColor={colors.muted}
+          selectionColor={colors.primary}
           style={styles.memoInput}
         />
         {!memo.ok && <Text style={styles.error}>{memo.error}</Text>}
@@ -107,33 +112,43 @@ export function ExpenseForm({ value, onChange, fieldErrors, minDay, allowCategor
 
 const styles = StyleSheet.create({
   field: { gap: 8 },
-  label: { fontSize: 14, fontWeight: '600', color: '#555' },
+  amountCard: { gap: 12, padding: 24, borderRadius: 24, backgroundColor: colors.surface },
+  label: { fontSize: 14, fontFamily: fonts.bold, color: colors.muted },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
     borderBottomWidth: 2,
-    borderColor: '#208AEF',
+    borderColor: colors.primary,
   },
-  amountInput: { flex: 1, fontSize: 28, paddingVertical: 8, color: '#111' },
-  unit: { fontSize: 24, color: '#111' },
+  amountInput: { flex: 1, minWidth: 0, minHeight: 56, fontSize: 32, fontFamily: fonts.bold, paddingVertical: 12, color: colors.text, fontVariant: ['tabular-nums'] },
+  unit: { fontFamily: fonts.regular, fontSize: 20, color: colors.text, marginLeft: 8 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
-    borderRadius: 999,
+    minHeight: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#D1D5DB',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
-  chipSelected: { borderColor: '#208AEF', backgroundColor: '#EAF4FE' },
-  chipLabel: { fontSize: 15, color: '#333' },
-  chipLabelSelected: { color: '#1565C0', fontWeight: '600' },
+  chipSelected: { borderColor: colors.primary, backgroundColor: colors.secondary },
+  chipLabel: { fontFamily: fonts.regular, fontSize: 15, color: colors.text },
+  chipLabelSelected: { color: colors.primary, fontFamily: fonts.bold },
+  pressed: { opacity: 0.8 },
   memoInput: {
-    borderBottomWidth: 1,
-    borderColor: '#D1D5DB',
+    minHeight: 56,
+    borderWidth: 1,
+    borderRadius: 16,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    fontFamily: fonts.regular,
     fontSize: 16,
-    paddingVertical: 8,
-    color: '#111',
+    padding: 16,
+    color: colors.text,
   },
-  hint: { color: '#555' },
-  error: { color: '#D93025' },
+  hint: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, color: colors.muted },
+  error: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, color: colors.danger },
 });

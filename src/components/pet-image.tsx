@@ -1,6 +1,8 @@
 import { Image } from 'expo-image';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { fonts } from '@/theme';
+
 import type { PetState, PetType } from '@/api/types';
 import { PET_IMAGES, type PetImages } from '@/lib/pet-images';
 
@@ -19,13 +21,13 @@ const PLACEHOLDER_TINTS: Record<PetState, string> = {
   BUDGET_REACHED: '#EDE7F6',
 };
 
-type PetImageProps = { petType: PetType; petState: PetState; images?: PetImages };
+type PetImageProps = { petType: PetType; petState: PetState; images?: PetImages; size?: 'default' | 'home' };
 
-export function PetImage({ petType, petState, images = PET_IMAGES }: PetImageProps) {
+export function PetImage({ petType, petState, images = PET_IMAGES, size = 'default' }: PetImageProps) {
   const source = images[petType]?.[petState];
 
   if (source !== undefined) {
-    return <Image {...HIDDEN_FROM_SCREEN_READER} testID="pet-image" source={source} contentFit="contain" style={styles.art} />;
+    return <Image {...HIDDEN_FROM_SCREEN_READER} testID="pet-image" source={source} contentFit="contain" style={[styles.art, size === 'home' && styles.homeArt]} />;
   }
   return (
     <View
@@ -42,6 +44,7 @@ export function PetImage({ petType, petState, images = PET_IMAGES }: PetImagePro
 const styles = StyleSheet.create({
   // Artwork is exported bottom-aligned at this size so the paws rest on the budget gauge below.
   art: { width: 124, height: 96, alignSelf: 'center' },
+  homeArt: { width: 155, height: 120 },
   frame: { width: 120, height: 120, borderRadius: 16, alignSelf: 'center' },
   placeholder: {
     borderWidth: 2,
@@ -51,7 +54,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 2,
   },
-  type: { fontSize: 14, fontWeight: '700', color: '#333' },
-  state: { fontSize: 12, color: '#333' },
-  note: { fontSize: 11, color: '#666' },
+  type: { fontSize: 14, fontFamily: fonts.bold, color: '#333' },
+  state: { fontFamily: fonts.regular, fontSize: 12, color: '#333' },
+  note: { fontFamily: fonts.regular, fontSize: 11, color: '#666' },
 });

@@ -10,6 +10,7 @@ import { CONNECTION_ERROR, errorMessage } from '@/lib/error-message';
 import { formatAmountInput, parseBudgetInput } from '@/lib/money';
 import { currentMonth, monthTitle } from '@/lib/month';
 import { useSession } from '@/session/session-provider';
+import { colors, contentWidth, fonts } from '@/theme';
 
 export default function SettingsBudgetScreen() {
   const { api, refreshStage } = useSession();
@@ -93,8 +94,8 @@ export default function SettingsBudgetScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#fff' },
+  safeArea: { flex: 1, backgroundColor: colors.background },
   keyboardAvoiding: { flex: 1 },
-  container: { padding: 24, gap: 24 },
-  title: { fontSize: 20, fontWeight: '700', color: '#111' },
+  container: { ...contentWidth, padding: 24, gap: 24 },
+  title: { fontSize: 20, fontFamily: fonts.bold, color: colors.text },
 });

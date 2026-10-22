@@ -5,3 +5,9 @@ appId: com.altair.petgyebu
 ---
 - stopApp
 - openLink: "exp+petgyebuapp://?__expo_url=${encodeURIComponent(APP_URL)}&__expo_disable_onboarding=1&__expo_disable_auto_launch=1&__expo_disable_fab=1"
+# iOS may ask once before opening this app's development deep link.
+- runFlow:
+    when:
+      visible: ".*(펫계부|[Pp]etgyebu).*(열겠습니까|[Oo]pen).*|[Oo]pen.*(펫계부|[Pp]etgyebu).*"
+    commands:
+      - tapOn: "열기|Open"

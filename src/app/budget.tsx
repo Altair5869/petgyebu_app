@@ -8,6 +8,7 @@ import { errorMessage } from '@/lib/error-message';
 import { formatAmountInput, parseBudgetInput } from '@/lib/money';
 import { currentMonth, monthTitle, previousMonth } from '@/lib/month';
 import { useSession } from '@/session/session-provider';
+import { colors, contentWidth, fonts } from '@/theme';
 
 export default function BudgetScreen() {
   const { api, refreshStage } = useSession();
@@ -81,8 +82,8 @@ export default function BudgetScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#fff' },
+  safeArea: { flex: 1, backgroundColor: colors.background },
   keyboardAvoiding: { flex: 1 },
-  container: { flex: 1, padding: 24, gap: 24 },
-  title: { fontSize: 24, fontWeight: '700', color: '#111', marginTop: 24 },
+  container: { ...contentWidth, flex: 1, padding: 24, gap: 24 },
+  title: { fontSize: 24, fontFamily: fonts.bold, color: colors.text, marginTop: 24 },
 });

@@ -1,16 +1,29 @@
 import { SplashScreen, Stack } from 'expo-router';
+import { useFonts } from 'expo-font';
 import { useEffect } from 'react';
 
 import { LoadingView, MessageView } from '@/components/message-view';
 import { apiBaseUrl } from '@/config';
 import { CONNECTION_ERROR } from '@/lib/error-message';
 import { SessionProvider, useSession } from '@/session/session-provider';
+import { colors, fonts } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  const [fontsLoaded, fontError] = useFonts({
+    [fonts.regular]: require('../../assets/fonts/line-seed/LINESeedKR-Rg.ttf'),
+    [fonts.bold]: require('../../assets/fonts/line-seed/LINESeedKR-Bd.ttf'),
+  });
+
+  useEffect(() => {
+    if ((fontsLoaded || fontError) && !apiBaseUrl) SplashScreen.hide();
+  }, [fontsLoaded, fontError]);
+
+  // The font is decoration: if it fails to load, text falls back to the system face.
+  if (!fontsLoaded && !fontError) return null;
+
   if (!apiBaseUrl) {
-    SplashScreen.hide();
     return <MessageView message="API 주소(EXPO_PUBLIC_API_BASE_URL)가 설정되지 않았어요. .env.local을 확인해 주세요." />;
   }
   return (
@@ -32,7 +45,15 @@ function RootNavigator() {
 
   const stage = state.status === 'signedIn' ? state.stage : null;
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack screenOptions={{
+      headerShown: false,
+      headerStyle: { backgroundColor: colors.background },
+      headerTintColor: colors.primary,
+      headerTitleStyle: { color: colors.text, fontFamily: fonts.bold },
+      headerBackTitleStyle: { fontFamily: fonts.regular },
+      headerShadowVisible: false,
+      contentStyle: { backgroundColor: colors.background },
+    }}>
       <Stack.Protected guard={state.status === 'signedOut'}>
         <Stack.Screen name="sign-in" />
       </Stack.Protected>

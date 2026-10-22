@@ -1,12 +1,12 @@
 # 지출 기록 → 홈 갱신 → 월별 통계. 준비: first-login 직후(예산 300,000원, 지출 0건).
 appId: com.altair.petgyebu
 env:
-  APP_URL: http://127.0.0.1:8081
+  APP_URL: ${APP_URL || 'http://127.0.0.1:8081'}
 ---
 - runFlow: ../subflows/open-app.yaml
-- extendedWaitUntil: { visible: "고양이 · 안정", timeout: 120000 }
+- extendedWaitUntil: { visible: "고양이, 안정", timeout: 120000 }
 - tapOn: "지출 기록하기"
-# The home card is also titled "지출 기록", so wait for something only the entry screen shows.
+# Wait for the entry screen after the navigation animation.
 - extendedWaitUntil: { visible: "금액을 입력해 주세요", timeout: 20000 }
 - tapOn: "지출 금액"
 - inputText: "12000"
@@ -29,13 +29,17 @@ env:
 - inputText: "150000"
 - waitForAnimationToEnd
 - tapOn: "저장"
-- extendedWaitUntil: { visible: "고양이 · 주의", timeout: 20000 }
+- extendedWaitUntil: { visible: "고양이, 주의", timeout: 20000 }
 - tapOn: "월별 통계"
 - extendedWaitUntil: { visible: "전체 내역", timeout: 20000 }
 - assertVisible: "167,000원"
 - assertVisible: "3건"
 # Each row is one accessible element labelled "{title}, {subtitle}, {amount}".
-- extendedWaitUntil: { visible: "라떼, .*월 .*일 · 카페, 12,000원", timeout: 20000 }
+# The summary cells wrap onto two rows, so the list starts below the first screen.
+- scrollUntilVisible:
+    element: "라떼, .*월 .*일 · 카페, 12,000원"
+    direction: DOWN
+    timeout: 20000
 - assertVisible: "기타, .*월 .*일, 5,000원"
 - assertVisible: "기타, .*월 .*일, 150,000원"
 - assertVisible: "모든 내역을 불러왔어요"

@@ -12,6 +12,7 @@ import { useMonthStats } from '@/hooks/use-month-stats';
 import { CONNECTION_ERROR } from '@/lib/error-message';
 import { currentMonth } from '@/lib/month';
 import { useSession } from '@/session/session-provider';
+import { colors, contentWidth, fonts } from '@/theme';
 
 function Separator() {
   return <View style={styles.separator} />;
@@ -81,13 +82,13 @@ export default function MonthStatsScreen() {
               <Text style={styles.section}>전체 내역</Text>
             </>
           ) : (
-            <ActivityIndicator style={styles.state} />
+            <ActivityIndicator color={colors.primary} style={styles.state} />
           )}
         </View>
       }
       ListFooterComponent={
         !ready ? undefined : list.loadingMore ? (
-          <ActivityIndicator style={styles.footer} />
+          <ActivityIndicator color={colors.primary} style={styles.footer} />
         ) : list.moreError ? (
           <View style={styles.footer}>
             <Button label="다시 시도" onPress={list.loadMore} />
@@ -104,12 +105,12 @@ export default function MonthStatsScreen() {
 }
 
 const styles = StyleSheet.create({
-  list: { flex: 1, backgroundColor: '#fff' },
-  content: { padding: 24 },
-  header: { gap: 16, marginBottom: 8 },
-  section: { fontSize: 16, fontWeight: '600', color: '#111' },
+  list: { flex: 1, backgroundColor: colors.background },
+  content: { ...contentWidth, padding: 24, paddingBottom: 40 },
+  header: { gap: 24, marginBottom: 16 },
+  section: { fontSize: 18, fontFamily: fonts.bold, color: colors.text },
   state: { gap: 16, marginTop: 24 },
-  separator: { height: 1, backgroundColor: '#EEF0F3' },
-  message: { textAlign: 'center', color: '#666' },
+  separator: { height: 8 },
+  message: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, textAlign: 'center', color: colors.muted },
   footer: { marginTop: 16 },
 });

@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { canGoToNextMonth, canGoToPreviousMonth, monthTitle, nextMonth, previousMonth } from '@/lib/month';
+import { colors, fonts } from '@/theme';
 
 type MonthNavigatorProps = { month: string; onChange: (month: string) => void };
 
@@ -13,7 +14,7 @@ function Arrow({ label, glyph, disabled, onPress }: { label: string; glyph: stri
       disabled={disabled}
       hitSlop={8}
       onPress={onPress}
-      style={styles.arrow}>
+      style={({ pressed }) => [styles.arrow, pressed && styles.pressed]}>
       <Text style={[styles.glyph, disabled && styles.glyphDisabled]}>{glyph}</Text>
     </Pressable>
   );
@@ -30,9 +31,10 @@ export function MonthNavigator({ month, onChange }: MonthNavigatorProps) {
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  title: { fontSize: 18, fontWeight: '600', color: '#111' },
-  arrow: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  glyph: { fontSize: 28, color: '#208AEF' },
-  glyphDisabled: { color: '#C5CAD1' },
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  title: { flexShrink: 1, fontSize: 20, fontFamily: fonts.bold, color: colors.text, textAlign: 'center' },
+  arrow: { minWidth: 48, minHeight: 48, padding: 8, borderRadius: 16, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
+  glyph: { fontFamily: fonts.regular, fontSize: 28, color: colors.primary },
+  glyphDisabled: { color: colors.disabled },
+  pressed: { opacity: 0.8 },
 });

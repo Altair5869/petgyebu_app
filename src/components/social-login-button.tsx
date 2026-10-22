@@ -61,15 +61,16 @@ export function SocialLoginButton({ provider, onPress, loading, disabled }: Soci
 
 const styles = StyleSheet.create({
   button: {
-    minHeight: 52,
-    borderRadius: 12,
+    minHeight: 56,
+    borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
     paddingHorizontal: 16,
+    paddingVertical: 16,
   },
   inactive: { opacity: 0.4 },
   pressed: { opacity: 0.8 },
-  label: { fontSize: 16, fontWeight: '600' },
+  label: { flexShrink: 1, fontSize: 16, fontWeight: '600', textAlign: 'center' },
 });

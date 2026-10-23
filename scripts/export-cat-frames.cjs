@@ -1,5 +1,5 @@
 // Run the reviewed Canvas compositor in an isolated, installed Chrome instance.
-// First: python3 output/cat-interaction-preview/serve-preview.py
+// First: python3 output/cat-interaction-preview/serve-preview.py (local preview sources, not in the repository)
 const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
 const os = require('node:os');

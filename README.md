@@ -20,14 +20,14 @@ GitHub Actions(`.github/workflows/ci.yml`)가 모든 push·PR에서 lint, typech
 - 머리를 누르면 잠깐 눈을 감고, 놓으면 현재 예산 감정으로 돌아온다. 반응 중 예산이 바뀌면 종료 후 최신 상태를 표시한다. 볼 드래그는 아직 구현하지 않았다.
 - 동작 줄이기에서는 자동 깜빡임을 생략하고 정지된 감은 눈 반응만 표시한다. 화면 이탈·백그라운드·터치 취소 시 반응을 종료한다. Android 알림창 포커스 이벤트는 Android에서만 구독한다.
 - `assets/images/pets/cat-interaction/`의 네 감정 × 세 표정 PNG를 사용한다. 모두 744×576이며, 화면에 쓸 세 장을 먼저 디코딩한 뒤 고정 크기로 표시한다. 디코딩 실패 시 기존 정지 고양이를 유지한다. 앱 실행 중 색 분석이나 Canvas 합성은 하지 않는다.
-- PNG는 사용자가 확인한 `output/cat-interaction-preview/`의 합성 결과다. 별도 미리보기 서버를 실행한 뒤 `node scripts/export-cat-frames.cjs`로 다시 내보낼 수 있다. 설치된 Chrome의 헤드리스 모드와 일회성 임시 프로필을 사용하며, 다른 설치 경로는 `CHROME_BIN`으로 지정한다. 재생성 후에는 표정과 볼 경계를 다시 확인한다.
+- PNG는 사용자가 확인한 미리보기 합성 결과다. 미리보기 원본과 서버(`output/cat-interaction-preview/`)는 저장소에 넣지 않고 로컬에만 둔다. 미리보기 서버를 실행한 뒤 `node scripts/export-cat-frames.cjs`로 다시 내보낼 수 있다. 설치된 Chrome의 헤드리스 모드와 일회성 임시 프로필을 사용하며, 다른 설치 경로는 `CHROME_BIN`으로 지정한다. 재생성 후에는 표정과 볼 경계를 다시 확인한다.
 - `__tests__/cat-interaction-test.ts`, `interactive-cat-test.tsx`, `cat-frame-assets-test.cjs`가 상태 복귀·접근성 설정·화면 이탈·디코딩 실패·프레임의 몸/발 고정을 검사한다.
 - 실제 앱 확인: 테스트 백엔드에 연결된 고양이 계정에서 `maestro --device <UDID> test -e APP_URL=http://127.0.0.1:8081 .maestro/home/cat-interaction.yaml`. 이 시나리오는 지출·예산을 변경하지 않으며, 터치와 화면 이동·복귀를 확인한다. 반응의 자연스러움과 짧은 프레임 전환은 별도 화면 확인이 필요하다.
 
 ### 이번 적용의 확인 결과 (2026-10-23)
 
-- lint·typecheck 통과, Jest **29 suites / 332 tests 통과**.
-- iPhone 17e / iOS 27.0, `bootTestRun` 백엔드(8080), 별도 Metro(8082)에서 `.maestro/home/cat-interaction.yaml` 통과. 머리 탭·길게 누르기, 설정·지출 입력 화면 왕복 후 터치 재활성화를 확인했다. 최종 결과와 캡처는 `output/cat-app-check/final/`에 있다.
+- lint·typecheck 통과, Jest **29 suites / 332 tests 통과**(이 중 2 suites는 이후 테스트 대상에서 뺀 `output/` 미리보기 테스트).
+- iPhone 17e / iOS 27.0, `bootTestRun` 백엔드(8080), 별도 Metro(8082)에서 `.maestro/home/cat-interaction.yaml` 통과. 머리 탭·길게 누르기, 설정·지출 입력 화면 왕복 후 터치 재활성화를 확인했다.
 - 실행 중 발견한 iOS `appStateFocusChange` 미지원 오류는 Android에만 focus/blur 이벤트를 등록하도록 수정했다. 해당 플랫폼 분기 회귀 검사도 추가했다.
 - 안정 상태의 터치 전후 홈 캡처에서 고양이 위치·크기와 화면 배치를 검토했다. 네 감정의 타이밍·최신 예산 복귀는 Jest로 확인했다. **Android 실기기/에뮬레이터, iOS 네 감정 전체의 움직임·스크린리더 조작·동작 줄이기 설정을 실제 기기로 확인한 것은 아니다.**
 

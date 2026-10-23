@@ -45,5 +45,5 @@ example
 /ios
 /android
 
-# Local simulator logs and screenshots (keep reproducible preview sources tracked)
-/output/cat-app-check/
+# Local design previews, simulator logs and screenshots
+/output/

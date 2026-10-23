@@ -7,6 +7,7 @@ import { ApiError } from '@/api/client';
 import type { Home } from '@/api/types';
 import { BudgetGauge } from '@/components/budget-gauge';
 import { PetImage } from '@/components/pet-image';
+import { InteractiveCat } from '@/components/interactive-cat';
 import { CONNECTION_ERROR } from '@/lib/error-message';
 import { describeBalance, formatUsagePercent, formatWon } from '@/lib/money';
 import { monthTitle } from '@/lib/month';
@@ -25,6 +26,7 @@ function isStageError(error: unknown): boolean {
 export default function HomeScreen() {
   const { api, refreshStage } = useSession();
   const [load, setLoad] = useState<HomeLoad>({ status: 'loading' });
+  const [focused, setFocused] = useState(false);
 
   const fetchHome = useCallback(() => {
     const showError = (message: string) => () => setLoad({ status: 'error', message });
@@ -42,7 +44,9 @@ export default function HomeScreen() {
   // Runs on first display and every return to this screen (e.g. after saving an expense).
   useFocusEffect(
     useCallback(() => {
+      setFocused(true);
       fetchHome();
+      return () => setFocused(false);
     }, [fetchHome]),
   );
 
@@ -90,7 +94,9 @@ export default function HomeScreen() {
         </View>
         <View style={styles.petSection}>
           <View>
-            <PetImage petType={home.petType} petState={home.petState} size="home" />
+            {home.petType === 'CAT'
+              ? <InteractiveCat petState={home.petState} focused={focused} />
+              : <PetImage petType={home.petType} petState={home.petState} size="home" />}
             <BudgetGauge
               petState={home.petState}
               size="home"

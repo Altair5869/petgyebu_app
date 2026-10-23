@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>펫계부 · 고양이 동작 실험</title>
+  <style>
+    @font-face { font-family: Seed; src: url('../../assets/fonts/line-seed/LINESeedKR-Rg.ttf'); }
+    @font-face { font-family: Seed; src: url('../../assets/fonts/line-seed/LINESeedKR-Bd.ttf'); font-weight: 700; }
+    :root { color-scheme: light; --paper:#fbf8f3; --ink:#382d28; --muted:#786b63; --cocoa:#765344; --peach:#f7e6d8; --line:#e8ddd4; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.6 Seed, sans-serif; }
+    main { max-width:860px; margin:auto; padding:40px 20px 64px; }
+    h1 { font-size:28px; line-height:1.35; margin:12px 0; letter-spacing:-.7px; }
+    h2 { font-size:18px; margin:0 0 12px; }
+    p { margin:8px 0; }
+    .eyebrow { font-size:13px; font-weight:700; color:var(--cocoa); }
+    #source { display:block; height:40px; line-height:20px; }
+    .muted, small { color:var(--muted); }
+    .notice { margin:24px 0; padding:16px 20px; border-radius:18px; background:var(--peach); font-size:14px; }
+    .grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+    .card { background:white; border:1px solid var(--line); border-radius:24px; padding:24px; min-width:0; }
+    .stage { position:relative; width:100%; aspect-ratio:372/288; margin:12px auto; }
+    canvas { width:100%; height:100%; display:block; touch-action:pan-y; }
+    #head { position:absolute; border:1px dashed transparent; border-radius:50%; background:transparent; cursor:grab; touch-action:none; min-width:44px; min-height:44px; padding:0; }
+    #head:active { cursor:grabbing; }
+    .show-area #head { border-color:var(--cocoa); background:#f7e6d844; }
+    button, select { font:inherit; }
+    button, select, .check { min-height:44px; }
+    button { border:1px solid var(--line); border-radius:12px; background:white; color:var(--ink); padding:10px 14px; cursor:pointer; }
+    button:disabled { cursor:default; opacity:.55; }
+    button:focus-visible, select:focus-visible, input:focus-visible { outline:3px solid var(--cocoa); outline-offset:3px; }
+    .primary { background:var(--cocoa); color:white; border-color:var(--cocoa); width:100%; }
+    .check { display:flex; align-items:center; gap:10px; font-size:14px; }
+    input { width:20px; height:20px; accent-color:var(--cocoa); }
+    label[for=budget] { display:block; font-size:14px; margin-bottom:8px; }
+    select { width:100%; padding:10px; border:1px solid var(--line); border-radius:12px; background:white; color:var(--ink); }
+    .status { font-size:14px; text-align:center; min-height:48px; }
+    .actions { display:flex; gap:8px; margin:12px 0; flex-wrap:wrap; }
+    .actions button { flex:1; }
+    hr { border:0; border-top:1px solid var(--line); margin:20px 0; }
+    details { margin-top:24px; font-size:14px; }
+    summary { cursor:pointer; min-height:44px; }
+    li { margin:8px 0; }
+    #trace { white-space:pre-wrap; overflow-wrap:anywhere; font-size:13px; }
+    .frame-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; text-align:center; font-size:14px; }
+    .frame-grid canvas { aspect-ratio:372/288; height:auto; }
+    @media(max-width:640px) { main { padding-top:24px; } .grid { grid-template-columns:1fr; } h1 { font-size:25px; } }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="eyebrow">PETGYEBU · INTERACTION STUDY 01</span>
+    <h1>가만히 곁에, 쓰다듬으면 살짝.</h1>
+    <p class="muted">기존 고양이 한 마리로 살펴보는 대기 동작과 머리 쓰다듬기.</p>
+  </header>
+  <p class="notice"><strong>원본 볼터치를 고정한 수정본입니다.</strong> 눈 소재에 섞인 볼 색을 제외하고 원본 볼터치를 유지하도록 합성을 수정했습니다. 아래 세 프레임에서 볼의 위치와 색을 비교해 주세요. 실제 화면의 자연스러움은 검토 중이며, 앱에는 적용하지 않았습니다.</p>
+  <div class="grid">
+    <section class="card" aria-label="고양이 미리보기">
+      <span class="eyebrow" id="source">기존 원본 PNG · 위치 고정</span>
+      <div class="stage" id="stage">
+        <canvas id="cat" width="744" height="576" role="img" aria-label="안정 상태의 기존 고양이"></canvas>
+        <button id="head" aria-label="고양이 머리 쓰다듬기" disabled></button>
+      </div>
+      <div class="status" aria-live="polite"><strong id="state-label">안정</strong><br><span id="reaction">이미지를 불러오는 중이에요</span></div>
+      <button class="primary" id="pet" disabled>머리 쓰다듬기</button>
+      <p class="muted" style="font-size:13px;margin-top:12px">초안을 켜고 머리 위를 누르거나 쓸어보세요. 몸통과 볼은 반응하지 않아요.</p>
+    </section>
+    <section class="card" aria-label="실험 설정">
+      <h2>네 가지 예산 감정</h2>
+      <label for="budget">현재 예산 상태 · 미리보기 전용</label>
+      <select id="budget">
+        <option value="0">안정 · 0% 이상 50% 미만</option>
+        <option value="1">주의 · 50% 이상 80% 미만</option>
+        <option value="2">경고 · 80% 이상 100% 미만</option>
+        <option value="3">예산 도달 · 100% 이상</option>
+      </select>
+      <hr>
+      <label class="check"><input type="checkbox" id="draft" disabled>표정 프레임 재생</label>
+      <label class="check"><input type="checkbox" id="idle" checked>대기 중 눈 깜빡임</label>
+      <label class="check"><input type="checkbox" id="overlay">원본 겹쳐 비교 · 뜬 눈이 겹쳐 보여요</label>
+      <label class="check"><input type="checkbox" id="area">머리 터치 영역 보기</label>
+      <p class="muted" id="motion" style="font-size:13px"></p>
+      <div class="actions"><button id="blink" disabled>깜빡임 한 번</button><button id="reset">원본으로 복귀</button></div>
+      <p style="font-size:14px"><strong>볼 드래그는 보류 중이에요.</strong><br><span class="muted">이번에는 대기 동작과 머리 터치 반응만 확인해요.</span></p>
+    </section>
+  </div>
+  <section class="card" style="margin-top:20px" aria-label="정지 프레임 비교">
+    <h2>멈춰서 비교해 보세요</h2>
+    <p class="muted" id="frame-version" style="font-size:14px"></p>
+    <div class="frame-grid">
+      <div><canvas id="frame-open" width="744" height="576" role="img" aria-label="눈 뜬 원본"></canvas>눈 뜸 · 원본</div>
+      <div><canvas id="frame-half" width="744" height="576" role="img" aria-label="눈 반쯤 감은 프레임"></canvas>반쯤 감음</div>
+      <div><canvas id="frame-closed" width="744" height="576" role="img" aria-label="눈 감은 프레임"></canvas>감음</div>
+    </div>
+    <p class="muted" style="font-size:13px">발·머리 윤곽이 같은 위치인지, 눈 주변에 테두리나 색 얼룩이 보이는지 비교해 주세요.</p>
+  </section>
+  <details>
+    <summary>이번 실험에서 확인할 것</summary>
+    <ul>
+      <li>표정 프레임 재생을 켜면 4~7초 간격으로 눈을 깜빡입니다. 예산 도달 상태는 자동 동작을 멈춥니다.</li>
+      <li>머리를 누르면 반응하고, 손을 떼면 원래 감정으로 돌아옵니다. 버튼으로도 같은 반응을 볼 수 있습니다.</li>
+      <li>반응 중 예산 상태를 바꿔도 종료 시점의 최신 상태로 돌아옵니다. 아래 버튼으로 확인할 수 있습니다.</li>
+      <li>동작 줄이기 설정에서는 자동 깜빡임을 생략하고, 쓰다듬기는 정지 표정으로 표시합니다.</li>
+      <li>원본과 눈 소재를 정렬해 같은 크기의 프레임으로 미리 합성합니다. 눈·눈꺼풀을 독립적으로 움직이는 방식은 아닙니다.</li>
+    </ul>
+    <button id="change-during-pet" disabled>반응 중 다음 예산 상태로 변경</button>
+    <p id="trace" aria-live="polite">아직 상호작용 기록이 없습니다.</p>
+    <a id="source-sheet" href="cat-stable-blink-source-v2.png">선택한 상태의 눈 소재 보기</a>
+  </details>
+</main>
+<script src="eye-compositor.js"></script>
+<script src="preview.js"></script>
+</body>
+</html>

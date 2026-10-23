@@ -44,3 +44,6 @@ example
 # generated native folders
 /ios
 /android
+
+# Local simulator logs and screenshots (keep reproducible preview sources tracked)
+/output/cat-app-check/

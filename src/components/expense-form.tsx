@@ -1,5 +1,5 @@
 import DatePicker from '@expo/ui/community/datetime-picker';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Keyboard, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import type { ExpenseCategory } from '@/api/types';
 import { CATEGORIES, CATEGORY_LABELS, parseMemo } from '@/lib/expense';
@@ -79,9 +79,11 @@ export function ExpenseForm({ value, onChange, fieldErrors, minDay, allowCategor
               accessibilityRole="radio"
               accessibilityLabel={CATEGORY_LABELS[c]}
               accessibilityState={{ selected: category === c }}
-              onPress={() =>
-                onChange({ ...value, category: category === c && allowCategoryClear ? null : c }, 'category')
-              }
+              onPress={() => {
+                // The number pad has no close key; picking a category ends the amount entry.
+                Keyboard.dismiss();
+                onChange({ ...value, category: category === c && allowCategoryClear ? null : c }, 'category');
+              }}
               style={({ pressed }) => [styles.chip, category === c && styles.chipSelected, pressed && styles.pressed]}>
               <Text style={[styles.chipLabel, category === c && styles.chipLabelSelected]}>
                 {CATEGORY_LABELS[c]}

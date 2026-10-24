@@ -19,6 +19,15 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({ id: '7' }),
 }));
 
+// The native stack header sits above the screen; its height offsets the keyboard avoidance.
+jest.mock('expo-router/react-navigation', () => ({ useHeaderHeight: () => 116 }));
+// Render the avoider as a plain view that keeps its props, so tests can read the offset.
+jest.mock('react-native/Libraries/Components/Keyboard/KeyboardAvoidingView', () => {
+  const { createElement } = jest.requireActual('react');
+  const { View } = jest.requireActual('react-native');
+  return { __esModule: true, default: (props: object) => createElement(View, { ...props, testID: 'keyboard-avoiding' }) };
+});
+
 // The SwiftUI picker is native; render its value so tests can see it.
 jest.mock('@expo/ui/community/datetime-picker', () => {
   const { createElement } = jest.requireActual('react');
@@ -341,4 +350,9 @@ test('while a delete is in flight save is disabled', async () => {
   expect(save).toBeDisabled();
   await fireEvent.press(save);
   expect(mockApi.updateExpense).not.toHaveBeenCalled();
+});
+
+test('lifts the save footer by the header height so the keypad does not cover it', async () => {
+  await renderReady();
+  expect(screen.getByTestId('keyboard-avoiding').props.keyboardVerticalOffset).toBe(116);
 });

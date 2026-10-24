@@ -1,5 +1,6 @@
 import { randomUUID } from 'expo-crypto';
 import { router } from 'expo-router';
+import { useHeaderHeight } from 'expo-router/react-navigation';
 import { useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,6 +23,8 @@ import { colors, contentWidth, fonts } from '@/theme';
 
 export default function NewExpenseScreen() {
   const { api } = useSession();
+  // The keyboard avoider measures itself from below the native header, so add the header back.
+  const headerHeight = useHeaderHeight();
   const [draft, setDraft] = useState<ExpenseDraft>(() => ({
     amountText: '',
     day: todayInSeoul(),
@@ -69,10 +72,14 @@ export default function NewExpenseScreen() {
 
   return (
     <SafeAreaView edges={['bottom']} style={styles.safeArea}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={headerHeight}
+        style={styles.flex}>
         <ScrollView
           contentInsetAdjustmentBehavior="automatic"
           contentContainerStyle={styles.form}
+          keyboardDismissMode="interactive"
           keyboardShouldPersistTaps="handled">
           <ExpenseForm
             value={draft}

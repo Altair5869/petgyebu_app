@@ -1,4 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
+import { useHeaderHeight } from 'expo-router/react-navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -30,6 +31,8 @@ const isNotFound = (e: unknown) => e instanceof ApiError && e.status === 404;
 
 export default function EditExpenseScreen() {
   const { api } = useSession();
+  // The keyboard avoider measures itself from below the native header, so add the header back.
+  const headerHeight = useHeaderHeight();
   const id = Number(useLocalSearchParams<{ id: string }>().id);
   const [screen, setScreen] = useState<Screen>({ status: 'loading' });
   const [draft, setDraft] = useState<ExpenseDraft | null>(null);
@@ -139,10 +142,14 @@ export default function EditExpenseScreen() {
 
   return (
     <SafeAreaView edges={['bottom']} style={styles.safeArea}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={headerHeight}
+        style={styles.flex}>
         <ScrollView
           contentInsetAdjustmentBehavior="automatic"
           contentContainerStyle={styles.form}
+          keyboardDismissMode="interactive"
           keyboardShouldPersistTaps="handled">
           <ExpenseForm
             value={draft}

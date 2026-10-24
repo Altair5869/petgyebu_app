@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { router } from 'expo-router';
+import { Keyboard } from 'react-native';
 
 import { ApiError, RequestTimeoutError } from '@/api/client';
 import NewExpenseScreen from '@/app/expenses/new';
@@ -17,6 +18,15 @@ jest.mock('@/session/session-provider', () => ({
 jest.mock('expo-router', () => ({
   router: { back: jest.fn(), push: jest.fn() },
 }));
+
+// The native stack header sits above the screen; its height offsets the keyboard avoidance.
+jest.mock('expo-router/react-navigation', () => ({ useHeaderHeight: () => 116 }));
+// Render the avoider as a plain view that keeps its props, so tests can read the offset.
+jest.mock('react-native/Libraries/Components/Keyboard/KeyboardAvoidingView', () => {
+  const { createElement } = jest.requireActual('react');
+  const { View } = jest.requireActual('react-native');
+  return { __esModule: true, default: (props: object) => createElement(View, { ...props, testID: 'keyboard-avoiding' }) };
+});
 
 // The SwiftUI picker is native; render its value so tests can see it.
 jest.mock('@expo/ui/community/datetime-picker', () => {
@@ -211,4 +221,16 @@ test('a reused-key conflict shows the conflict copy', async () => {
 
   await screen.findByText('이미 저장된 기록과 내용이 달라요. 월별 통계에서 확인해 주세요.');
   expect(router.back).not.toHaveBeenCalled();
+});
+
+test('lifts the save footer by the header height so the keypad does not cover it', async () => {
+  await render(<NewExpenseScreen />);
+  expect(screen.getByTestId('keyboard-avoiding').props.keyboardVerticalOffset).toBe(116);
+});
+
+test('choosing a category closes the number pad, which has no close key', async () => {
+  const dismiss = jest.spyOn(Keyboard, 'dismiss');
+  await render(<NewExpenseScreen />);
+  await fireEvent.press(screen.getByRole('radio', { name: '카페' }));
+  expect(dismiss).toHaveBeenCalledTimes(1);
 });

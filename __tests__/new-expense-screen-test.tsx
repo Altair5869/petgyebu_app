@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { Keyboard } from 'react-native';
 
@@ -233,4 +233,19 @@ test('choosing a category closes the number pad, which has no close key', async 
   await render(<NewExpenseScreen />);
   await fireEvent.press(screen.getByRole('radio', { name: '카페' }));
   expect(dismiss).toHaveBeenCalledTimes(1);
+});
+
+test('an amount event from before a category tap keeps the chosen category', async () => {
+  await render(<NewExpenseScreen />);
+  await fillAmount('700');
+  // Hold the handler from before the tap, as a late native text event would still carry it.
+  const lateAmountChange = screen.getByLabelText('지출 금액').props.onChangeText as (t: string) => void;
+  await fireEvent.press(screen.getByRole('radio', { name: '식비' }));
+  await act(() => lateAmountChange('7000'));
+  await fireEvent.press(screen.getByRole('button', { name: '저장' }));
+
+  expect(mockApi.createExpense).toHaveBeenLastCalledWith(
+    expect.objectContaining({ amount: 7000, category: 'FOOD' }),
+    expect.any(String),
+  );
 });

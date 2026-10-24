@@ -83,9 +83,9 @@ export default function NewExpenseScreen() {
           keyboardShouldPersistTaps="handled">
           <ExpenseForm
             value={draft}
-            onChange={(next, field) => {
+            onChange={(update, field) => {
               clearError(field);
-              setDraft(next);
+              setDraft(update);
             }}
             fieldErrors={fieldErrors}
             minDay="2000-01-01"

@@ -22,7 +22,8 @@ export const EXPENSE_FIELDS: ExpenseField[] = ['amount', 'expenseDate', 'categor
 
 type Props = {
   value: ExpenseDraft;
-  onChange: (next: ExpenseDraft, field: ExpenseField) => void;
+  // Receives an update of the latest draft, so an event from an older render keeps the other fields.
+  onChange: (update: (draft: ExpenseDraft) => ExpenseDraft, field: ExpenseField) => void;
   fieldErrors: FieldErrors;
   minDay: string;
   allowCategoryClear: boolean;
@@ -42,7 +43,7 @@ export function ExpenseForm({ value, onChange, fieldErrors, minDay, allowCategor
             accessibilityLabel="지출 금액"
             keyboardType="number-pad"
             value={amountText}
-            onChangeText={(t) => onChange({ ...value, amountText: formatAmountInput(t) }, 'amount')}
+            onChangeText={(t) => onChange((d) => ({ ...d, amountText: formatAmountInput(t) }), 'amount')}
             placeholder="0"
             placeholderTextColor={colors.muted}
             selectionColor={colors.primary}
@@ -65,7 +66,7 @@ export function ExpenseForm({ value, onChange, fieldErrors, minDay, allowCategor
           maximumDate={seoulDayToDate(todayInSeoul())}
           timeZoneName="Asia/Seoul"
           locale="ko_KR"
-          onValueChange={(_, selected) => onChange({ ...value, day: dateToSeoulDay(selected) }, 'expenseDate')}
+          onValueChange={(_, selected) => onChange((d) => ({ ...d, day: dateToSeoulDay(selected) }), 'expenseDate')}
         />
         {fieldErrors.expenseDate && <Text style={styles.error}>{fieldErrors.expenseDate}</Text>}
       </View>
@@ -82,7 +83,7 @@ export function ExpenseForm({ value, onChange, fieldErrors, minDay, allowCategor
               onPress={() => {
                 // The number pad has no close key; picking a category ends the amount entry.
                 Keyboard.dismiss();
-                onChange({ ...value, category: category === c && allowCategoryClear ? null : c }, 'category');
+                onChange((d) => ({ ...d, category: d.category === c && allowCategoryClear ? null : c }), 'category');
               }}
               style={({ pressed }) => [styles.chip, category === c && styles.chipSelected, pressed && styles.pressed]}>
               <Text style={[styles.chipLabel, category === c && styles.chipLabelSelected]}>
@@ -99,7 +100,7 @@ export function ExpenseForm({ value, onChange, fieldErrors, minDay, allowCategor
         <TextInput
           accessibilityLabel="메모"
           value={memoText}
-          onChangeText={(t) => onChange({ ...value, memoText: t }, 'memo')}
+          onChangeText={(t) => onChange((d) => ({ ...d, memoText: t }), 'memo')}
           placeholder="선택"
           placeholderTextColor={colors.muted}
           selectionColor={colors.primary}

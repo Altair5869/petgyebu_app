@@ -35,6 +35,14 @@ const HOME = {
   budgetBalanceAmount: 300000,
 };
 
+test('DOG home offers a head-petting control while preserving budget information', async () => {
+  mockApi.getHome.mockResolvedValue({ ...HOME, petType: 'DOG' });
+  await render(<HomeScreen />);
+  await screen.findByLabelText('강아지, 안정');
+  screen.getByRole('button', { name: '강아지 쓰다듬기' });
+  screen.getByLabelText('300,000원 남았어요');
+});
+
 beforeEach(() => {
   jest.clearAllMocks();
   mockRefreshStage.mockResolvedValue(undefined);

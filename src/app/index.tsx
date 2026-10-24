@@ -6,8 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ApiError } from '@/api/client';
 import type { Home } from '@/api/types';
 import { BudgetGauge } from '@/components/budget-gauge';
-import { PetImage } from '@/components/pet-image';
-import { InteractiveCat } from '@/components/interactive-cat';
+import { InteractivePet } from '@/components/interactive-pet';
 import { CONNECTION_ERROR } from '@/lib/error-message';
 import { describeBalance, formatUsagePercent, formatWon } from '@/lib/money';
 import { monthTitle } from '@/lib/month';
@@ -94,9 +93,7 @@ export default function HomeScreen() {
         </View>
         <View style={styles.petSection}>
           <View>
-            {home.petType === 'CAT'
-              ? <InteractiveCat petState={home.petState} focused={focused} />
-              : <PetImage petType={home.petType} petState={home.petState} size="home" />}
+            <InteractivePet petType={home.petType} petState={home.petState} focused={focused} />
             <BudgetGauge
               petState={home.petState}
               size="home"

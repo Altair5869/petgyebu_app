@@ -2,24 +2,42 @@ import { Image, type ImageRef } from 'expo-image';
 import { useEffect, useState } from 'react';
 import { AccessibilityInfo, AppState, Platform, Pressable, StyleSheet, View } from 'react-native';
 
-import type { PetState } from '@/api/types';
+import type { PetState, PetType } from '@/api/types';
 import { PetImage } from '@/components/pet-image';
 import { CAT_FRAMES } from '@/lib/cat-frames';
-import { createCatInteraction, type CatPose, type CatReaction } from '@/lib/cat-interaction';
+import { DOG_FRAMES } from '@/lib/dog-frames';
+import { createPetInteraction, type PetPose, type PetReaction } from '@/lib/pet-interaction';
 
-const HEADS: Record<PetState, { left: number; top: number; width: number }> = {
-  STABLE: { left: 0.30, top: 0.12, width: 0.44 },
-  CAUTION: { left: 0.33, top: 0.15, width: 0.43 },
-  WARNING: { left: 0.27, top: 0.12, width: 0.45 },
-  BUDGET_REACHED: { left: 0.27, top: 0.12, width: 0.45 },
+const HEADS: Record<PetType, Record<PetState, { left: number; top: number; width: number }>> = {
+  CAT: {
+    STABLE: { left: 0.30, top: 0.12, width: 0.44 },
+    CAUTION: { left: 0.33, top: 0.15, width: 0.43 },
+    WARNING: { left: 0.27, top: 0.12, width: 0.45 },
+    BUDGET_REACHED: { left: 0.27, top: 0.12, width: 0.45 },
+  },
+  DOG: {
+    STABLE: { left: 0.32, top: 0.23, width: 0.40 },
+    CAUTION: { left: 0.39, top: 0.28, width: 0.38 },
+    WARNING: { left: 0.30, top: 0.25, width: 0.40 },
+    BUDGET_REACHED: { left: 0.30, top: 0.25, width: 0.40 },
+  },
 };
+const FRAMES = { CAT: CAT_FRAMES, DOG: DOG_FRAMES };
+type Props = { petType: PetType; petState: PetState; focused: boolean };
 
-export function InteractiveCat({ petState, focused }: { petState: PetState; focused: boolean }) {
-  const [reaction, setReaction] = useState<CatReaction>(null);
-  const [motion] = useState(() => createCatInteraction(setReaction));
+export function InteractivePet(props: Props) {
+  // Changing species cancels the old reaction and pending image decoding.
+  return <PetAnimation key={props.petType} {...props} />;
+}
+
+function PetAnimation({ petType, petState, focused }: Props) {
+  const id = petType === 'CAT' ? 'cat' : 'dog';
+  const name = petType === 'CAT' ? '고양이' : '강아지';
+  const [reaction, setReaction] = useState<PetReaction>(null);
+  const [motion] = useState(() => createPetInteraction(setReaction));
   const [reduced, setReduced] = useState(true);
   const [foreground, setForeground] = useState(AppState.currentState === 'active');
-  const [loaded, setLoaded] = useState<{ state: PetState; frames: Record<CatPose, ImageRef> }>();
+  const [loaded, setLoaded] = useState<{ state: PetState; frames: Record<PetPose, ImageRef> }>();
   const displayState = reaction?.state ?? petState;
   const pose = reaction?.pose ?? 'open';
   const ready = loaded?.state === displayState;
@@ -43,30 +61,30 @@ export function InteractiveCat({ petState, focused }: { petState: PetState; focu
 
   useEffect(() => {
     let alive = true;
-    const sources = CAT_FRAMES[displayState];
+    const sources = FRAMES[petType][displayState];
     Promise.all([sources.open, sources.half, sources.closed].map((source) => Image.loadAsync(source))).then(([open, half, closed]) => {
       if (alive) setLoaded({ state: displayState, frames: { open, half, closed } });
-    }).catch(() => { /* Keep the existing static cat if a frame fails to decode. */ });
+    }).catch(() => { /* Keep the existing static pet if a frame fails to decode. */ });
     return () => { alive = false; };
-  }, [displayState]);
+  }, [displayState, petType]);
 
   useEffect(() => {
     motion.update({ state: petState, enabled: focused && foreground && ready, reducedMotion: reduced });
   }, [motion, petState, focused, foreground, ready, reduced]);
   useEffect(() => () => motion.dispose(), [motion]);
 
-  const head = HEADS[displayState];
+  const head = HEADS[petType][displayState];
   return (
-    <View style={styles.art} testID="interactive-cat">
+    <View style={styles.art} testID={`interactive-${id}`}>
       {ready ? (
         <Image source={loaded.frames[pose]} contentFit="contain" transition={0} style={styles.art}
-          testID={`cat-frame-${displayState}-${pose}`} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" />
-      ) : <PetImage petType="CAT" petState={displayState} size="home" />}
+          testID={`${id}-frame-${displayState}-${pose}`} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" />
+      ) : <PetImage petType={petType} petState={displayState} size="home" />}
       <Pressable
-        testID="cat-head"
+        testID={`${id}-head`}
         accessibilityRole="button"
-        accessibilityLabel="고양이 쓰다듬기"
-        accessibilityHint="머리를 쓰다듬으면 잠깐 눈을 감아요"
+        accessibilityLabel={`${name} 쓰다듬기`}
+        accessibilityHint="머리를 쓰다듬으면 잠깐 편안한 눈매가 돼요"
         disabled={!ready || !focused || !foreground}
         hitSlop={8}
         style={[styles.head, { left: head.left * 155, top: head.top * 120, width: head.width * 155 }]}

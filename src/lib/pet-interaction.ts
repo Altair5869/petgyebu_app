@@ -1,11 +1,11 @@
 import type { PetState } from '@/api/types';
 
-export type CatPose = 'open' | 'half' | 'closed';
-export type CatReaction = { state: PetState; pose: CatPose } | null;
+export type PetPose = 'open' | 'half' | 'closed';
+export type PetReaction = { state: PetState; pose: PetPose } | null;
 type Options = { state: PetState; enabled: boolean; reducedMotion: boolean };
 
 // No budget writes: transient artwork holds its starting state; null uses the latest home state.
-export function createCatInteraction(publish: (frame: CatReaction) => void) {
+export function createPetInteraction(publish: (frame: PetReaction) => void) {
   let options: Options = { state: 'STABLE', enabled: false, reducedMotion: true };
   let reaction: { state: PetState; kind: 'blink' | 'pet' } | null = null;
   let timers: ReturnType<typeof setTimeout>[] = [];
@@ -13,7 +13,7 @@ export function createCatInteraction(publish: (frame: CatReaction) => void) {
   let suppressActivation = false;
   const later = (fn: () => void, ms: number) => { timers.push(setTimeout(fn, ms)); };
   const clear = () => { timers.forEach(clearTimeout); timers = []; clearTimeout(idle); };
-  const show = (pose: CatPose) => { if (reaction) publish({ state: reaction.state, pose }); };
+  const show = (pose: PetPose) => { if (reaction) publish({ state: reaction.state, pose }); };
 
   function schedule() {
     clearTimeout(idle);

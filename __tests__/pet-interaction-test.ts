@@ -1,4 +1,4 @@
-import { createCatInteraction } from '@/lib/cat-interaction';
+import { createPetInteraction } from '@/lib/pet-interaction';
 import type { PetState } from '@/api/types';
 
 beforeEach(() => { jest.useFakeTimers(); jest.spyOn(Math, 'random').mockReturnValue(0); });
@@ -6,7 +6,7 @@ afterEach(() => { jest.clearAllTimers(); jest.useRealTimers(); jest.restoreAllMo
 
 function setup(state: PetState = 'STABLE', reducedMotion = false) {
   const publish = jest.fn();
-  const motion = createCatInteraction(publish);
+  const motion = createPetInteraction(publish);
   motion.update({ state, reducedMotion, enabled: true });
   return { motion, publish };
 }

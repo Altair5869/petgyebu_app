@@ -19,10 +19,20 @@ GitHub Actions(`.github/workflows/ci.yml`)가 모든 push·PR에서 lint, typech
 - 안정·주의·경고는 4~7초 간격으로 눈 표정이 잠깐 바뀐다. 강아지의 안정 원본은 이미 웃는 눈이므로 편안한 눈매로 바뀌었다 돌아온다. 예산 도달에서는 자동 동작을 멈춘다.
 - 머리를 누르면 잠깐 눈을 감고, 놓으면 현재 예산 감정으로 돌아온다. 반응 중 예산이 바뀌면 종료 후 최신 상태를 표시한다. 볼 드래그는 아직 구현하지 않았다.
 - 동작 줄이기에서는 자동 깜빡임을 생략하고 정지된 감은 눈 반응만 표시한다. 화면 이탈·백그라운드·터치 취소 시 반응을 종료한다. Android 알림창 포커스 이벤트는 Android에서만 구독한다.
-- `assets/images/pets/cat-interaction/`, `dog-interaction/`에 각 펫의 네 감정 × 세 표정 PNG가 있다. 모두 744×576이며, 화면에 쓸 세 장을 먼저 디코딩한 뒤 고정 크기로 표시한다. 디코딩 실패 시 해당 펫의 기존 정지 이미지를 유지한다. 앱 실행 중 색 분석이나 Canvas 합성은 하지 않는다.
+- `assets/images/pets/cat-interaction/`, `dog-interaction/`에 각 펫의 네 감정 × 세 표정 PNG가 있다. 모두 **465×360 단일 파일**이며 @2x/@3x 변형은 없다. 홈의 155×120pt 표시 크기는 그대로다. 화면에 쓸 세 장을 먼저 디코딩하고, 디코딩 실패 시 해당 펫의 기존 정지 이미지를 유지한다. 앱 실행 중 색 분석이나 Canvas 합성은 하지 않는다.
 - PNG는 사용자가 확인한 미리보기 합성 결과다. 미리보기 원본과 서버(`output/cat-interaction-preview/`)는 저장소에 넣지 않고 로컬에만 둔다. 미리보기 서버를 실행한 뒤 `node scripts/export-cat-frames.cjs`로 다시 내보낼 수 있다. 설치된 Chrome의 헤드리스 모드와 일회성 임시 프로필을 사용하며, 다른 설치 경로는 `CHROME_BIN`으로 지정한다. 재생성 후에는 표정과 볼 경계를 다시 확인한다.
 - `src/components/interactive-pet.tsx`와 `src/lib/pet-interaction.ts`가 두 펫의 동작을 공유한다. 펫 종류를 변경하면 진행 중인 반응과 이미지 로딩을 취소한다. `pet-interaction-test.ts`, `interactive-pet-test.tsx`, `cat-frame-assets-test.cjs`, `dog-frame-assets-test.cjs`가 상태 복귀·접근성 설정·화면 이탈·디코딩 실패·프레임 정렬을 검사한다.
 - 실제 앱 확인: 테스트 백엔드에 연결된 고양이 계정에서 `maestro --device <UDID> test -e APP_URL=http://127.0.0.1:8081 .maestro/home/cat-interaction.yaml`. 이 시나리오는 지출·예산을 변경하지 않으며, 터치와 화면 이동·복귀를 확인한다. 반응의 자연스러움과 짧은 프레임 전환은 별도 화면 확인이 필요하다.
+
+### 프레임 축소와 강아지 눈 보정 (F-M02)
+
+- 두 export 스크립트는 로컬 미리보기의 744×576 합성 결과에 동일한 **area 리샘플링**을 적용해 465×360으로 저장한다. `scripts/resize-pet-frames.cjs`가 알파를 고려해 색을 평균하고, 상태별 원본의 투명도와 강아지 볼터치 픽셀을 고정한다. 파일 이름과 `require` 경로는 유지한다.
+- `du -sh assets/images/pets/*-interaction`: 고양이 **4.2M → 1.6M**, 강아지 **3.9M → 1.6M**. PNG 실제 바이트 합계는 8,512,829 → 3,308,661로 약 61.1% 감소했다. RGBA 픽셀 버퍼 계산값은 장당 1,714,176 → 669,600바이트다(기기 메모리 실측값 아님).
+- 강아지 안정·closed의 눈 선을 올려 볼터치와 분리했고, 주의·half의 끊긴 테두리와 흰 점을 정리하며 위쪽 눈꺼풀을 곡선으로 바꿨다. 경고·예산 도달·half의 베이지색 눈 위 얼룩을 제거했다.
+- 고양이 접근성 안내는 “머리를 쓰다듬으면 잠깐 눈을 감아요”, 강아지는 “머리를 쓰다듬으면 잠깐 편안한 눈매가 돼요”다.
+- 눈 밖 픽셀·실루엣·투명도·원본 볼터치 고정 검사를 유지한다. 필터 경계에는 출력 기준 1px 여유만 두며, 그 밖의 픽셀은 정확히 비교한다. 정지 그림과 프레임의 표시 크기·정렬 및 원본 대비 실루엣 경계를 테스트한다.
+- 확대 비교 파일은 로컬 `output/pet-frame-polish/`의 `dog-frame-comparison.png`, `dog-eye-comparison.png`, `dog-polish-before-after.png`, `cat-frame-comparison.png`에 있다. **output/은 커밋하지 않는다.**
+- **Claude Code QA 예정**: 이번 수정의 시뮬레이터·Maestro 확인은 실행하지 않았다. 아래 기록은 이전 상호작용 적용 당시의 확인 결과다.
 
 ### 강아지 적용 및 확인 (2026-10-24, F-M02)
 
@@ -31,7 +41,7 @@ GitHub Actions(`.github/workflows/ci.yml`)가 모든 push·PR에서 lint, typech
 - iPhone 17e / iOS 27.0, `bootTestRun`(8080), Metro(8082)에서 `.maestro/home/dog-interaction.yaml` 통과. 안정 상태 머리 탭·길게 누르기와 설정·지출 입력 화면 왕복 후 터치 재활성화를 확인했다. 테스트 후 펫을 원래 고양이로 복원했으며 예산·지출은 변경하지 않았다.
 - 네 상태의 정지 프레임은 확대해서 검토했다. **iOS 네 상태 전체의 움직임, Android, 실제 스크린리더·동작 줄이기 조작은 확인하지 않았다.**
 - 로컬 미리보기: `python3 output/dog-interaction-preview/serve-preview.py` → `http://127.0.0.1:8766/`. 상태 선택 후 ‘표정 프레임 재생’을 켜고 머리를 누른다. 원본·중간·감은 표정을 나란히 비교할 수 있다. 제작 PNG·프롬프트·미리보기는 기존 정책대로 `output/`에 로컬 보관한다.
-- PNG 재생성: 미리보기 서버 실행 후 `node scripts/export-dog-frames.cjs`. 내장 imagegen으로 만든 눈 소재를 사용하고, Chrome의 임시 프로필로 동일 Canvas 프레임을 내보낸다. 사용자 브라우저 프로필이나 추가 패키지는 사용하지 않는다.
+- PNG 재생성: 미리보기 서버 실행 후 `node scripts/export-dog-frames.cjs`. 내장 imagegen으로 만든 눈 소재를 사용하고, Chrome의 임시 프로필로 Canvas 합성 결과를 읽어 465×360으로 area 축소한다. 사용자 브라우저 프로필이나 추가 패키지는 사용하지 않는다.
 
 ### 이번 적용의 확인 결과 (2026-10-23)
 

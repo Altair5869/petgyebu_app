@@ -1,7 +1,7 @@
 import type { PetState } from '@/api/types';
 import type { PetPose } from '@/lib/pet-interaction';
 
-// Exact 744×576 Canvas exports from the approved standalone preview.
+// 465×360 area-resampled exports from the approved standalone preview.
 export const CAT_FRAMES: Record<PetState, Record<PetPose, number>> = {
   STABLE: {
     open: require('../../assets/images/pets/cat-interaction/cat-stable-open.png'),

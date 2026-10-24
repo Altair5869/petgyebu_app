@@ -33,6 +33,27 @@ describe.each(['CAT', 'DOG'] as const)('%s interaction', (petType) => {
   const id = petType.toLowerCase();
   const name = petType === 'CAT' ? '고양이' : '강아지';
 
+  test('announces the species-specific petting hint', async () => {
+    await render(<InteractivePet petType={petType} petState="STABLE" focused />);
+    expect(screen.getByRole('button', { name: `${name} 쓰다듬기` }).props.accessibilityHint).toBe(
+      petType === 'CAT' ? '머리를 쓰다듬으면 잠깐 눈을 감아요' : '머리를 쓰다듬으면 잠깐 편안한 눈매가 돼요',
+    );
+  });
+
+  test('static fallback and decoded frame keep the same home bounds', async () => {
+    let resolveFrame!: (value: never) => void;
+    // All three requests share the same pending decode in this test.
+    const pending = new Promise<never>((resolve) => { resolveFrame = resolve; });
+    jest.mocked(Image.loadAsync).mockReturnValue(pending);
+    await render(<InteractivePet petType={petType} petState="STABLE" focused />);
+    const fallback = StyleSheet.flatten(screen.getByTestId('pet-image', SEEN).props.style);
+    expect(fallback).toMatchObject({ width: 155, height: 120, alignSelf: 'center' });
+    await act(async () => resolveFrame({} as never));
+    const frame = await screen.findByTestId(`${id}-frame-STABLE-open`, SEEN);
+    expect(StyleSheet.flatten(frame.props.style)).toEqual(fallback);
+    expect(frame.props.contentFit).toBe('contain');
+  });
+
   test.each(['STABLE', 'CAUTION', 'WARNING', 'BUDGET_REACHED'] as const)('%s returns to its budget expression after petting', async (petState) => {
     await render(<InteractivePet petType={petType} petState={petState} focused />);
     await waitFor(() => expect(screen.getByTestId(`${id}-head`)).toBeEnabled());

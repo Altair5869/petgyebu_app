@@ -84,7 +84,7 @@ function PetAnimation({ petType, petState, focused }: Props) {
         testID={`${id}-head`}
         accessibilityRole="button"
         accessibilityLabel={`${name} 쓰다듬기`}
-        accessibilityHint="머리를 쓰다듬으면 잠깐 편안한 눈매가 돼요"
+        accessibilityHint={petType === 'CAT' ? '머리를 쓰다듬으면 잠깐 눈을 감아요' : '머리를 쓰다듬으면 잠깐 편안한 눈매가 돼요'}
         disabled={!ready || !focused || !foreground}
         hitSlop={8}
         style={[styles.head, { left: head.left * 155, top: head.top * 120, width: head.width * 155 }]}

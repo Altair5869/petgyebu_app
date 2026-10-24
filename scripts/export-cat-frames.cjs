@@ -4,6 +4,7 @@ const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { preparePetFrames } = require('./resize-pet-frames.cjs');
 const chrome = process.env.CHROME_BIN || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'petgyebu-frame-export-'));
 const destination = path.join(__dirname, '../assets/images/pets/cat-interaction');
@@ -17,14 +18,15 @@ try {
   if (!match) throw new Error('No exported frames. Check the local preview server and compositor.');
   const frames = JSON.parse(match[1]);
   if (Object.keys(frames).length !== 12) throw new Error('Expected four states × three frames.');
+  const prepared = preparePetFrames(frames, 'cat');
   fs.mkdirSync(destination, { recursive: true });
   for (const state of ['stable', 'caution', 'warning', 'budget-reached']) {
     for (const pose of ['open', 'half', 'closed']) {
       const name = `cat-${state}-${pose}.png`;
-      const png = Buffer.from(frames[name], 'base64');
-      if (png.readUInt32BE(16) !== 744 || png.readUInt32BE(20) !== 576) throw new Error(`Unexpected dimensions: ${name}`);
+      const png = prepared[name];
+      if (png.readUInt32BE(16) !== 465 || png.readUInt32BE(20) !== 360) throw new Error(`Unexpected dimensions: ${name}`);
       fs.writeFileSync(path.join(destination, name), png);
-      console.log(`${name}: ${png.length} bytes, 744×576`);
+      console.log(`${name}: ${png.length} bytes, 465×360`);
     }
   }
 } finally {

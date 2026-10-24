@@ -356,3 +356,13 @@ test('lifts the save footer by the header height so the keypad does not cover it
   await renderReady();
   expect(screen.getByTestId('keyboard-avoiding').props.keyboardVerticalOffset).toBe(116);
 });
+
+test('an amount event from before a category tap keeps the chosen category', async () => {
+  await renderReady();
+  const lateAmountChange = screen.getByLabelText('지출 금액').props.onChangeText as (t: string) => void;
+  await fireEvent.press(screen.getByRole('radio', { name: '식비' }));
+  await act(() => lateAmountChange('7000'));
+  await fireEvent.press(screen.getByRole('button', { name: '저장' }));
+
+  expect(mockApi.updateExpense).toHaveBeenCalledWith(7, { amount: 7000, category: 'FOOD' });
+});

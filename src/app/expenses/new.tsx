@@ -2,7 +2,7 @@ import { randomUUID } from 'expo-crypto';
 import { router } from 'expo-router';
 import { useHeaderHeight } from 'expo-router/react-navigation';
 import { useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiError } from '@/api/client';
@@ -14,6 +14,7 @@ import {
   type ExpenseField,
   type FieldErrors,
 } from '@/components/expense-form';
+import { useLastFieldScroll } from '@/hooks/use-last-field-scroll';
 import { SAVE_UNCONFIRMED, errorMessage } from '@/lib/error-message';
 import { parseMemo } from '@/lib/expense';
 import { parseAmountInput } from '@/lib/money';
@@ -25,6 +26,7 @@ export default function NewExpenseScreen() {
   const { api } = useSession();
   // The keyboard avoider measures itself from below the native header, so add the header back.
   const headerHeight = useHeaderHeight();
+  const { scrollRef, onScrollLayout, lastField } = useLastFieldScroll();
   const [draft, setDraft] = useState<ExpenseDraft>(() => ({
     amountText: '',
     day: todayInSeoul(),
@@ -73,10 +75,12 @@ export default function NewExpenseScreen() {
   return (
     <SafeAreaView edges={['bottom']} style={styles.safeArea}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior="padding"
         keyboardVerticalOffset={headerHeight}
         style={styles.flex}>
         <ScrollView
+          ref={scrollRef}
+          onLayout={onScrollLayout}
           contentInsetAdjustmentBehavior="automatic"
           contentContainerStyle={styles.form}
           keyboardDismissMode="interactive"
@@ -90,6 +94,7 @@ export default function NewExpenseScreen() {
             fieldErrors={fieldErrors}
             minDay="2000-01-01"
             allowCategoryClear
+            memoFocus={lastField}
           />
         </ScrollView>
         <View style={styles.footer}>

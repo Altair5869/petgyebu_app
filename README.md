@@ -89,7 +89,7 @@ maestro test -e APP_URL=http://127.0.0.1:8081 .maestro/onboarding/relaunch-home.
 - 앱이 `localhost`로 Metro·백엔드에 닿도록 `adb reverse tcp:8081 tcp:8081 && adb reverse tcp:8080 tcp:8080`을 실행한다(에뮬레이터를 다시 켜면 다시 실행).
 - 새 계정으로 처음부터 확인하려면 `adb shell pm clear com.altair.petgyebu`로 앱 데이터를 지운 뒤 `adb reverse`를 다시 실행한다.
 - 실행: `maestro --device emulator-5554 test .maestro/onboarding/first-login.yaml`
-- 헤더 뒤로 가기 버튼 이름은 iOS `뒤로`, 안드로이드 `Navigate up`이라 시나리오는 `"뒤로|Navigate up"`으로 누른다. 날짜 선택은 `subflows/pick-previous-month-15.yaml`이 플랫폼별로 나눠 처리한다.
+- 헤더 뒤로 가기 버튼 이름은 iOS `뒤로`, 안드로이드 `Navigate up`이라 시나리오는 `"뒤로|Navigate up"`으로 누른다. 날짜 선택은 `subflows/pick-previous-month-15.yaml`이 플랫폼별로 나눠 처리한다. 안드로이드 날짜 대화상자 버튼("Change to previous month", "OK")은 영어 기준이라 에뮬레이터 언어를 영어로 둔다.
 - 안드로이드에서 Maestro가 한글을 입력하면 입력 포커스를 잃으므로 시나리오의 메모 입력은 영문으로 쓴다.
 
 **시나리오와 준비 상태**

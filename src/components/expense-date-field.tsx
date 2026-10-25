@@ -18,21 +18,29 @@ function fullDayLabel(day: string): string {
   return `${year}년 ${month}월 ${date}일`;
 }
 
+// The Android dialog shows and returns the device's local calendar day, so it gets local noon of
+// the Seoul day instead of Seoul noon (which is the previous local day west of UTC-3).
+function dayToLocalDate(day: string): Date {
+  const [year, month, date] = day.split('-').map(Number);
+  return new Date(year, month - 1, date, 12);
+}
+
+function localDateToDay(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
 export function ExpenseDateField({ day, minDay, maxDay, onChange, os = Platform.OS }: Props) {
   const [open, setOpen] = useState(false);
-  const pickerProps = {
-    value: seoulDayToDate(day),
-    mode: 'date',
-    minimumDate: seoulDayToDate(minDay),
-    maximumDate: seoulDayToDate(maxDay),
-    timeZoneName: 'Asia/Seoul',
-    locale: 'ko_KR',
-  } as const;
-
   if (os !== 'android') {
     return (
       <DatePicker
-        {...pickerProps}
+        value={seoulDayToDate(day)}
+        mode="date"
+        minimumDate={seoulDayToDate(minDay)}
+        maximumDate={seoulDayToDate(maxDay)}
+        timeZoneName="Asia/Seoul"
+        locale="ko_KR"
         testID="expense-date"
         display="compact"
         onValueChange={(_, selected) => onChange(dateToSeoulDay(selected))}
@@ -53,11 +61,14 @@ export function ExpenseDateField({ day, minDay, maxDay, onChange, os = Platform.
       </Pressable>
       {open && (
         <DatePicker
-          {...pickerProps}
+          value={dayToLocalDate(day)}
+          mode="date"
+          minimumDate={dayToLocalDate(minDay)}
+          maximumDate={dayToLocalDate(maxDay)}
           presentation="dialog"
           onValueChange={(_, selected) => {
             setOpen(false);
-            onChange(dateToSeoulDay(selected));
+            onChange(localDateToDay(selected));
           }}
           onDismiss={() => setOpen(false)}
         />

@@ -16,7 +16,10 @@ env:
 - extendedWaitUntil: { visible: "기타, .*월 .*일, 9,000원", timeout: 20000 }
 - tapOn: "기타, .*월 .*일, 9,000원"
 - extendedWaitUntil: { visible: "삭제", timeout: 20000 }
-- tapOn: "지출 금액"
+# Tap the right end so the cursor follows the filled amount; a centre tap on Android lands mid-number and eraseText leaves digits behind.
+- tapOn:
+    text: "지출 금액"
+    point: "95%,50%"
 - eraseText: 10
 - inputText: "8000"
 - waitForAnimationToEnd

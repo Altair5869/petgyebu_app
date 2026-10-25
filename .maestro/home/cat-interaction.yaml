@@ -17,11 +17,11 @@ env:
 - takeScreenshot: cat-home-after-petting
 - tapOn: "설정"
 - extendedWaitUntil: { visible: ".*월 예산", timeout: 20000 }
-- tapOn: "뒤로"
+- tapOn: "뒤로|Navigate up"
 - extendedWaitUntil: { visible: { id: "cat-head", enabled: true }, timeout: 20000 }
 - tapOn: { id: "cat-head" }
 - tapOn: "지출 기록하기"
 - extendedWaitUntil: { visible: "금액을 입력해 주세요", timeout: 20000 }
-- tapOn: "뒤로"
+- tapOn: "뒤로|Navigate up"
 - extendedWaitUntil: { visible: { id: "cat-head", enabled: true }, timeout: 20000 }
 - takeScreenshot: cat-home-after-return

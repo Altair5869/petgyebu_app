@@ -1,0 +1,28 @@
+# On the expense edit screen, change the date to the 15th of the previous month.
+# iOS: the inline picker, by its accessibility names (simulator language English); closed by tapping the header.
+# Android: the date button opens a Material dialog, confirmed with OK.
+appId: com.altair.petgyebu
+---
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn: { text: "20.*\\. .*\\. .*\\." }
+      - waitForAnimationToEnd
+      - tapOn: "Previous Month"
+      - waitForAnimationToEnd
+      - tapOn: "15"
+      - waitForAnimationToEnd
+      - tapOn: { point: "50%,10%" }
+      - waitForAnimationToEnd
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn: "날짜, .*"
+      - extendedWaitUntil: { visible: "Change to previous month", timeout: 20000 }
+      - tapOn: "Change to previous month"
+      - waitForAnimationToEnd
+      - tapOn: ".*, .* 15, 20.*"
+      - tapOn: "OK"
+      - waitForAnimationToEnd

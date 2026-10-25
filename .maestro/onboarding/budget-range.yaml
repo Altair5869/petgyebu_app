@@ -4,7 +4,10 @@ env:
   APP_URL: http://127.0.0.1:8081
 ---
 - assertVisible: ".*월 예산"
-- tapOn: "예산 금액"
+# Tap the right end so the cursor follows the filled amount; a centre tap on Android lands mid-number and eraseText leaves digits behind.
+- tapOn:
+    text: "예산 금액"
+    point: "95%,50%"
 - eraseText: 20
 - inputText: "0"
 - assertVisible: "1원부터 1억 원까지 입력할 수 있어요"

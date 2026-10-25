@@ -13,7 +13,8 @@ env:
 - tapOn: "카페"
 # The label and the input are both named "메모"; tap the input's placeholder.
 - tapOn: "선택"
-- inputText: "라떼"
+# ASCII text: Maestro on Android drops focus while typing Hangul.
+- inputText: "latte"
 - waitForAnimationToEnd
 - tapOn: "저장"
 - extendedWaitUntil: { visible: "288,000원 남았어요", timeout: 20000 }
@@ -37,7 +38,7 @@ env:
 # Each row is one accessible element labelled "{title}, {subtitle}, {amount}".
 # The summary cells wrap onto two rows, so the list starts below the first screen.
 - scrollUntilVisible:
-    element: "라떼, .*월 .*일 · 카페, 12,000원"
+    element: "latte, .*월 .*일 · 카페, 12,000원"
     direction: DOWN
     timeout: 20000
 - assertVisible: "기타, .*월 .*일, 5,000원"

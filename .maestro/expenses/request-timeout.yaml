@@ -5,7 +5,8 @@ appId: com.altair.petgyebu
 - tapOn: "월별 통계"
 - extendedWaitUntil: { visible: "서버에 연결할 수 없어요. 다시 시도해 주세요.", timeout: 20000 }
 - assertVisible: "다시 시도"
-- tapOn: "뒤로"
+- tapOn: "뒤로|Navigate up"
+- waitForAnimationToEnd
 - tapOn: "지출 기록하기"
 - extendedWaitUntil: { visible: "금액을 입력해 주세요", timeout: 20000 }
 - tapOn: "지출 금액"

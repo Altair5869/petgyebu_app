@@ -1,10 +1,10 @@
-import DatePicker from '@expo/ui/community/datetime-picker';
 import { Keyboard, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import type { ExpenseCategory } from '@/api/types';
+import { ExpenseDateField } from '@/components/expense-date-field';
 import { CATEGORIES, CATEGORY_LABELS, parseMemo } from '@/lib/expense';
 import { formatAmountInput, parseAmountInput } from '@/lib/money';
-import { dateToSeoulDay, seoulDayToDate, todayInSeoul } from '@/lib/month';
+import { todayInSeoul } from '@/lib/month';
 import { colors, fonts } from '@/theme';
 
 export type ExpenseDraft = {
@@ -27,9 +27,10 @@ type Props = {
   fieldErrors: FieldErrors;
   minDay: string;
   allowCategoryClear: boolean;
+  memoFocus?: { onFocus: () => void; onBlur: () => void };
 };
 
-export function ExpenseForm({ value, onChange, fieldErrors, minDay, allowCategoryClear }: Props) {
+export function ExpenseForm({ value, onChange, fieldErrors, minDay, allowCategoryClear, memoFocus }: Props) {
   const { amountText, day, category, memoText } = value;
   const amount = parseAmountInput(amountText, '금액을 입력해 주세요');
   const memo = parseMemo(memoText);
@@ -57,16 +58,11 @@ export function ExpenseForm({ value, onChange, fieldErrors, minDay, allowCategor
 
       <View style={styles.field}>
         <Text style={styles.label}>날짜</Text>
-        <DatePicker
-          testID="expense-date"
-          value={seoulDayToDate(day)}
-          mode="date"
-          display="compact"
-          minimumDate={seoulDayToDate(minDay)}
-          maximumDate={seoulDayToDate(todayInSeoul())}
-          timeZoneName="Asia/Seoul"
-          locale="ko_KR"
-          onValueChange={(_, selected) => onChange((d) => ({ ...d, day: dateToSeoulDay(selected) }), 'expenseDate')}
+        <ExpenseDateField
+          day={day}
+          minDay={minDay}
+          maxDay={todayInSeoul()}
+          onChange={(selected) => onChange((d) => ({ ...d, day: selected }), 'expenseDate')}
         />
         {fieldErrors.expenseDate && <Text style={styles.error}>{fieldErrors.expenseDate}</Text>}
       </View>
@@ -101,6 +97,8 @@ export function ExpenseForm({ value, onChange, fieldErrors, minDay, allowCategor
           accessibilityLabel="메모"
           value={memoText}
           onChangeText={(t) => onChange((d) => ({ ...d, memoText: t }), 'memo')}
+          onFocus={memoFocus?.onFocus}
+          onBlur={memoFocus?.onBlur}
           placeholder="선택"
           placeholderTextColor={colors.muted}
           selectionColor={colors.primary}

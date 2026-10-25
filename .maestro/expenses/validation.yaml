@@ -14,6 +14,7 @@ env:
 - tapOn: "식비"
 # The label and the input are both named "메모"; tap the input's placeholder.
 - tapOn: "선택"
-- inputText: "가나다라마바사아자차가나다라마바사아자차가나다라마바사아자차가나다라마바사아자차가나다라마바사아자차가나다라마바사아자차가나다라마바사아자차가나다라마바사아자차가나다라마바사아자차가나다라마바사아자차가나다라마바사아자차가"
+# ASCII text: Maestro on Android drops focus while typing Hangul.
+- inputText: "abcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijk"
 - assertVisible: "메모는 100자까지 입력할 수 있어요"
 - assertVisible: { text: "저장", enabled: false }

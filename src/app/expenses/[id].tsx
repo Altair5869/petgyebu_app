@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useHeaderHeight } from 'expo-router/react-navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiError } from '@/api/client';
@@ -15,6 +15,7 @@ import {
   type FieldErrors,
 } from '@/components/expense-form';
 import { LoadingView, MessageView } from '@/components/message-view';
+import { useLastFieldScroll } from '@/hooks/use-last-field-scroll';
 import { CONNECTION_ERROR, DELETE_UNCONFIRMED, UPDATE_UNCONFIRMED, errorMessage } from '@/lib/error-message';
 import { expenseChanges, parseMemo } from '@/lib/expense';
 import { formatAmountInput, parseAmountInput } from '@/lib/money';
@@ -33,6 +34,7 @@ export default function EditExpenseScreen() {
   const { api } = useSession();
   // The keyboard avoider measures itself from below the native header, so add the header back.
   const headerHeight = useHeaderHeight();
+  const { scrollRef, onScrollLayout, onContentSizeChange, lastField } = useLastFieldScroll();
   const id = Number(useLocalSearchParams<{ id: string }>().id);
   const [screen, setScreen] = useState<Screen>({ status: 'loading' });
   const [draft, setDraft] = useState<ExpenseDraft | null>(null);
@@ -143,10 +145,13 @@ export default function EditExpenseScreen() {
   return (
     <SafeAreaView edges={['bottom']} style={styles.safeArea}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior="padding"
         keyboardVerticalOffset={headerHeight}
         style={styles.flex}>
         <ScrollView
+          ref={scrollRef}
+          onLayout={onScrollLayout}
+          onContentSizeChange={onContentSizeChange}
           contentInsetAdjustmentBehavior="automatic"
           contentContainerStyle={styles.form}
           keyboardDismissMode="interactive"
@@ -160,6 +165,7 @@ export default function EditExpenseScreen() {
             fieldErrors={fieldErrors}
             minDay="2000-01-01"
             allowCategoryClear={false}
+            memoFocus={lastField}
           />
         </ScrollView>
         <View style={styles.footer}>

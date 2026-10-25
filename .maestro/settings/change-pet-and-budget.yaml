@@ -19,7 +19,10 @@ env:
 - extendedWaitUntil: { visible: "예산 금액", timeout: 20000 }
 # Wait for the push animation before focusing the field.
 - waitForAnimationToEnd
-- tapOn: "예산 금액"
+# Tap the right end so the cursor follows the filled amount; a centre tap on Android lands mid-number and eraseText leaves digits behind.
+- tapOn:
+    text: "예산 금액"
+    point: "95%,50%"
 - waitForAnimationToEnd
 - eraseText: 20
 - inputText: "450000"
@@ -27,6 +30,6 @@ env:
 - waitForAnimationToEnd
 - tapOn: "저장"
 - extendedWaitUntil: { visible: "450,000원", timeout: 20000 }
-- tapOn: "뒤로"
+- tapOn: "뒤로|Navigate up"
 - extendedWaitUntil: { visible: "강아지, 안정", timeout: 20000 }
 - assertVisible: "450,000원 남았어요"

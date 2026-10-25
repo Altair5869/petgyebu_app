@@ -1,5 +1,5 @@
 # 지난달 지출 수정 → 지난달 통계로 복귀. 준비: first-login 직후 + README "지난달 지출 넣기"(지난달 지출 1건: 금액 7,000원, 메모 'old').
-# 후반부는 이번 달 지출의 날짜를 날짜 선택기로 지난달 15일로 바꾼다(선택기의 접근성 이름으로 탭; 닫기만 헤더 좌표 탭).
+# 후반부는 이번 달 지출의 날짜를 날짜 선택기로 지난달 15일로 바꾼다(subflows/pick-previous-month-15.yaml, iOS·Android 분기).
 appId: com.altair.petgyebu
 env:
   APP_URL: http://127.0.0.1:8081
@@ -12,7 +12,10 @@ env:
 - extendedWaitUntil: { visible: "old, .*월 .*일 · 기타, 7,000원", timeout: 20000 }
 - tapOn: "old, .*월 .*일 · 기타, 7,000원"
 - extendedWaitUntil: { visible: "삭제", timeout: 20000 }
-- tapOn: "지출 금액"
+# Tap the right end so the cursor follows the filled amount; a centre tap on Android lands mid-number and eraseText leaves digits behind.
+- tapOn:
+    text: "지출 금액"
+    point: "95%,50%"
 - eraseText: 10
 - inputText: "9000"
 - waitForAnimationToEnd
@@ -23,7 +26,7 @@ env:
 - assertVisible: "9,000원"
 - assertNotVisible: "지출 기록하기"
 # 뒤로 한 번이면 홈
-- tapOn: "뒤로"
+- tapOn: "뒤로|Navigate up"
 - extendedWaitUntil: { visible: "고양이, 안정", timeout: 20000 }
 
 # 이번 달 지출 기록 → 홈 잔액 확인
@@ -43,15 +46,7 @@ env:
 - extendedWaitUntil: { visible: "mv, .*월 .*일 · 식비, 3,000원", timeout: 20000 }
 - tapOn: "mv, .*월 .*일 · 식비, 3,000원"
 - extendedWaitUntil: { visible: "삭제", timeout: 20000 }
-- tapOn: { text: "20.*\\. .*\\. .*\\." }
-- waitForAnimationToEnd
-- tapOn: "Previous Month"
-- waitForAnimationToEnd
-- tapOn: "15"
-- waitForAnimationToEnd
-# 선택기가 열린 채라 헤더 제목 영역을 눌러 닫는다
-- tapOn: { point: "50%,10%" }
-- waitForAnimationToEnd
+- runFlow: ../subflows/pick-previous-month-15.yaml
 - tapOn: "저장"
 - extendedWaitUntil: { visible: "mv, .*월 .*일 · 식비, 3,000원", timeout: 20000 }
 - assertVisible: "old, .*월 .*일 · 기타, 9,000원"
@@ -68,6 +63,9 @@ env:
 - extendedWaitUntil: { visible: "금액을 입력해 주세요", timeout: 20000 }
 - tapOn: "지출 금액"
 - inputText: "1000"
+# With no category tap the number pad stays open and hides the memo field on Android.
+- scrollUntilVisible:
+    element: "선택"
 - tapOn: "선택"
 - inputText: "mv2"
 - waitForAnimationToEnd
@@ -75,19 +73,12 @@ env:
 - extendedWaitUntil: { visible: "mv2, .*월 .*일.*, 1,000원", timeout: 20000 }
 - tapOn: "mv2, .*월 .*일.*, 1,000원"
 - extendedWaitUntil: { visible: "삭제", timeout: 20000 }
-- tapOn: { text: "20.*\\. .*\\. .*\\." }
-- waitForAnimationToEnd
-- tapOn: "Previous Month"
-- waitForAnimationToEnd
-- tapOn: "15"
-- waitForAnimationToEnd
-- tapOn: { point: "50%,10%" }
-- waitForAnimationToEnd
+- runFlow: ../subflows/pick-previous-month-15.yaml
 - tapOn: "저장"
 - extendedWaitUntil: { visible: "mv2, .*월 .*일.*, 1,000원", timeout: 20000 }
 - assertVisible: "13,000원"
 - assertVisible: "3건"
 - assertNotVisible: "지출 기록하기"
 # 뒤로 한 번이면 홈, 잔액 증가
-- tapOn: "뒤로"
+- tapOn: "뒤로|Navigate up"
 - extendedWaitUntil: { visible: "300,000원 남았어요", timeout: 20000 }

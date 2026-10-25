@@ -34,7 +34,7 @@ export default function EditExpenseScreen() {
   const { api } = useSession();
   // The keyboard avoider measures itself from below the native header, so add the header back.
   const headerHeight = useHeaderHeight();
-  const { scrollRef, onScrollLayout, lastField } = useLastFieldScroll();
+  const { scrollRef, onScrollLayout, onContentSizeChange, lastField } = useLastFieldScroll();
   const id = Number(useLocalSearchParams<{ id: string }>().id);
   const [screen, setScreen] = useState<Screen>({ status: 'loading' });
   const [draft, setDraft] = useState<ExpenseDraft | null>(null);
@@ -151,6 +151,7 @@ export default function EditExpenseScreen() {
         <ScrollView
           ref={scrollRef}
           onLayout={onScrollLayout}
+          onContentSizeChange={onContentSizeChange}
           contentInsetAdjustmentBehavior="automatic"
           contentContainerStyle={styles.form}
           keyboardDismissMode="interactive"

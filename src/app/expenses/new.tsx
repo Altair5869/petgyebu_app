@@ -26,7 +26,7 @@ export default function NewExpenseScreen() {
   const { api } = useSession();
   // The keyboard avoider measures itself from below the native header, so add the header back.
   const headerHeight = useHeaderHeight();
-  const { scrollRef, onScrollLayout, lastField } = useLastFieldScroll();
+  const { scrollRef, onScrollLayout, onContentSizeChange, lastField } = useLastFieldScroll();
   const [draft, setDraft] = useState<ExpenseDraft>(() => ({
     amountText: '',
     day: todayInSeoul(),
@@ -81,6 +81,7 @@ export default function NewExpenseScreen() {
         <ScrollView
           ref={scrollRef}
           onLayout={onScrollLayout}
+          onContentSizeChange={onContentSizeChange}
           contentInsetAdjustmentBehavior="automatic"
           contentContainerStyle={styles.form}
           keyboardDismissMode="interactive"

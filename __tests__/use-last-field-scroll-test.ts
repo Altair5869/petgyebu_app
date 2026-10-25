@@ -22,6 +22,14 @@ describe('on Android', () => {
     expect(scrollToEnd).toHaveBeenCalledTimes(1);
   });
 
+  test('scrolls to the end when a message below the last field grows the content', async () => {
+    const { result, scrollToEnd } = await setup('android', true);
+    await act(() => result.current.lastField.onFocus());
+    scrollToEnd.mockClear();
+    await act(() => result.current.onContentSizeChange());
+    expect(scrollToEnd).toHaveBeenCalledTimes(1);
+  });
+
   test('scrolls right away when the keyboard is already open on focus', async () => {
     const { result, scrollToEnd } = await setup('android', true);
     await act(() => result.current.lastField.onFocus());

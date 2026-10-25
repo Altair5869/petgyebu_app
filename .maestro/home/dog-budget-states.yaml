@@ -18,14 +18,17 @@ env:
 - tapOn: "변경"
 - extendedWaitUntil: { visible: "예산 금액", timeout: 20000 }
 - waitForAnimationToEnd
-- tapOn: "예산 금액"
+# Tap the right end so the cursor follows the filled amount; a centre tap on Android lands mid-number and eraseText leaves digits behind.
+- tapOn:
+    text: "예산 금액"
+    point: "95%,50%"
 - waitForAnimationToEnd
 - eraseText: 20
 - inputText: "1000000"
 - waitForAnimationToEnd
 - tapOn: "저장"
 - extendedWaitUntil: { visible: "카카오로 로그인됨", timeout: 20000 }
-- tapOn: "뒤로"
+- tapOn: "뒤로|Navigate up"
 - extendedWaitUntil: { visible: "690,000원 남았어요", timeout: 20000 }
 - assertVisible: "강아지, 안정"
 - assertVisible: "사용률 31%"
@@ -36,14 +39,16 @@ env:
 - tapOn: "변경"
 - extendedWaitUntil: { visible: "예산 금액", timeout: 20000 }
 - waitForAnimationToEnd
-- tapOn: "예산 금액"
+- tapOn:
+    text: "예산 금액"
+    point: "95%,50%"
 - waitForAnimationToEnd
 - eraseText: 20
 - inputText: "620000"
 - waitForAnimationToEnd
 - tapOn: "저장"
 - extendedWaitUntil: { visible: "카카오로 로그인됨", timeout: 20000 }
-- tapOn: "뒤로"
+- tapOn: "뒤로|Navigate up"
 - extendedWaitUntil: { visible: "310,000원 남았어요", timeout: 20000 }
 - assertVisible: "강아지, 주의"
 - assertVisible: "사용률 50%"
@@ -54,14 +59,16 @@ env:
 - tapOn: "변경"
 - extendedWaitUntil: { visible: "예산 금액", timeout: 20000 }
 - waitForAnimationToEnd
-- tapOn: "예산 금액"
+- tapOn:
+    text: "예산 금액"
+    point: "95%,50%"
 - waitForAnimationToEnd
 - eraseText: 20
 - inputText: "387500"
 - waitForAnimationToEnd
 - tapOn: "저장"
 - extendedWaitUntil: { visible: "카카오로 로그인됨", timeout: 20000 }
-- tapOn: "뒤로"
+- tapOn: "뒤로|Navigate up"
 - extendedWaitUntil: { visible: "77,500원 남았어요", timeout: 20000 }
 - assertVisible: "강아지, 경고"
 - assertVisible: "사용률 80%"
@@ -72,14 +79,16 @@ env:
 - tapOn: "변경"
 - extendedWaitUntil: { visible: "예산 금액", timeout: 20000 }
 - waitForAnimationToEnd
-- tapOn: "예산 금액"
+- tapOn:
+    text: "예산 금액"
+    point: "95%,50%"
 - waitForAnimationToEnd
 - eraseText: 20
 - inputText: "310000"
 - waitForAnimationToEnd
 - tapOn: "저장"
 - extendedWaitUntil: { visible: "카카오로 로그인됨", timeout: 20000 }
-- tapOn: "뒤로"
+- tapOn: "뒤로|Navigate up"
 - extendedWaitUntil: { visible: "예산을 모두 사용했어요, 남은 예산 0원", timeout: 20000 }
 - assertVisible: "강아지, 예산 도달"
 - assertVisible: "사용률 100%"
@@ -90,14 +99,16 @@ env:
 - tapOn: "변경"
 - extendedWaitUntil: { visible: "예산 금액", timeout: 20000 }
 - waitForAnimationToEnd
-- tapOn: "예산 금액"
+- tapOn:
+    text: "예산 금액"
+    point: "95%,50%"
 - waitForAnimationToEnd
 - eraseText: 20
 - inputText: "300000"
 - waitForAnimationToEnd
 - tapOn: "저장"
 - extendedWaitUntil: { visible: "카카오로 로그인됨", timeout: 20000 }
-- tapOn: "뒤로"
+- tapOn: "뒤로|Navigate up"
 - extendedWaitUntil: { visible: "10,000원 초과했어요", timeout: 20000 }
 - assertVisible: "강아지, 예산 도달"
 - assertVisible: "사용률 103.3%"
@@ -108,14 +119,16 @@ env:
 - tapOn: "변경"
 - extendedWaitUntil: { visible: "예산 금액", timeout: 20000 }
 - waitForAnimationToEnd
-- tapOn: "예산 금액"
+- tapOn:
+    text: "예산 금액"
+    point: "95%,50%"
 - waitForAnimationToEnd
 - eraseText: 20
 - inputText: "100000000"
 - waitForAnimationToEnd
 - tapOn: "저장"
 - extendedWaitUntil: { visible: "카카오로 로그인됨", timeout: 20000 }
-- tapOn: "뒤로"
+- tapOn: "뒤로|Navigate up"
 - extendedWaitUntil: { visible: "99,690,000원 남았어요", timeout: 20000 }
 - assertVisible: "강아지, 안정"
 - assertVisible: "사용률 0.3%"

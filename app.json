@@ -37,6 +37,10 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
+      ],
+      [
+        "./plugins/with-android-app-name.js",
+        "펫계부"
       ]
     ],
     "experiments": {

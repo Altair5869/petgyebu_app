@@ -2,7 +2,7 @@
   "expo": {
     "name": "petgyebu_app",
     "slug": "petgyebu_app",
-    "version": "1.0.0",
+    "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "petgyebuapp",
@@ -15,6 +15,7 @@
       }
     },
     "android": {
+      "package": "com.altair.petgyebu",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

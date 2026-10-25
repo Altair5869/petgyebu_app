@@ -5,7 +5,7 @@ import {
   unlink as kakaoUnlink,
 } from '@react-native-seoul/kakao-login';
 
-import { getSocialCredential, signOutSocial, unlinkSocial } from '@/session/social-credential';
+import { getSocialCredential, hasGoogleClientIds, signOutSocial, unlinkSocial } from '@/session/social-credential';
 import { SocialLoginCancelledError, SocialLoginUnavailableError } from '@/session/social-login-errors';
 
 jest.mock('@react-native-seoul/kakao-login', () => ({ login: jest.fn(), logout: jest.fn(), unlink: jest.fn() }));
@@ -114,6 +114,35 @@ describe('without login keys', () => {
     );
     expect(google.GoogleSignin.signIn).not.toHaveBeenCalled();
   });
+});
+
+test.each(['ios', 'android'])('has the Google client ids on %s when both are set', (os) => {
+  expect(hasGoogleClientIds(os)).toBe(true);
+});
+
+describe('with only the Google web client id', () => {
+  beforeEach(() => {
+    jest.resetModules();
+    jest.doMock('@/config', () => ({ devLoginId: null, kakaoNativeAppKey: null, googleIosClientId: null, googleWebClientId: 'web-client' }));
+  });
+  afterEach(() => jest.dontMock('@/config'));
+
+  // Android signs in with the web client id alone; only iOS needs its own client id.
+  test.each([
+    ['android', true],
+    ['ios', false],
+  ])('on %s reports %p', (os, expected) => {
+    const mod = require('@/session/social-credential') as typeof import('@/session/social-credential');
+    expect(mod.hasGoogleClientIds(os)).toBe(expected);
+  });
+});
+
+test.each(['ios', 'android'])('has no Google client ids on %s without the web client id', (os) => {
+  jest.resetModules();
+  jest.doMock('@/config', () => ({ devLoginId: null, kakaoNativeAppKey: null, googleIosClientId: 'ios-client', googleWebClientId: null }));
+  const mod = require('@/session/social-credential') as typeof import('@/session/social-credential');
+  expect(mod.hasGoogleClientIds(os)).toBe(false);
+  jest.dontMock('@/config');
 });
 
 describe.each([

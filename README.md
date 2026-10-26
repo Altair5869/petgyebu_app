@@ -56,10 +56,12 @@ GitHub Actions(`.github/workflows/ci.yml`)가 모든 push·PR에서 lint, typech
 
 **기기**: 기본은 iOS 시뮬레이터다. 카카오·구글 SDK 같은 네이티브 모듈을 쓰므로 Expo Go 대신 개발용 앱(Expo development build)을 쓴다. `npm run ios`(`npx expo run:ios`)는 처음 한 번, 또는 네이티브 의존성이 바뀌었을 때만 실행해 앱을 설치한다(번들 ID `com.altair.petgyebu`). 평소에는 `npx expo start --clear`로 Metro만 띄우고 개발용 앱에서 연다. 기기별 API 주소는 `.env.local`의 `EXPO_PUBLIC_API_BASE_URL`에 넣는다.
 
+**Android 에뮬레이터**: Android SDK(`ANDROID_HOME`)와 JDK 17이 필요하다. `npx expo prebuild --platform android --clean` 후 `JAVA_HOME=<JDK 17> npx expo run:android`로 설치한다(패키지 `com.altair.petgyebu`). `adb reverse tcp:8080 tcp:8080`과 `adb reverse tcp:8081 tcp:8081`을 걸면 iOS와 같은 `localhost` 주소를 그대로 쓸 수 있다. 에뮬레이터를 다시 켜면 `adb reverse`도 다시 건다.
+
 | 기기 | `EXPO_PUBLIC_API_BASE_URL` |
 | --- | --- |
 | iOS 시뮬레이터 | `http://localhost:8080/api/v1` |
-| Android 에뮬레이터 | `http://10.0.2.2:8080/api/v1` |
+| Android 에뮬레이터 | `http://10.0.2.2:8080/api/v1`, 또는 `adb reverse tcp:8080 tcp:8080` 후 `http://localhost:8080/api/v1` |
 | 실제 기기(같은 Wi-Fi) | `http://<PC LAN IP>:8080/api/v1` |
 
 **확인 순서**: 로그인하고 펫·현재 월 예산을 설정한다. 그다음 지출을 저장하면 `POST /expenses`가 호출되고, 현재 월 목록(`GET /months/{month}/expenses`)을 첫 페이지부터 다시 불러오고, 새 항목이 날짜 내림차순 위치에 보여야 한다. 홈으로 돌아가면 `GET /home`이 다시 호출되어 사용 금액과 펫 상태가 바뀌어야 한다. 앱을 재시작해도 같은 값이 나오는지 확인한다.
@@ -173,8 +175,9 @@ docker exec petgyebu_backend_renewal-postgres-1 psql -U petgyebu -d petgyebu -c 
 
 | 키 | 출처 |
 |---|---|
-| `EXPO_PUBLIC_KAKAO_NATIVE_APP_KEY` | 카카오 개발자 콘솔 앱의 네이티브 앱 키. 플랫폼 iOS에 번들 ID `com.altair.petgyebu`를 등록하고 카카오 로그인을 켠다 |
-| `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` | 구글 클라우드 OAuth 클라이언트 "iOS"(번들 ID 동일) |
+| `EXPO_PUBLIC_KAKAO_NATIVE_APP_KEY` | 카카오 개발자 콘솔 앱의 네이티브 앱 키. 플랫폼 iOS에 번들 ID `com.altair.petgyebu`를, 플랫폼 Android에 패키지명 `com.altair.petgyebu`와 키 해시를 등록하고 카카오 로그인을 켠다 |
+| `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` | 구글 클라우드 OAuth 클라이언트 "iOS"(번들 ID 동일). Android에는 필요 없다 |
+| (앱 키 없음) | 구글 클라우드 OAuth 클라이언트 "Android": 패키지명 `com.altair.petgyebu`와 서명 인증서 SHA-1을 등록한다. 앱은 이 클라이언트 ID를 쓰지 않지만, 등록이 없으면 로그인이 `DEVELOPER_ERROR`로 실패한다 |
 | `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` | 구글 클라우드 OAuth 클라이언트 "웹 애플리케이션". ID 토큰의 `aud`가 된다 |
 | `PETGYEBU_KAKAO_APP_ID` | 카카오 콘솔의 숫자 앱 ID(백엔드용) |
 | `PETGYEBU_GOOGLE_CLIENT_IDS` | 웹 클라이언트 ID(백엔드용) |
@@ -201,6 +204,15 @@ PETGYEBU_GOOGLE_CLIENT_IDS=<구글 웹 클라이언트 ID>
 npx expo prebuild --platform ios --clean
 npx expo run:ios
 ```
+
+Android는 `npx expo prebuild --platform android --clean` 후 `npx expo run:android`. 개발 빌드는 `android/app/debug.keystore`로 서명되므로 SHA-1과 카카오 키 해시는 그 키스토어에서 뽑는다(`--clean`으로 다시 만들어도 같은 키스토어가 들어간다).
+
+```bash
+keytool -list -v -keystore android/app/debug.keystore -alias androiddebugkey -storepass android -keypass android | grep SHA1
+keytool -exportcert -keystore android/app/debug.keystore -alias androiddebugkey -storepass android | openssl sha1 -binary | openssl base64
+```
+
+EAS 빌드나 Play 앱 서명으로 출시용 키가 바뀌면 SHA-1과 키 해시도 달라진다. 그 키의 값을 구글 Android OAuth 클라이언트와 카카오 Android 플랫폼에 추가로 등록해야 출시 빌드에서 로그인된다.
 
 **백엔드**: `bootRun`으로 띄운다(`bootTestRun`은 멈춘다). `PETGYEBU_JWT_SECRET`도 필요하며, 값과 만드는 방법은 백엔드 저장소 `petgyebu_backend_renewal/README.md`의 로컬 실행 부분에 있다. 아래는 `.env.local`에서 두 변수만 내보낸다.
 

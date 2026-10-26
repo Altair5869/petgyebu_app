@@ -2,15 +2,20 @@
   "expo": {
     "name": "petgyebu_app",
     "slug": "petgyebu_app",
-    "version": "1.0.0",
+    "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "petgyebuapp",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.altair.petgyebu",
+      "infoPlist": {
+        "CFBundleDisplayName": "펫계부"
+      }
     },
     "android": {
+      "package": "com.altair.petgyebu",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -32,6 +37,10 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
+      ],
+      [
+        "./plugins/with-android-app-name.js",
+        "펫계부"
       ]
     ],
     "experiments": {

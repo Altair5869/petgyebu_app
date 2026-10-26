@@ -1,0 +1,84 @@
+# 지난달 지출 수정 → 지난달 통계로 복귀. 준비: first-login 직후 + README "지난달 지출 넣기"(지난달 지출 1건: 금액 7,000원, 메모 'old').
+# 후반부는 이번 달 지출의 날짜를 날짜 선택기로 지난달 15일로 바꾼다(subflows/pick-previous-month-15.yaml, iOS·Android 분기).
+appId: com.altair.petgyebu
+env:
+  APP_URL: http://127.0.0.1:8081
+---
+- runFlow: ../subflows/open-app.yaml
+- extendedWaitUntil: { visible: "고양이, 안정", timeout: 120000 }
+- tapOn: "월별 통계"
+- extendedWaitUntil: { visible: "전체 내역", timeout: 20000 }
+- tapOn: "이전 달"
+- extendedWaitUntil: { visible: "old, .*월 .*일 · 기타, 7,000원", timeout: 20000 }
+- tapOn: "old, .*월 .*일 · 기타, 7,000원"
+- extendedWaitUntil: { visible: "삭제", timeout: 20000 }
+# Tap the right end so the cursor follows the filled amount; a centre tap on Android lands mid-number and eraseText leaves digits behind.
+- tapOn:
+    text: "지출 금액"
+    point: "95%,50%"
+- eraseText: 10
+- inputText: "9000"
+- waitForAnimationToEnd
+- tapOn: "저장"
+# 지난달 통계로 돌아와 변경된 금액
+- extendedWaitUntil: { visible: "old, .*월 .*일 · 기타, 9,000원", timeout: 20000 }
+- assertNotVisible: "old, .*월 .*일 · 기타, 7,000원"
+- assertVisible: "9,000원"
+- assertNotVisible: "지출 기록하기"
+# 뒤로 한 번이면 홈
+- tapOn: "뒤로|Navigate up"
+- extendedWaitUntil: { visible: "고양이, 안정", timeout: 20000 }
+
+# 이번 달 지출 기록 → 홈 잔액 확인
+- tapOn: "지출 기록하기"
+- extendedWaitUntil: { visible: "금액을 입력해 주세요", timeout: 20000 }
+- tapOn: "지출 금액"
+- inputText: "3000"
+- tapOn: "식비"
+- tapOn: "선택"
+- inputText: "mv"
+- waitForAnimationToEnd
+- tapOn: "저장"
+- extendedWaitUntil: { visible: "297,000원 남았어요", timeout: 20000 }
+
+# 날짜를 지난달 15일로 변경 → 지난달 통계로 복귀, 그 항목 포함
+- tapOn: "월별 통계"
+- extendedWaitUntil: { visible: "mv, .*월 .*일 · 식비, 3,000원", timeout: 20000 }
+- tapOn: "mv, .*월 .*일 · 식비, 3,000원"
+- extendedWaitUntil: { visible: "삭제", timeout: 20000 }
+- runFlow: ../subflows/pick-previous-month-15.yaml
+- tapOn: "저장"
+- extendedWaitUntil: { visible: "mv, .*월 .*일 · 식비, 3,000원", timeout: 20000 }
+- assertVisible: "old, .*월 .*일 · 기타, 9,000원"
+- assertVisible: "12,000원"
+- assertVisible: "2건"
+- assertNotVisible: "지출 기록하기"
+# 이번 달로 넘기면 빠져 있음
+- tapOn: "다음 달"
+- extendedWaitUntil: { visible: "지출 기록하기", timeout: 20000 }
+- assertNotVisible: "mv, .*월 .*일 · 식비, 3,000원"
+- assertVisible: "0건"
+# 같은 통계 화면에서 한 번 더: 이번 달 지출을 같은 지난달로 옮겨도 다시 그 달로 돌아온다(month 파라미터 비우기 확인)
+- tapOn: "지출 기록하기"
+- extendedWaitUntil: { visible: "금액을 입력해 주세요", timeout: 20000 }
+- tapOn: "지출 금액"
+- inputText: "1000"
+# With no category tap the number pad stays open and hides the memo field on Android.
+- scrollUntilVisible:
+    element: "선택"
+- tapOn: "선택"
+- inputText: "mv2"
+- waitForAnimationToEnd
+- tapOn: "저장"
+- extendedWaitUntil: { visible: "mv2, .*월 .*일.*, 1,000원", timeout: 20000 }
+- tapOn: "mv2, .*월 .*일.*, 1,000원"
+- extendedWaitUntil: { visible: "삭제", timeout: 20000 }
+- runFlow: ../subflows/pick-previous-month-15.yaml
+- tapOn: "저장"
+- extendedWaitUntil: { visible: "mv2, .*월 .*일.*, 1,000원", timeout: 20000 }
+- assertVisible: "13,000원"
+- assertVisible: "3건"
+- assertNotVisible: "지출 기록하기"
+# 뒤로 한 번이면 홈, 잔액 증가
+- tapOn: "뒤로|Navigate up"
+- extendedWaitUntil: { visible: "300,000원 남았어요", timeout: 20000 }

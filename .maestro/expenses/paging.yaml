@@ -1,0 +1,20 @@
+# 25건 무한 스크롤. 준비: README의 SQL로 현재 계정에 이번 달 지출 25건(memo 'p01'~'p25').
+appId: com.altair.petgyebu
+env:
+  APP_URL: http://127.0.0.1:8081
+---
+- runFlow: ../subflows/open-app.yaml
+- extendedWaitUntil: { visible: "월별 통계", timeout: 120000 }
+- tapOn: "월별 통계"
+- extendedWaitUntil: { visible: "전체 내역", timeout: 20000 }
+- assertVisible: "25건"
+# The summary cells wrap onto two rows, so the list starts below the first screen.
+- scrollUntilVisible:
+    element: "p25, .*월 .*일 · 기타, 1,000원"
+    direction: DOWN
+    timeout: 20000
+- scrollUntilVisible:
+    element: "모든 내역을 불러왔어요"
+    direction: DOWN
+    timeout: 30000
+- assertVisible: "p01, .*월 .*일 · 기타, 1,000원"

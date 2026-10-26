@@ -1,0 +1,13 @@
+# Restart the development build and open the app from the local Metro server.
+# SDK 58 launch URL: exp+<scheme>://?__expo_url=<encoded Metro URL>; the __expo_disable_* flags
+# hide the first-launch onboarding, dev menu and tools button for this launch only.
+appId: com.altair.petgyebu
+---
+- stopApp
+- openLink: "exp+petgyebuapp://?__expo_url=${encodeURIComponent(APP_URL)}&__expo_disable_onboarding=1&__expo_disable_auto_launch=1&__expo_disable_fab=1"
+# iOS may ask once before opening this app's development deep link.
+- runFlow:
+    when:
+      visible: ".*(펫계부|[Pp]etgyebu).*(열겠습니까|[Oo]pen).*|[Oo]pen.*(펫계부|[Pp]etgyebu).*"
+    commands:
+      - tapOn: "열기|Open"

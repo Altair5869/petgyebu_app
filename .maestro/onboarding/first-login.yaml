@@ -1,0 +1,27 @@
+# 새 계정 첫 로그인 → 고양이 → 예산 300,000원 → 홈.
+# 준비: .env.local의 EXPO_PUBLIC_DEV_LOGIN_ID를 처음 쓰는 값으로 바꾸고 Metro 재시작, 앱은 로그인 화면 상태.
+appId: com.altair.petgyebu
+env:
+  APP_URL: ${APP_URL || 'http://127.0.0.1:8081'}
+---
+- runFlow: ../subflows/open-app.yaml
+- extendedWaitUntil: { visible: "카카오 로그인", timeout: 120000 }
+- tapOn: "카카오 로그인"
+- extendedWaitUntil: { visible: "함께할 펫을 골라 주세요", timeout: 20000 }
+- tapOn: "고양이"
+- tapOn: "다음"
+- extendedWaitUntil: { visible: ".*월 예산", timeout: 20000 }
+- tapOn: "예산 금액"
+- inputText: "300000"
+- assertVisible: "300,000"
+# The save button moves above the number pad; wait for the keyboard animation.
+- waitForAnimationToEnd
+- tapOn: "저장"
+- extendedWaitUntil: { visible: "고양이, 안정", timeout: 20000 }
+- assertVisible: "예산에 여유가 있어 마음이 편안해요"
+- assertVisible: "300,000원 남았어요"
+- assertVisible: "사용률 0%"
+- assertVisible: "이번 달 지출"
+- assertVisible: "0원"
+- assertVisible: "이번 달 예산"
+- assertVisible: "첫 지출을 기록해 보세요"

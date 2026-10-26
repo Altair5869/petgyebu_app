@@ -1,0 +1,46 @@
+# 지출 기록 → 홈 갱신 → 월별 통계. 준비: first-login 직후(예산 300,000원, 지출 0건).
+appId: com.altair.petgyebu
+env:
+  APP_URL: ${APP_URL || 'http://127.0.0.1:8081'}
+---
+- runFlow: ../subflows/open-app.yaml
+- extendedWaitUntil: { visible: "고양이, 안정", timeout: 120000 }
+- tapOn: "지출 기록하기"
+# Wait for the entry screen after the navigation animation.
+- extendedWaitUntil: { visible: "금액을 입력해 주세요", timeout: 20000 }
+- tapOn: "지출 금액"
+- inputText: "12000"
+- tapOn: "카페"
+# The label and the input are both named "메모"; tap the input's placeholder.
+- tapOn: "선택"
+# ASCII text: Maestro on Android drops focus while typing Hangul.
+- inputText: "latte"
+- waitForAnimationToEnd
+- tapOn: "저장"
+- extendedWaitUntil: { visible: "288,000원 남았어요", timeout: 20000 }
+- assertVisible: "사용률 4%"
+- tapOn: "지출 기록하기"
+- tapOn: "지출 금액"
+- inputText: "5000"
+- waitForAnimationToEnd
+- tapOn: "저장"
+- extendedWaitUntil: { visible: "283,000원 남았어요", timeout: 20000 }
+- tapOn: "지출 기록하기"
+- tapOn: "지출 금액"
+- inputText: "150000"
+- waitForAnimationToEnd
+- tapOn: "저장"
+- extendedWaitUntil: { visible: "고양이, 주의", timeout: 20000 }
+- tapOn: "월별 통계"
+- extendedWaitUntil: { visible: "전체 내역", timeout: 20000 }
+- assertVisible: "167,000원"
+- assertVisible: "3건"
+# Each row is one accessible element labelled "{title}, {subtitle}, {amount}".
+# The summary cells wrap onto two rows, so the list starts below the first screen.
+- scrollUntilVisible:
+    element: "latte, .*월 .*일 · 카페, 12,000원"
+    direction: DOWN
+    timeout: 20000
+- assertVisible: "기타, .*월 .*일, 5,000원"
+- assertVisible: "기타, .*월 .*일, 150,000원"
+- assertVisible: "모든 내역을 불러왔어요"

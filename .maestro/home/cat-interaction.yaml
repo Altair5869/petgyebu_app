@@ -1,0 +1,27 @@
+# 준비: bootTestRun + 현재 월 예산이 설정된 CAT 계정. 지출·예산 데이터는 변경하지 않는다.
+# 애니메이션 프레임/최신 감정 복귀의 세부 타이밍은 Jest와 실제 화면 검토로 확인한다.
+appId: com.altair.petgyebu
+env:
+  APP_URL: ${APP_URL || 'http://127.0.0.1:8081'}
+---
+- runFlow: ../subflows/open-app.yaml
+- extendedWaitUntil: { visible: "고양이, .*", timeout: 120000 }
+- extendedWaitUntil:
+    visible: { id: "cat-head", enabled: true }
+    timeout: 20000
+- takeScreenshot: cat-home-before
+- tapOn: { id: "cat-head" }
+- longPressOn: { id: "cat-head" }
+- assertVisible: "고양이, .*"
+- assertVisible: "지출 기록하기"
+- takeScreenshot: cat-home-after-petting
+- tapOn: "설정"
+- extendedWaitUntil: { visible: ".*월 예산", timeout: 20000 }
+- tapOn: "뒤로|Navigate up"
+- extendedWaitUntil: { visible: { id: "cat-head", enabled: true }, timeout: 20000 }
+- tapOn: { id: "cat-head" }
+- tapOn: "지출 기록하기"
+- extendedWaitUntil: { visible: "금액을 입력해 주세요", timeout: 20000 }
+- tapOn: "뒤로|Navigate up"
+- extendedWaitUntil: { visible: { id: "cat-head", enabled: true }, timeout: 20000 }
+- takeScreenshot: cat-home-after-return

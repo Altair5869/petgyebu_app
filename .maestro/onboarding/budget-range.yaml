@@ -1,0 +1,19 @@
+# 예산 범위 밖 입력은 저장 비활성. 준비: 예산 화면이 열려 있는 상태(pet-only-relaunch 이후).
+appId: com.altair.petgyebu
+env:
+  APP_URL: http://127.0.0.1:8081
+---
+- assertVisible: ".*월 예산"
+# Tap the right end so the cursor follows the filled amount; a centre tap on Android lands mid-number and eraseText leaves digits behind.
+- tapOn:
+    text: "예산 금액"
+    point: "95%,50%"
+- eraseText: 20
+- inputText: "0"
+- assertVisible: "1원부터 1억 원까지 입력할 수 있어요"
+- assertVisible: { text: "저장", enabled: false }
+- eraseText: 20
+- inputText: "100000001"
+- assertVisible: "100,000,001"
+- assertVisible: "1원부터 1억 원까지 입력할 수 있어요"
+- assertVisible: { text: "저장", enabled: false }

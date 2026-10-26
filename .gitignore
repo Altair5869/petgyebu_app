@@ -38,6 +38,12 @@ yarn-error.*
 
 example
 
+# local planning notes
+.superpowers/
+
 # generated native folders
 /ios
 /android
+
+# Local design previews, simulator logs and screenshots
+/output/

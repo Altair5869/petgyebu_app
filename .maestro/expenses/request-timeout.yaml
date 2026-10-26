@@ -1,0 +1,17 @@
+# 서버가 응답 없이 멈추면 10초 뒤 안내. 준비: first-login 직후 홈이 열린 상태에서 백엔드 프로세스 일시정지(README "서버 응답 멈추기").
+# 끝나면 등록 화면이 열린 채 남는다. 서버를 재개(kill -CONT)한 뒤 expense-retry-once.yaml을 이어서 돌린다.
+appId: com.altair.petgyebu
+---
+- tapOn: "월별 통계"
+- extendedWaitUntil: { visible: "서버에 연결할 수 없어요. 다시 시도해 주세요.", timeout: 20000 }
+- assertVisible: "다시 시도"
+- tapOn: "뒤로|Navigate up"
+- waitForAnimationToEnd
+- tapOn: "지출 기록하기"
+- extendedWaitUntil: { visible: "금액을 입력해 주세요", timeout: 20000 }
+- tapOn: "지출 금액"
+- inputText: "4321"
+- waitForAnimationToEnd
+- tapOn: "저장"
+- extendedWaitUntil: { visible: "저장됐는지 확인하지 못했어요. 다시 저장해도 한 번만 기록돼요.", timeout: 20000 }
+- assertVisible: "4,321"

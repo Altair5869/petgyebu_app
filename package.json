@@ -1,17 +1,22 @@
 {
   "name": "petgyebu_app",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "main": "expo-router/entry",
   "dependencies": {
     "@expo/ui": "~58.0.20",
+    "@react-native-google-signin/google-signin": "^16.1.5",
+    "@react-native-seoul/kakao-login": "^6.0.4",
     "expo": "~58.0.14",
     "expo-constants": "~58.0.12",
+    "expo-crypto": "~58.0.7",
+    "expo-dev-client": "~58.0.14",
     "expo-device": "~58.0.5",
     "expo-font": "~58.0.8",
     "expo-glass-effect": "~58.0.4",
     "expo-image": "~58.0.15",
     "expo-linking": "~58.0.13",
     "expo-router": "~58.0.23",
+    "expo-secure-store": "~58.0.2",
     "expo-splash-screen": "~58.0.10",
     "expo-status-bar": "~58.0.3",
     "expo-symbols": "~58.0.4",
@@ -28,18 +33,32 @@
     "react-native-worklets": "0.13.0"
   },
   "devDependencies": {
+    "@testing-library/react-native": "^14.1.0",
+    "@types/jest": "30.0.0",
     "@types/react": "~19.3.0",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~58.0.4",
+    "jest": "~30.5.2",
+    "jest-expo": "~58.0.11",
+    "pngjs": "^7.0.0",
     "typescript": "~6.0.3"
   },
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "jest"
   },
-  "private": true
+  "private": true,
+  "jest": {
+    "preset": "jest-expo",
+    "globalSetup": "<rootDir>/jest.global-setup.js",
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "<rootDir>/output/"
+    ]
+  }
 }

@@ -1,0 +1,81 @@
+# 월별 통계(이번 달 → 지난달 → 지출 없는 달 → 예산 초과). 준비: first-login 직후(예산 300,000원, 지출 0건)
+# + README "지난달 지출 넣기"(지난달 지출 1건, 예산 없음). 지난달 SQL은 이 흐름을 돌리기 전에 넣어 둔다.
+appId: com.altair.petgyebu
+env:
+  APP_URL: http://127.0.0.1:8081
+---
+- runFlow: ../subflows/open-app.yaml
+- extendedWaitUntil: { visible: "고양이, 안정", timeout: 120000 }
+
+# 1. 카페 12,000·카페 4,000·식비 8,000·기타 2,000 기록
+- tapOn: "지출 기록하기"
+- extendedWaitUntil: { visible: "금액을 입력해 주세요", timeout: 20000 }
+- tapOn: "지출 금액"
+- inputText: "12000"
+- tapOn: "카페"
+- waitForAnimationToEnd
+- tapOn: "저장"
+- extendedWaitUntil: { visible: "288,000원 남았어요", timeout: 20000 }
+- tapOn: "지출 기록하기"
+- tapOn: "지출 금액"
+- inputText: "4000"
+- tapOn: "카페"
+- waitForAnimationToEnd
+- tapOn: "저장"
+- extendedWaitUntil: { visible: "284,000원 남았어요", timeout: 20000 }
+- tapOn: "지출 기록하기"
+- tapOn: "지출 금액"
+- inputText: "8000"
+- tapOn: "식비"
+- waitForAnimationToEnd
+- tapOn: "저장"
+- extendedWaitUntil: { visible: "276,000원 남았어요", timeout: 20000 }
+- tapOn: "지출 기록하기"
+- tapOn: "지출 금액"
+- inputText: "2000"
+- waitForAnimationToEnd
+- tapOn: "저장"
+- extendedWaitUntil: { visible: "274,000원 남았어요", timeout: 20000 }
+- tapOn: "월별 통계"
+- extendedWaitUntil: { visible: "전체 내역", timeout: 20000 }
+- assertVisible: "총 지출"
+- assertVisible: "26,000원"
+- assertVisible: "4건"
+- assertVisible: "8.6%"
+- assertVisible: "274,000원"
+- assertVisible: "16,000원 · 61.5%"
+- assertVisible: "8,000원 · 30.8%"
+- assertVisible: "2,000원 · 7.7%"
+- assertVisible: "지출 기록하기"
+- assertVisible: { text: "다음 달", enabled: false }
+
+# 2. 이전 달(지출 1건, 예산 없음)
+- tapOn: "이전 달"
+- extendedWaitUntil: { visible: "전체 내역", timeout: 20000 }
+- assertVisible: "총 지출"
+- assertVisible: "1건"
+- assertVisible: "미설정"
+- assertNotVisible: "지출 기록하기"
+- assertVisible: "남은 예산"
+
+# 3. 지출 없는 달(두 달 전)
+- tapOn: "이전 달"
+- extendedWaitUntil: { visible: "이 달에는 기록한 지출이 없어요", timeout: 20000 }
+- assertVisible: "0원"
+- assertVisible: "0건"
+- assertNotVisible: "지출 기록하기"
+
+# 이번 달로 돌아와 예산 초과(6): 300,000원 넘게 기록
+- tapOn: "다음 달"
+- extendedWaitUntil: { visible: "전체 내역", timeout: 20000 }
+- tapOn: "다음 달"
+- extendedWaitUntil: { visible: "지출 기록하기", timeout: 20000 }
+- tapOn: "지출 기록하기"
+- extendedWaitUntil: { visible: "금액을 입력해 주세요", timeout: 20000 }
+- tapOn: "지출 금액"
+- inputText: "300000"
+- waitForAnimationToEnd
+- tapOn: "저장"
+- extendedWaitUntil: { visible: "초과", timeout: 20000 }
+- assertVisible: "326,000원"
+- assertVisible: "26,000원"

@@ -1,0 +1,8 @@
+# 직전 달 예산 제안. 준비: 펫만 고른 계정에 README의 SQL로 직전 달 예산 250,000원을 넣는다.
+appId: com.altair.petgyebu
+env:
+  APP_URL: http://127.0.0.1:8081
+---
+- runFlow: ../subflows/open-app.yaml
+- extendedWaitUntil: { visible: "지난달 예산을 불러왔어요", timeout: 120000 }
+- assertVisible: "250,000"

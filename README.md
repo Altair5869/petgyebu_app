@@ -212,6 +212,8 @@ keytool -list -v -keystore android/app/debug.keystore -alias androiddebugkey -st
 keytool -exportcert -keystore android/app/debug.keystore -alias androiddebugkey -storepass android | openssl sha1 -binary | openssl base64
 ```
 
+EAS 빌드나 Play 앱 서명으로 출시용 키가 바뀌면 SHA-1과 키 해시도 달라진다. 그 키의 값을 구글 Android OAuth 클라이언트와 카카오 Android 플랫폼에 추가로 등록해야 출시 빌드에서 로그인된다.
+
 **백엔드**: `bootRun`으로 띄운다(`bootTestRun`은 멈춘다). `PETGYEBU_JWT_SECRET`도 필요하며, 값과 만드는 방법은 백엔드 저장소 `petgyebu_backend_renewal/README.md`의 로컬 실행 부분에 있다. 아래는 `.env.local`에서 두 변수만 내보낸다.
 
 ```bash

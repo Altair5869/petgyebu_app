@@ -7,13 +7,20 @@ import { devLoginId, googleIosClientId, googleWebClientId, kakaoNativeAppKey } f
 
 import { SocialLoginCancelledError, SocialLoginUnavailableError } from './social-login-errors';
 
-// The Kakao iOS module rejects every failure with code "RNKakaoLogins"; a user cancel is only
-// visible as a message prefix (RNKakaoLogins.swift `describe`): "ClientFailed(Cancelled)" when the
+// The Kakao module rejects every failure with code "RNKakaoLogins"; a user cancel is only visible in
+// the message. iOS prefixes it (RNKakaoLogins.swift `describe`): "ClientFailed(Cancelled)" when the
 // login window is closed, "AuthFailed(AccessDenied)" when 취소 is tapped on the web consent page.
 const KAKAO_CANCEL_PREFIXES = ['ClientFailed(Cancelled)', 'AuthFailed(AccessDenied)'];
+// Android passes the Kakao SDK message as-is: ClientError(Cancelled) when the login window is closed
+// or KakaoTalk login is cancelled, and LoginBridgeActivity's message.
+const KAKAO_ANDROID_CANCEL_MESSAGES = ['user cancelled.', 'Login canceled by user.'];
 
 function isKakaoCancel(error: unknown): boolean {
-  return error instanceof Error && KAKAO_CANCEL_PREFIXES.some((prefix) => error.message.startsWith(prefix));
+  return (
+    error instanceof Error &&
+    (KAKAO_CANCEL_PREFIXES.some((prefix) => error.message.startsWith(prefix)) ||
+      KAKAO_ANDROID_CANCEL_MESSAGES.includes(error.message))
+  );
 }
 
 async function kakaoCredential(): Promise<string> {

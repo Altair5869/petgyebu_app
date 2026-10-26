@@ -70,6 +70,17 @@ test('maps a Kakao consent-page cancel (AccessDenied) to SocialLoginCancelledErr
   await expect(getSocialCredential('kakao', false, null)).rejects.toBeInstanceOf(SocialLoginCancelledError);
 });
 
+// Found in the Kakao Android SDK 2.24.0 that RNKakaoLoginsModule.kt rejects with as-is:
+// ClientError(Cancelled) when the login window is closed or KakaoTalk login is cancelled, and
+// LoginBridgeActivity's own message.
+test.each(['user cancelled.', 'Login canceled by user.'])(
+  'maps the Android Kakao cancel message %p to SocialLoginCancelledError',
+  async (message) => {
+    kakao.mockRejectedValue(Object.assign(new Error(message), { code: 'RNKakaoLogins' }));
+    await expect(getSocialCredential('kakao', false, null)).rejects.toBeInstanceOf(SocialLoginCancelledError);
+  },
+);
+
 test('rethrows other Kakao errors unchanged', async () => {
   const other = Object.assign(new Error('ApiFailed(InvalidParameter): bad request'), {
     code: 'RNKakaoLogins',

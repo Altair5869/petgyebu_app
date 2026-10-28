@@ -61,3 +61,27 @@ export type MonthStats = {
   budgetBalanceAmount: number | null;
   categories: CategoryStat[];
 };
+
+export type DayRange = { from: string; to: string };
+
+export type WeeklyCategoryChange = {
+  category: ExpenseCategory;
+  thisWeekAmount: number;
+  lastWeekAmount: number;
+  changeAmount: number;
+};
+
+export type ForecastStatus = 'NO_BUDGET' | 'BUDGET_REACHED' | 'TOO_EARLY' | 'WILL_EXHAUST' | 'WITHIN_BUDGET';
+
+// The keys are always present; the values are null when the status has no such figure.
+export type Forecast = {
+  status: ForecastStatus;
+  dailyAverageAmount: number | null;
+  exhaustionDate: string | null;
+};
+
+export type Insights = {
+  today: string;
+  weekly: { thisWeek: DayRange; lastWeek: DayRange; categories: WeeklyCategoryChange[] };
+  forecast: Forecast;
+};

@@ -294,6 +294,33 @@ test('gets monthly stats from the stats endpoint with the Bearer token', async (
   await expect(api.getMonthStats('2026-09')).resolves.toEqual(stats);
 });
 
+test('gets insights from the insights endpoint with the Bearer token', async () => {
+  const insights = {
+    today: '2026-10-28',
+    weekly: {
+      thisWeek: { from: '2026-10-26', to: '2026-10-28' },
+      lastWeek: { from: '2026-10-19', to: '2026-10-21' },
+      categories: [
+        { category: 'CAFE', thisWeekAmount: 21000, lastWeekAmount: 8000, changeAmount: 13000 },
+        { category: 'TRANSPORT', thisWeekAmount: 5000, lastWeekAmount: 5000, changeAmount: 0 },
+        { category: 'FOOD', thisWeekAmount: 12000, lastWeekAmount: 16000, changeAmount: -4000 },
+      ],
+    },
+    forecast: { status: 'WILL_EXHAUST', dailyAverageAmount: 2392, exhaustionDate: '2026-10-30' },
+  };
+  handler = (url, init) => {
+    if (url.endsWith('/auth/refresh')) return jsonResponse(200, REFRESH_OK);
+    expect(url).toBe(`${BASE}/insights`);
+    expect(init.method).toBe('GET');
+    expect(bearer(init)).toBe('Bearer a1');
+    return jsonResponse(200, insights);
+  };
+  const { api } = setup('r0');
+  await api.restoreSession();
+
+  await expect(api.getInsights()).resolves.toEqual(insights);
+});
+
 describe('request timeout', () => {
   // A server that accepts the connection but never answers; aborting rejects like real fetch.
   function hangingFetch(_url: string, init: RequestInit) {

@@ -32,6 +32,8 @@ flowchart TD
 
 홈의 정보 순서는 **펫 상태 → 예산 잔액·사용률 → 지출 기록**이다. 지출이 0건이면 `STABLE`과 첫 기록 안내를 보여준다. 사용자가 예산을 수정하면 현재 지출 합계는 유지하고 잔액·사용률·펫 상태를 갱신한다.
 
+홈 → 이번 주 돌아보기(예측·이번 주 요약·카테고리별 변화) → 뒤로. 이 화면은 `GET /api/v1/insights`를 사용하며 펫·예산이 없어도 열린다.
+
 ## 2. 지출 입력과 정정
 
 ```mermaid
@@ -117,6 +119,7 @@ flowchart TD
 | 현재 홈·예산 | `GET /api/v1/home`, `GET/PUT /api/v1/months/{month}/budget` |
 | 지출 입력·수정 | `POST /api/v1/expenses`, `GET/PATCH/DELETE /api/v1/expenses/{expenseId}` |
 | 월별 내역·통계 | `GET /api/v1/months/{month}/expenses`, `GET /api/v1/months/{month}/stats` |
+| 이번 주 돌아보기 | `GET /api/v1/insights` |
 
 1. 신규·새 달 사용자는 펫과 해당 현재 월 예산을 확정한 뒤에만 홈에 들어간다.
 2. 지출 입력·정정 뒤 해당 월 목록·통계가 갱신되고 현재 월이 영향받으면 펫 상태도 갱신된다. 날짜가 월을 넘으면 두 월이 갱신된다.

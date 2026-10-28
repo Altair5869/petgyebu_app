@@ -129,6 +129,10 @@ export default function HomeScreen() {
           <Text style={[styles.link, styles.statsLabel]}>월별 통계 보기</Text>
           <Text accessibilityElementsHidden importantForAccessibility="no" style={styles.link}>→</Text>
         </Pressable>
+        <Pressable accessibilityRole="link" accessibilityLabel="이번 주 돌아보기" onPress={() => router.push('/insights')} style={({ pressed }) => [styles.statsLink, pressed && styles.pressed]}>
+          <Text style={[styles.link, styles.statsLabel]}>이번 주 돌아보기</Text>
+          <Text accessibilityElementsHidden importantForAccessibility="no" style={styles.link}>→</Text>
+        </Pressable>
       </ScrollView>
       <View style={styles.footer}>
         {home.spentAmount === 0 && <Text style={styles.firstRecord}>첫 지출을 기록해 보세요</Text>}

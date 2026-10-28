@@ -242,3 +242,11 @@ test.each([
   await render(<HomeScreen />);
   await screen.findByText(description);
 });
+
+test('the weekly insights link opens the insights screen', async () => {
+  mockApi.getHome.mockResolvedValue(HOME);
+  await render(<HomeScreen />);
+
+  fireEvent.press(await screen.findByRole('link', { name: '이번 주 돌아보기' }));
+  expect(router.push).toHaveBeenCalledWith('/insights');
+});

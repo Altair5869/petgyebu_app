@@ -4,7 +4,7 @@
 
 ## 공통 규칙
 
-15개 API가 모두 구현되어 있습니다. 접두사는 `/api/v1`이고, 기준 문서는 `docs/00-renewal-development-guide.md` §8과 `develop` 브랜치 컨트롤러 코드입니다.
+16개 API가 모두 구현되어 있습니다. 접두사는 `/api/v1`이고, 기준 문서는 `docs/00-renewal-development-guide.md` §8과 `develop` 브랜치 컨트롤러 코드입니다.
 
 ### Base URL
 
@@ -253,8 +253,8 @@
 | `NO_BUDGET` | 현재 월 예산 없음 | `null` | `null` |
 | `BUDGET_REACHED` | 지출이 이미 예산 이상 | `null` | `null` |
 | `TOO_EARLY` | 1~3일차라 예측 숨김 | `null` | `null` |
-| `WITHIN_BUDGET` | 이 속도로 월말까지 예산 이내 (지출 0건이면 평균 `0`) | `floor(지출 / 일)` | `null` |
-| `WILL_EXHAUST` | 이 속도면 월말 전에 예산 소진 | `floor(지출 / 일)` | 예상 소진일 |
+| `WITHIN_BUDGET` | 이 속도로 이번 달 끝까지 예산 이내 (지출 0건이면 평균 `0`) | `floor(지출 / 일)` | `null` |
+| `WILL_EXHAUST` | 이 속도면 이번 달 안에 예산 소진 | `floor(지출 / 일)` | 예상 소진일 |
 
 ## curl 요청 예시
 

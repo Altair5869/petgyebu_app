@@ -216,6 +216,46 @@
 - `categories`: 지출이 있는 항목만 금액 내림차순. 동률이면 `FOOD, CAFE, TRANSPORT, SHOPPING, HEALTH, LIVING, OTHER` 순서
 - `sharePercent`: 소수 첫째 자리 **반올림**(`usagePercent`는 버림). 합이 99.9%나 100.1%여도 보정하지 않습니다
 
+## 인사이트 API
+
+### GET `/insights`
+
+서울 기준 오늘의 카테고리별 이번 주·지난주 같은 요일 범위 비교와 현재 월 예산 소진 예측을 반환합니다. 요청 파라미터는 없습니다.
+
+```json
+{
+  "today": "2026-10-28",
+  "weekly": {
+    "thisWeek": { "from": "2026-10-26", "to": "2026-10-28" },
+    "lastWeek": { "from": "2026-10-19", "to": "2026-10-21" },
+    "categories": [
+      { "category": "CAFE", "thisWeekAmount": 21000, "lastWeekAmount": 8000, "changeAmount": 13000 },
+      { "category": "TRANSPORT", "thisWeekAmount": 5000, "lastWeekAmount": 5000, "changeAmount": 0 },
+      { "category": "FOOD", "thisWeekAmount": 12000, "lastWeekAmount": 16000, "changeAmount": -4000 }
+    ]
+  },
+  "forecast": {
+    "status": "WILL_EXHAUST",
+    "dailyAverageAmount": 2392,
+    "exhaustionDate": "2026-10-30"
+  }
+}
+```
+
+- `thisWeek`는 이번 주 월요일~오늘, `lastWeek`는 7일 전 같은 요일 범위이며 양 끝을 포함합니다
+- `categories`: 두 범위 중 한쪽에라도 지출이 있는 항목만 `changeAmount`(이번 주 - 지난주, 음수 가능) 내림차순. 동률이면 `FOOD, CAFE, TRANSPORT, SHOPPING, HEALTH, LIVING, OTHER` 순서. 지출이 없으면 빈 배열
+- 펫·예산이 없어도 200이며 409는 없습니다. 오류는 인증 실패 401뿐입니다
+
+`forecast.status`는 아래 순서로 처음 맞는 하나입니다.
+
+| `status` | 의미 | `dailyAverageAmount` | `exhaustionDate` |
+|---|---|---|---|
+| `NO_BUDGET` | 현재 월 예산 없음 | `null` | `null` |
+| `BUDGET_REACHED` | 지출이 이미 예산 이상 | `null` | `null` |
+| `TOO_EARLY` | 1~3일차라 예측 숨김 | `null` | `null` |
+| `WITHIN_BUDGET` | 이 속도로 월말까지 예산 이내 (지출 0건이면 평균 `0`) | `floor(지출 / 일)` | `null` |
+| `WILL_EXHAUST` | 이 속도면 월말 전에 예산 소진 | `floor(지출 / 일)` | 예상 소진일 |
+
 ## curl 요청 예시
 
 로컬 `bootTestRun` 기준입니다. 먼저 변수를 설정하고, 로그인 응답의 토큰을 `TOKEN`·`REFRESH`에 넣습니다.
@@ -276,6 +316,9 @@ curl "$BASE/home" -H "Authorization: Bearer $TOKEN"
 
 # 월 통계
 curl "$BASE/months/2026-10/stats" -H "Authorization: Bearer $TOKEN"
+
+# 인사이트
+curl "$BASE/insights" -H "Authorization: Bearer $TOKEN"
 ```
 
 ### 지출

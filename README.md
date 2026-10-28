@@ -111,8 +111,8 @@ maestro test -e APP_URL=http://127.0.0.1:8081 .maestro/onboarding/relaunch-home.
 | `expenses/edit-and-delete.yaml` | 월별 통계에서 수정(금액·메모 지움·칩 유지) → 삭제 취소 → 삭제, 홈 금액 갱신 | `first-login` 직후 |
 | `expenses/edit-deleted.yaml` | 수정 화면 중 다른 경로로 지출이 삭제되면 저장 시 안내 | `first-login` 직후 + 아래 "수정 화면 중 지출 지우기" |
 | `stats/monthly-stats.yaml` | 이번 달 통계·카테고리 비중, 지난달(예산 없음), 지출 없는 달, 예산 초과 | `first-login` 직후 + 아래 "지난달 지출 넣기"(지난달 지출 1건, 7,000원·`old`) |
-| `insights/weekly-insights.yaml` | 홈의 "이번 주 돌아보기"(스크롤 필요) → 지출 없음 안내 → 카페 12,000원 기록 → 늘어난 카테고리 요약·카테고리별 변화·예측 카드 | `first-login` 직후 |
 | `stats/move-month.yaml` | 지난달 지출 수정 후 지난달 통계로 복귀, 이번 달 지출을 날짜 선택기로 지난달로 이동(이번 달에서 빠지고 홈 잔액 복원), 같은 화면에서 반복 | `first-login` 직후 + "지난달 지출 넣기"(금액 7,000원, 메모 `old`, 카테고리 `OTHER`). 다시 돌리려면 아래 "move-month 다시 돌리기 전 정리"를 실행하고 `old`를 7,000원으로 되돌린 뒤 이번 달 지출을 지운다 |
+| `insights/weekly-insights.yaml` | 홈의 "이번 주 돌아보기"(스크롤 필요) → 지출 없음 안내 → 카페 12,000원 기록 → 늘어난 카테고리 요약·카테고리별 변화·예측 카드 | `first-login` 직후 |
 | `settings/change-pet-and-budget.yaml` | 설정에서 펫을 강아지로, 이번 달 예산을 450,000원으로 바꾸고 홈에 반영 | `first-login` 직후 |
 | `settings/logout.yaml` | 로그아웃 → 로그인 화면 → 다시 로그인하면 홈 | 홈이 보이는 계정 |
 | `settings/delete-account.yaml` | 탈퇴 취소, 탈퇴 → 로그인 화면 → 같은 ID로 새 계정(펫 선택부터) | 홈이 보이는 계정 |

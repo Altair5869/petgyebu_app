@@ -1,6 +1,6 @@
 # Petgyebu API 명세 (앱 연동용)
 
-> 원본 계약은 백엔드 저장소 `docs/00-renewal-development-guide.md` §8이다. 이 파일은 2026-10-17에 내보낸 사본이며, API가 바뀌면 백엔드 문서를 먼저 고치고 이 파일을 다시 내보낸다.
+> 원본 계약은 백엔드 저장소 `docs/00-renewal-development-guide.md` §8이다. 이 파일은 2026-10-17에 내보낸 사본이고, insights 절은 2026-10-28에 백엔드 develop `52aa2b0`에서 추가했다. API가 바뀌면 백엔드 문서를 먼저 고치고 이 파일을 다시 내보낸다.
 
 ## 공통 규칙
 

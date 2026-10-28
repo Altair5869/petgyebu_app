@@ -73,10 +73,10 @@ const styles = StyleSheet.create({
   label: { fontSize: 16, fontFamily: fonts.bold, color: colors.text },
   ranges: { fontSize: 14, fontFamily: fonts.regular, color: colors.muted },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  name: { width: 56, fontFamily: fonts.regular, fontSize: 15, color: colors.text },
+  name: { minWidth: 56, flexShrink: 0, fontFamily: fonts.regular, fontSize: 15, color: colors.text },
   bars: { flex: 1, gap: 4 },
   bar: { height: 8, borderRadius: 4 },
-  change: { width: 64, textAlign: 'right', fontFamily: fonts.bold, fontSize: 15, fontVariant: ['tabular-nums'] },
+  change: { minWidth: 64, flexShrink: 0, textAlign: 'right', fontFamily: fonts.bold, fontSize: 15, fontVariant: ['tabular-nums'] },
   legend: { fontSize: 13, fontFamily: fonts.regular, color: colors.muted },
   empty: { fontFamily: fonts.regular, fontSize: 16, lineHeight: 24, color: colors.muted, textAlign: 'center', padding: 24, borderRadius: 24, backgroundColor: colors.surface },
 });

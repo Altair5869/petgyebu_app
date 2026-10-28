@@ -52,6 +52,10 @@ test('shows forecast, headline, week ranges, rows, bars and legend', async () =>
   expect(screen.getByTestId('weekly-row-CAFE').props.accessibilityLabel).toContain('카페, 이번 주 21,000원');
   screen.getByText('+13,000');
   screen.getByText('−4,000');
+  // 큰 금액이 줄바꿈되지 않도록 금액 열은 고정 width가 아니라 최소 너비다.
+  const change = StyleSheet.flatten(screen.getByText('+13,000').props.style);
+  expect(change.width).toBeUndefined();
+  expect(change).toMatchObject({ minWidth: 64, flexShrink: 0 });
   expect(StyleSheet.flatten(screen.getByTestId('this-week-bar-CAFE').props.style).width).toBe('100%');
   screen.getByText('색 막대 이번 주 · 회색 막대 지난주');
 });

@@ -13,7 +13,7 @@ env:
 - extendedWaitUntil: { visible: "이번 주와 지난주에 기록한 지출이 없어요", timeout: 20000 }
 - assertNotVisible: "카테고리별 변화"
 - assertVisible: ".*(이 속도면|이번 달 예산|4일부터).*"
-- tapOn: "뒤로"
+- tapOn: "뒤로|Navigate up"
 - extendedWaitUntil: { visible: "고양이, 안정", timeout: 20000 }
 
 # 2. 카페 12,000원 기록

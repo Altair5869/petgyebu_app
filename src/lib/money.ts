@@ -1,7 +1,7 @@
 const AMOUNT_MIN = 1;
 const AMOUNT_MAX = 100_000_000;
 
-function formatNumber(value: number): string {
+export function formatNumber(value: number): string {
   return String(value).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 

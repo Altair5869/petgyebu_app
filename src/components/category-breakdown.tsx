@@ -1,12 +1,14 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import type { CategoryStat } from '@/api/types';
+import type { CategoryStat, ExpenseCategory } from '@/api/types';
 import { CATEGORY_LABELS } from '@/lib/expense';
 import { formatWon } from '@/lib/money';
 import { CATEGORY_COLORS } from '@/lib/stats';
 import { colors, fonts } from '@/theme';
 
-export function CategoryBreakdown({ categories }: { categories: CategoryStat[] }) {
+type Props = { categories: CategoryStat[]; onSelect?: (category: ExpenseCategory) => void };
+
+export function CategoryBreakdown({ categories, onSelect }: Props) {
   if (categories.length === 0) {
     return <Text style={styles.empty}>이 달에는 기록한 지출이 없어요</Text>;
   }
@@ -22,13 +24,31 @@ export function CategoryBreakdown({ categories }: { categories: CategoryStat[] }
           />
         ))}
       </View>
-      {categories.map((c) => (
-        <View key={c.category} style={styles.row}>
-          <View style={[styles.dot, { backgroundColor: CATEGORY_COLORS[c.category] }]} />
-          <Text style={styles.name}>{CATEGORY_LABELS[c.category]}</Text>
-          <Text style={styles.value}>{`${formatWon(c.spentAmount)} · ${c.sharePercent}%`}</Text>
-        </View>
-      ))}
+      {categories.map((c) => {
+        const value = `${formatWon(c.spentAmount)} · ${c.sharePercent}%`;
+        const content = (
+          <>
+            <View style={[styles.dot, { backgroundColor: CATEGORY_COLORS[c.category] }]} />
+            <Text style={styles.name}>{CATEGORY_LABELS[c.category]}</Text>
+            <Text style={styles.value}>{value}</Text>
+            {onSelect && <Text accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.chevron}>›</Text>}
+          </>
+        );
+        return onSelect ? (
+          <Pressable
+            key={c.category}
+            accessibilityRole="button"
+            accessibilityLabel={`${CATEGORY_LABELS[c.category]} ${value}`}
+            onPress={() => onSelect(c.category)}
+            style={({ pressed }) => [styles.row, styles.rowButton, pressed && styles.pressed]}>
+            {content}
+          </Pressable>
+        ) : (
+          <View key={c.category} style={styles.row}>
+            {content}
+          </View>
+        );
+      })}
     </View>
   );
 }
@@ -38,6 +58,9 @@ const styles = StyleSheet.create({
   label: { fontSize: 16, fontFamily: fonts.bold, color: colors.text },
   bar: { flexDirection: 'row', height: 16, borderRadius: 8, overflow: 'hidden', backgroundColor: colors.border },
   row: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
+  rowButton: { minHeight: 44 },
+  pressed: { opacity: 0.8 },
+  chevron: { fontFamily: fonts.regular, fontSize: 18, color: colors.muted },
   dot: { width: 10, height: 10, borderRadius: 5 },
   name: { flexGrow: 1, flexBasis: 72, fontFamily: fonts.regular, fontSize: 15, color: colors.text },
   value: { maxWidth: '100%', marginLeft: 'auto', fontFamily: fonts.regular, fontSize: 15, color: colors.text, fontVariant: ['tabular-nums'] },

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
 
 import { CategoryBreakdown } from '@/components/category-breakdown';
 
@@ -23,4 +23,16 @@ test('empty list shows only the empty message', async () => {
   await render(<CategoryBreakdown categories={[]} />);
   expect(screen.getByText('이 달에는 기록한 지출이 없어요')).toBeOnTheScreen();
   expect(screen.queryByText('카테고리')).toBeNull();
+});
+
+test('rows open the category when onSelect is given', async () => {
+  const onSelect = jest.fn();
+  await render(
+    <CategoryBreakdown
+      onSelect={onSelect}
+      categories={[{ category: 'CAFE', spentAmount: 16000, expenseCount: 2, sharePercent: 100 }]}
+    />,
+  );
+  await fireEvent.press(screen.getByRole('button', { name: '카페 16,000원 · 100%' }));
+  expect(onSelect).toHaveBeenCalledWith('CAFE');
 });

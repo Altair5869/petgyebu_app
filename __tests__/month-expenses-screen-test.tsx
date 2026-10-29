@@ -6,7 +6,7 @@ import { currentMonth, monthTitle, previousMonth } from '@/lib/month';
 
 let mockFocusEffect: () => void = () => {};
 let mockParams: { month?: string } = {};
-const mockApi = { getMonthExpenses: jest.fn(), getMonthStats: jest.fn() };
+const mockApi = { getMonthExpenses: jest.fn(), getMonthStats: jest.fn(), getCategoryGoals: jest.fn() };
 
 jest.mock('@/session/session-provider', () => ({
   useSession: () => ({ api: mockApi }),
@@ -33,6 +33,13 @@ const statsFor = (month: string, spentAmount = 26000) => ({
   budgetBalanceAmount: 300000 - spentAmount,
   categories: [{ category: 'CAFE', spentAmount, expenseCount: 2, sharePercent: 100 }],
 });
+const goalsFor = (month: string) => ({
+  month,
+  budgetAmount: 300000,
+  goalTotalAmount: 150000,
+  goalsExceedBudget: false,
+  goals: [{ category: 'FOOD', goalAmount: 150000, spentAmount: 120000, remainingAmount: 30000, usagePercent: 80 }],
+});
 const EMPTY_PAGE = { items: [], nextCursor: null };
 
 beforeEach(() => {
@@ -40,6 +47,7 @@ beforeEach(() => {
   mockParams = {};
   mockApi.getMonthStats.mockImplementation((month: string) => Promise.resolve(statsFor(month)));
   mockApi.getMonthExpenses.mockResolvedValue(EMPTY_PAGE);
+  mockApi.getCategoryGoals.mockImplementation((month: string) => Promise.resolve(goalsFor(month)));
 });
 
 test('opens on the current month with stats and the record button', async () => {
@@ -248,4 +256,64 @@ test('regaining focus reloads both APIs', async () => {
   await screen.findByText('26,000원');
   expect(mockApi.getMonthStats).toHaveBeenCalledTimes(2);
   expect(mockApi.getMonthExpenses).toHaveBeenCalledTimes(2);
+});
+
+test('shows the goals card for the month', async () => {
+  await render(<MonthStatsScreen />);
+
+  await screen.findByText('카테고리 목표');
+  screen.getByText('30,000원 남음');
+  expect(mockApi.getCategoryGoals).toHaveBeenCalledWith(currentMonth());
+});
+
+test('a failed goals request shows the error and retry reloads all three', async () => {
+  mockApi.getCategoryGoals
+    .mockRejectedValueOnce(new TypeError('Network request failed'))
+    .mockImplementation((month: string) => Promise.resolve(goalsFor(month)));
+  await render(<MonthStatsScreen />);
+
+  await screen.findByText('서버에 연결할 수 없어요. 다시 시도해 주세요.');
+  await fireEvent.press(screen.getByRole('button', { name: '다시 시도' }));
+
+  await screen.findByText('카테고리 목표');
+  expect(mockApi.getMonthStats).toHaveBeenCalledTimes(2);
+  expect(mockApi.getMonthExpenses).toHaveBeenCalledTimes(2);
+  expect(mockApi.getCategoryGoals).toHaveBeenCalledTimes(2);
+});
+
+test('a late goals response for the month left behind is never shown', async () => {
+  let resolveCurrent: (v: unknown) => void = () => {};
+  mockApi.getCategoryGoals.mockImplementation((month: string) =>
+    month === currentMonth()
+      ? new Promise((resolve) => (resolveCurrent = resolve))
+      : Promise.resolve({ ...goalsFor(month), goals: [{ category: 'FOOD', goalAmount: 90000, spentAmount: 1000, remainingAmount: 89000, usagePercent: 1 }] }),
+  );
+  await render(<MonthStatsScreen />);
+
+  await fireEvent.press(screen.getByRole('button', { name: '이전 달' }));
+  await screen.findByText('89,000원 남음');
+  await act(async () => resolveCurrent(goalsFor(currentMonth())));
+
+  screen.getByText('89,000원 남음');
+  expect(screen.queryByText('30,000원 남음')).toBeNull();
+});
+
+test('the budget row opens the budget screen for the shown month', async () => {
+  await render(<MonthStatsScreen />);
+
+  await fireEvent.press(await screen.findByRole('button', { name: /예산 300,000원, 고치기/ }));
+  expect(router.push).toHaveBeenCalledWith({ pathname: '/settings/budget', params: { month: currentMonth() } });
+});
+
+test('goal edit and category rows navigate with month and category', async () => {
+  await render(<MonthStatsScreen />);
+
+  await fireEvent.press(await screen.findByRole('button', { name: '고치기 ›' }));
+  expect(router.push).toHaveBeenCalledWith({ pathname: '/goals', params: { month: currentMonth() } });
+
+  await fireEvent.press(screen.getByRole('button', { name: /^식비, 목표/ }));
+  expect(router.push).toHaveBeenCalledWith({
+    pathname: '/expenses/by-category',
+    params: { month: currentMonth(), category: 'FOOD' },
+  });
 });

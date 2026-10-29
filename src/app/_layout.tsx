@@ -68,6 +68,8 @@ function RootNavigator() {
         <Stack.Screen name="expenses/new" options={{ headerShown: true, title: '지출 기록', headerBackTitle: '뒤로' }} />
         <Stack.Screen name="expenses/index" options={{ headerShown: true, title: '월별 통계', headerBackTitle: '뒤로' }} />
         <Stack.Screen name="insights" options={{ headerShown: true, title: '이번 주 돌아보기', headerBackTitle: '뒤로' }} />
+        <Stack.Screen name="goals" options={{ headerShown: true, title: '카테고리 목표', headerBackTitle: '뒤로' }} />
+        <Stack.Screen name="expenses/by-category" options={{ headerShown: true, title: '카테고리 지출', headerBackTitle: '뒤로' }} />
         <Stack.Screen name="expenses/[id]" options={{ headerShown: true, title: '지출 수정', headerBackTitle: '뒤로' }} />
         <Stack.Screen name="settings/index" options={{ headerShown: true, title: '설정', headerBackTitle: '뒤로' }} />
         <Stack.Screen name="settings/budget" options={{ headerShown: true, title: '예산 변경', headerBackTitle: '뒤로' }} />

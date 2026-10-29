@@ -14,9 +14,10 @@ jest.mock('@/session/session-provider', () => ({
   useSession: () => ({ api: mockApi }),
 }));
 
+let mockFrom: string | undefined;
 jest.mock('expo-router', () => ({
   router: { back: jest.fn(), push: jest.fn(), dismissTo: jest.fn() },
-  useLocalSearchParams: () => ({ id: '7' }),
+  useLocalSearchParams: () => ({ id: '7', from: mockFrom }),
 }));
 
 // The native stack header sits above the screen; its height offsets the keyboard avoidance.
@@ -67,6 +68,7 @@ const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 beforeEach(() => {
   jest.clearAllMocks();
   mockPickedDay = null;
+  mockFrom = undefined;
   mockApi.getExpense.mockResolvedValue(loaded);
   mockApi.updateExpense.mockResolvedValue(loaded);
   mockApi.deleteExpense.mockResolvedValue(undefined);
@@ -365,4 +367,26 @@ test('an amount event from before a category tap keeps the chosen category', asy
   await fireEvent.press(screen.getByRole('button', { name: '저장' }));
 
   expect(mockApi.updateExpense).toHaveBeenCalledWith(7, { amount: 7000, category: 'FOOD' });
+});
+
+test('opened from the category list, saving within the same month goes back', async () => {
+  mockFrom = 'category';
+  await renderReady();
+  await fireEvent.changeText(screen.getByLabelText('지출 금액'), '7000');
+  await fireEvent.press(screen.getByRole('button', { name: '저장' }));
+
+  expect(router.back).toHaveBeenCalledTimes(1);
+  expect(router.dismissTo).not.toHaveBeenCalled();
+});
+
+test('opened from the category list, moving the expense to another month goes to that month', async () => {
+  mockFrom = 'category';
+  mockApi.getExpense.mockResolvedValue({ ...loaded, expenseDate: '2026-09-15' });
+  mockApi.updateExpense.mockResolvedValue({ ...loaded, expenseDate: '2026-08-31' });
+  await renderReady();
+  await fireEvent.changeText(screen.getByLabelText('지출 금액'), '7000');
+  await fireEvent.press(screen.getByRole('button', { name: '저장' }));
+
+  expect(router.back).not.toHaveBeenCalled();
+  expect(router.dismissTo).toHaveBeenCalledWith({ pathname: '/expenses', params: { month: '2026-08' } });
 });

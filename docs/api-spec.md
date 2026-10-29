@@ -1,10 +1,10 @@
 # Petgyebu API 명세 (앱 연동용)
 
-> 원본 계약은 백엔드 저장소 `docs/00-renewal-development-guide.md` §8이다. 이 파일은 2026-10-17에 내보낸 사본이고, insights 절은 2026-10-28에 백엔드 develop `52aa2b0`에서 추가했다. API가 바뀌면 백엔드 문서를 먼저 고치고 이 파일을 다시 내보낸다.
+> 원본 계약은 백엔드 저장소 `docs/00-renewal-development-guide.md` §8이다. 이 파일은 2026-10-17에 내보낸 사본이고, insights 절은 2026-10-28에 백엔드 develop `52aa2b0`에서, 과거 월 예산·카테고리 목표 절은 2026-10-29에 백엔드 develop `76f6a4d`에서 추가했다. API가 바뀌면 백엔드 문서를 먼저 고치고 이 파일을 다시 내보낸다.
 
 ## 공통 규칙
 
-16개 API가 모두 구현되어 있습니다. 접두사는 `/api/v1`이고, 기준 문서는 `docs/00-renewal-development-guide.md` §8과 `develop` 브랜치 컨트롤러 코드입니다.
+19개 API(14개 고유 경로)가 모두 구현되어 있습니다. 접두사는 `/api/v1`이고, 기준 문서는 `docs/00-renewal-development-guide.md` §8과 `develop` 브랜치 컨트롤러 코드입니다.
 
 ### Base URL
 
@@ -95,7 +95,7 @@
 
 ### DELETE `/users/me`
 
-회원 탈퇴, 응답 204. 지출·예산·계정이 모두 삭제되고 남은 토큰은 이후 401을 받습니다.
+회원 탈퇴, 응답 204. 지출·예산·카테고리 목표·계정이 모두 삭제되고 남은 토큰은 이후 401을 받습니다.
 
 ## 홈 API
 
@@ -155,6 +155,8 @@
 ### GET `/months/{month}/expenses?limit=20&cursor=...`
 
 - `limit`: 기본 20, 1~50 밖이면 400 `INVALID_REQUEST`(보정하지 않음)
+- `category`: 선택. `FOOD, CAFE, TRANSPORT, SHOPPING, HEALTH, LIVING, OTHER` 중 하나면 그 카테고리 지출만 반환합니다. 정렬·`limit`·커서 규칙은 그대로이고 소문자 등 잘못된 값은 400 `INVALID_REQUEST`(`category`). 필터를 바꾸면 커서를 버리고 첫 페이지부터 다시 조회합니다
+- 입력 검증 순서: `month` → `limit` → `category` → `cursor`
 - `cursor`: 첫 요청에는 빼고, 이후에는 직전 응답의 `nextCursor`를 그대로 보냅니다. 해석하지 마세요
 - 응답 200: `{ "items": [지출 객체...], "nextCursor": "..." }`. 마지막 페이지는 `nextCursor: null`
 - 정렬: 날짜 내림차순, 같은 날짜는 ID 내림차순
@@ -177,18 +179,18 @@
 
 ## 예산 API
 
-예산은 현재 월에만 설정·수정하고, 과거 월은 조회만 할 수 있습니다.
+예산은 2000-01부터 서울 기준 현재 월까지 설정·수정할 수 있습니다. 잘못 넣은 과거 예산을 고치거나 예산이 없던 과거 월에 새로 넣을 수 있고, 미래 월 예산은 저장하지 않으며 예산 삭제는 없습니다. 과거 월 예산을 바꾸면 그 달 통계의 예산·사용률·잔액만 바뀌고 홈·펫 상태·인사이트 예측은 현재 월 예산만 씁니다.
 
 ### GET `/months/{month}/budget`
 
-응답 200: `{ "month": "2026-10", "amount": 300000 }`. 예산이 없는 월은 `amount: null`입니다. 미래 월·형식 오류는 400 `INVALID_REQUEST`(`month`)입니다.
+응답 200: `{ "month": "2026-10", "amount": 300000 }`. 예산이 없는 월은 `amount: null`입니다. 미래 월·2000-01 이전·형식 오류는 400 `INVALID_REQUEST`(`month`)입니다.
 
 ### PUT `/months/{month}/budget`
 
 - 요청: `{ "amount": 300000 }`(1 ~ 100,000,000 정수)
 - 응답 200(생성·변경 모두): `{ "month", "amount" }`
-- 오류: 현재 월이 아닌 `{month}`은 400 `INVALID_REQUEST`(`month`), 금액 오류는 400(`amount`)
-- 월 중간에 바꾸면 사용률·잔액·펫 상태가 새 예산으로 즉시 다시 계산됩니다
+- 오류: 미래 월·2000-01 이전·형식 오류 `{month}`는 400 `INVALID_REQUEST`(`month`), 금액 오류는 400(`amount`)
+- 현재 월 예산을 월 중간에 바꾸면 사용률·잔액·펫 상태가 새 예산으로 즉시 다시 계산됩니다. 과거 월 예산은 그 달 통계에만 반영됩니다
 
 ## 통계 API
 
@@ -256,6 +258,45 @@
 | `WITHIN_BUDGET` | 이 속도로 이번 달 끝까지 예산 이내 (지출 0건이면 평균 `0`) | `floor(지출 / 일)` | `null` |
 | `WILL_EXHAUST` | 이 속도면 이번 달 안에 예산 소진 | `floor(지출 / 일)` | 예상 소진일 |
 
+## 카테고리 목표 API
+
+카테고리 목표는 달마다 따로 정하며 다음 달로 이어지지 않습니다. `{month}`는 예산과 같이 2000-01부터 서울 기준 현재 월까지, `{category}`는 지출과 같은 7개 값입니다. 한 달의 목표 합은 그 달 예산을 넘을 수 없습니다(같음은 허용). 펫 상태는 카테고리 목표와 무관하게 전체 예산 기준입니다.
+
+### GET `/months/{month}/category-goals`
+
+그 달 목표와 사용 현황을 반환합니다. 목표·예산이 없어도 200입니다.
+
+```json
+{
+  "month": "2026-09",
+  "budgetAmount": 100000,
+  "goalTotalAmount": 100000,
+  "goalsExceedBudget": false,
+  "goals": [
+    { "category": "FOOD", "goalAmount": 40000, "spentAmount": 3000, "remainingAmount": 37000, "usagePercent": 7.5 },
+    { "category": "CAFE", "goalAmount": 60000, "spentAmount": 70000, "remainingAmount": -10000, "usagePercent": 116.6 }
+  ]
+}
+```
+
+- `goals`: 목표가 있는 카테고리만 `FOOD, CAFE, TRANSPORT, SHOPPING, HEALTH, LIVING, OTHER` 순서(지출 금액 순이 아님)
+- `spentAmount`는 통계의 카테고리 `spentAmount`와 같은 값, `remainingAmount = goalAmount - spentAmount`(음수면 초과), `usagePercent`는 홈·통계처럼 소수 첫째 자리에서 **버림**하며 100을 넘을 수 있습니다
+- 예산이 없는 달은 `budgetAmount: null`, `goalsExceedBudget: false`
+- 예산을 목표 합보다 낮추면 목표는 그대로 두고 `goalsExceedBudget: true`를 내려줍니다
+- 오류: 잘못된 `{month}`는 400 `INVALID_REQUEST`(`month`)
+
+### PUT `/months/{month}/category-goals/{category}`
+
+- 요청: `{ "amount": 60000 }`(1 ~ 100,000,000 정수)
+- 응답 200(생성·변경 모두): `{ "month": "2026-09", "category": "CAFE", "amount": 60000 }`
+- 검사 순서: `month` → `category` → 본문 → 그 달 예산 존재 → 합계 한도
+- 오류: 400 `INVALID_REQUEST`(`month`·`category`·`amount`), 409 `BUDGET_REQUIRED`(그 달 예산이 없음), 409 `CATEGORY_GOALS_EXCEED_BUDGET`("카테고리 목표 합계가 월 예산을 넘을 수 없습니다."; `(다른 카테고리 목표 합) + amount > 예산`이며 행은 바뀌지 않음)
+- 한도 규칙이 하나뿐이어서 예산이 이미 목표 합보다 낮은 상태에서 목표를 줄이는 PUT도 결과 합이 예산을 넘으면 409입니다. 목표를 삭제하거나 예산을 올려서 풉니다. 그래서 여러 카테고리를 한꺼번에 바꿀 때는 합이 예산을 넘지 않는 순서로 하나씩 보내야 합니다
+
+### DELETE `/months/{month}/category-goals/{category}`
+
+응답 204. 목표가 없어도, 그 달 예산이 없어도 204이며 예산 때문에 생기는 400·409는 없습니다.
+
 ## curl 요청 예시
 
 로컬 `bootTestRun` 기준입니다. 먼저 변수를 설정하고, 로그인 응답의 토큰을 `TOKEN`·`REFRESH`에 넣습니다.
@@ -319,6 +360,13 @@ curl "$BASE/months/2026-10/stats" -H "Authorization: Bearer $TOKEN"
 
 # 인사이트
 curl "$BASE/insights" -H "Authorization: Bearer $TOKEN"
+
+# 카테고리 목표 조회 / 설정 / 삭제 (204)
+curl "$BASE/months/2026-10/category-goals" -H "Authorization: Bearer $TOKEN"
+curl -X PUT "$BASE/months/2026-10/category-goals/CAFE" \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"amount":60000}'
+curl -X DELETE "$BASE/months/2026-10/category-goals/CAFE" -H "Authorization: Bearer $TOKEN"
 ```
 
 ### 지출
@@ -329,8 +377,9 @@ curl -X POST "$BASE/expenses" \
   -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
   -d '{"amount":12000,"expenseDate":"2026-10-17","category":"CAFE","memo":"라떼"}'
 
-# 월 목록 첫 페이지 / 다음 페이지
+# 월 목록 첫 페이지 / 다음 페이지 / 한 카테고리만
 curl "$BASE/months/2026-10/expenses?limit=20" -H "Authorization: Bearer $TOKEN"
+curl "$BASE/months/2026-10/expenses?category=CAFE" -H "Authorization: Bearer $TOKEN"
 curl -G "$BASE/months/2026-10/expenses" --data-urlencode "cursor=<nextCursor>" \
   -H "Authorization: Bearer $TOKEN"
 
@@ -359,7 +408,8 @@ curl -X DELETE "$BASE/expenses/42" -H "Authorization: Bearer $TOKEN"
 | 405 | `METHOD_NOT_ALLOWED` | 지원하지 않는 메서드(`Allow` 헤더 포함) | - |
 | 409 | `IDEMPOTENCY_KEY_REUSED` | 같은 `Idempotency-Key`에 다른 본문 | 충돌 안내 문구와 월별 통계 확인 안내 |
 | 409 | `PET_REQUIRED` | 펫 미선택 상태에서 홈 호출 | 펫 선택 화면 |
-| 409 | `BUDGET_REQUIRED` | 현재 월 예산 없이 홈 호출 | 예산 설정 화면 |
+| 409 | `BUDGET_REQUIRED` | 현재 월 예산 없이 홈 호출, 그 달 예산 없이 목표 PUT | 예산 설정 화면, 목표는 예산 입력 안내 |
+| 409 | `CATEGORY_GOALS_EXCEED_BUDGET` | 목표 합이 그 달 예산 초과 | 서버 `message`를 그대로 표시 |
 | 415 | `UNSUPPORTED_MEDIA_TYPE` | JSON이 아닌 본문 | - |
 | 500 | `INTERNAL_ERROR` | 서버 오류 | 재시도 안내 |
 | 503 | `SOCIAL_LOGIN_UNAVAILABLE` | 카카오·구글 장애 또는 서버 설정 누락 | 잠시 후 다시 안내 |

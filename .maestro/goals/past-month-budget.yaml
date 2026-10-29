@@ -29,10 +29,14 @@ env:
 # 3. 지난달 통계로 돌아와 예산·남은 예산·"목표 정하기"
 - extendedWaitUntil: { visible: "이 달에 정한 목표가 없어요.", timeout: 20000 }
 - assertVisible: ".*월 예산 200,000원, 고치기"
+# 예산 줄의 금액은 "고치기" 버튼 라벨에 묶여 있어 따로 잡히지 않으므로, 아래 "200,000원"은 남은 예산 칸이다.
 - assertVisible: "200,000원"
 - assertVisible: "남은 예산"
+- assertVisible: "0%"
 - assertNotVisible: "미설정"
 - assertVisible: "이 달에 정한 목표가 없어요."
 - assertVisible: "목표 정하기"
+# 지출이 없는 달은 안내 문구가 보이는 자리에서 버튼 없음 확인(버튼은 그 위에 그려진다)
+- scrollUntilVisible: { element: "이 달에는 기록한 지출이 없어요", direction: DOWN, centerElement: true }
 - assertNotVisible: "지출 기록하기"
 - takeScreenshot: past-month-budget

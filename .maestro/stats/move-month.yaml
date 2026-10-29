@@ -23,8 +23,9 @@ env:
 # 지난달 통계로 돌아와 변경된 금액
 - scrollUntilVisible: { element: "old, .*월 .*일 · 기타, 9,000원", direction: DOWN, centerElement: true }
 - assertNotVisible: "old, .*월 .*일 · 기타, 7,000원"
-- scrollUntilVisible: { element: "총 지출", direction: UP }
+- runFlow: ../subflows/scroll-to-top.yaml
 - assertVisible: "9,000원"
+- scrollUntilVisible: { element: "전체 내역", direction: DOWN, centerElement: true }
 - assertNotVisible: "지출 기록하기"
 # 뒤로 한 번이면 홈
 - tapOn: "뒤로|Navigate up"
@@ -51,10 +52,13 @@ env:
 - tapOn: "저장"
 - scrollUntilVisible: { element: "mv, .*월 .*일 · 식비, 3,000원", direction: DOWN, centerElement: true }
 - assertVisible: "old, .*월 .*일 · 기타, 9,000원"
-- scrollUntilVisible: { element: "총 지출", direction: UP }
+- runFlow: ../subflows/scroll-to-top.yaml
 - assertVisible: "12,000원"
 - assertVisible: "2건"
+# 버튼은 "전체 내역" 위에 그려지므로 그 자리가 보이게 스크롤한 뒤 없음을 확인
+- scrollUntilVisible: { element: "전체 내역", direction: DOWN, centerElement: true }
 - assertNotVisible: "지출 기록하기"
+- runFlow: ../subflows/scroll-to-top.yaml
 # 이번 달로 넘기면 빠져 있음
 - tapOn: "다음 달"
 - extendedWaitUntil: { visible: "0건", timeout: 20000 }
@@ -75,16 +79,17 @@ env:
 - waitForAnimationToEnd
 - tapOn: "저장"
 # 화면이 이전 스크롤 위치로 돌아올 수 있어 맨 위에서부터 찾는다
-- scrollUntilVisible: { element: "총 지출", direction: UP }
+- runFlow: ../subflows/scroll-to-top.yaml
 - scrollUntilVisible: { element: "mv2, .*월 .*일.*, 1,000원", direction: DOWN, centerElement: true }
 - tapOn: "mv2, .*월 .*일.*, 1,000원"
 - extendedWaitUntil: { visible: "삭제", timeout: 20000 }
 - runFlow: ../subflows/pick-previous-month-15.yaml
 - tapOn: "저장"
 - scrollUntilVisible: { element: "mv2, .*월 .*일.*, 1,000원", direction: DOWN, centerElement: true }
-- scrollUntilVisible: { element: "총 지출", direction: UP }
+- runFlow: ../subflows/scroll-to-top.yaml
 - assertVisible: "13,000원"
 - assertVisible: "3건"
+- scrollUntilVisible: { element: "전체 내역", direction: DOWN, centerElement: true }
 - assertNotVisible: "지출 기록하기"
 # 뒤로 한 번이면 홈, 잔액 증가
 - tapOn: "뒤로|Navigate up"

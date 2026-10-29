@@ -85,3 +85,21 @@ export type Insights = {
   weekly: { thisWeek: DayRange; lastWeek: DayRange; categories: WeeklyCategoryChange[] };
   forecast: Forecast;
 };
+
+export type CategoryGoal = {
+  category: ExpenseCategory;
+  goalAmount: number;
+  spentAmount: number;
+  remainingAmount: number;
+  usagePercent: number;
+};
+
+export type CategoryGoals = {
+  month: string;
+  budgetAmount: number | null;
+  goalTotalAmount: number;
+  goalsExceedBudget: boolean;
+  goals: CategoryGoal[];
+};
+
+export type CategoryGoalSaved = { month: string; category: ExpenseCategory; amount: number };

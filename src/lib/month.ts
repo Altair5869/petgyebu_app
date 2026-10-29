@@ -56,3 +56,12 @@ export function monthTitle(month: string): string {
   const [year, m] = month.split('-').map(Number);
   return `${year}년 ${m}월`;
 }
+
+export function monthName(month: string): string {
+  return `${Number(month.split('-')[1])}월`;
+}
+
+// A month from a route param: malformed or out-of-range values are ignored.
+export function parseMonthParam(value: string | undefined, now: Date = new Date()): string | null {
+  return value && /^\d{4}-\d{2}$/.test(value) && value >= EARLIEST_MONTH && value <= currentMonth(now) ? value : null;
+}

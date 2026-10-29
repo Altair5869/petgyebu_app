@@ -10,7 +10,7 @@ import { MonthSummaryCard } from '@/components/month-summary-card';
 import { useMonthExpenses } from '@/hooks/use-month-expenses';
 import { useMonthStats } from '@/hooks/use-month-stats';
 import { CONNECTION_ERROR } from '@/lib/error-message';
-import { currentMonth } from '@/lib/month';
+import { currentMonth, parseMonthParam } from '@/lib/month';
 import { useSession } from '@/session/session-provider';
 import { colors, contentWidth, fonts } from '@/theme';
 
@@ -18,15 +18,10 @@ function Separator() {
   return <View style={styles.separator} />;
 }
 
-// The edit screen returns here with `month`; anything malformed or out of range is ignored.
-function validMonthParam(value: string | undefined): string | null {
-  return value && /^\d{4}-\d{2}$/.test(value) && value >= '2000-01' && value <= currentMonth() ? value : null;
-}
-
 export default function MonthStatsScreen() {
   const { api } = useSession();
   const { month: monthParam } = useLocalSearchParams<{ month?: string }>();
-  const paramMonth = validMonthParam(monthParam);
+  const paramMonth = parseMonthParam(monthParam);
   const [month, setMonth] = useState(paramMonth ?? currentMonth());
   // Adjust state while rendering when the param changes (no effect, no extra commit).
   const [seenParam, setSeenParam] = useState(paramMonth);

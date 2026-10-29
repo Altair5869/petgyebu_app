@@ -4,8 +4,10 @@ import {
   currentMonth,
   dateToSeoulDay,
   formatDay,
+  monthName,
   monthTitle,
   nextMonth,
+  parseMonthParam,
   previousMonth,
   seoulDayToDate,
   todayInSeoul,
@@ -92,5 +94,25 @@ describe('canGoToNextMonth', () => {
   test('uses the Seoul month, so late October UTC is already November', () => {
     // 2026-10-31 15:00 UTC is 2026-11-01 00:00 in Seoul
     expect(canGoToNextMonth('2026-10', new Date('2026-10-31T15:00:00Z'))).toBe(true);
+  });
+});
+
+test('monthName gives the month number with 월', () => {
+  expect(monthName('2026-09')).toBe('9월');
+  expect(monthName('2026-10')).toBe('10월');
+});
+
+describe('parseMonthParam', () => {
+  test('accepts a well-formed month up to the current one', () => {
+    expect(parseMonthParam('2026-09', new Date('2026-10-15T00:00:00+09:00'))).toBe('2026-09');
+    expect(parseMonthParam(currentMonth())).toBe(currentMonth());
+  });
+
+  test('rejects malformed, out-of-range or missing values', () => {
+    expect(parseMonthParam('2026-9')).toBeNull();
+    expect(parseMonthParam('1999-12')).toBeNull();
+    expect(parseMonthParam('2099-01')).toBeNull();
+    expect(parseMonthParam(nextMonth(currentMonth()))).toBeNull();
+    expect(parseMonthParam(undefined)).toBeNull();
   });
 });

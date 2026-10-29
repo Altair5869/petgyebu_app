@@ -155,7 +155,7 @@
 ### GET `/months/{month}/expenses?limit=20&cursor=...`
 
 - `limit`: 기본 20, 1~50 밖이면 400 `INVALID_REQUEST`(보정하지 않음)
-- `category`: 선택. `FOOD, CAFE, TRANSPORT, SHOPPING, HEALTH, LIVING, OTHER` 중 하나면 그 카테고리 지출만 반환합니다. 정렬·`limit`·커서 규칙은 그대로이고 소문자 등 잘못된 값은 400 `INVALID_REQUEST`(`category`). 필터를 바꾸면 커서를 버리고 첫 페이지부터 다시 조회합니다
+- `category`: 선택. `FOOD, CAFE, TRANSPORT, SHOPPING, HEALTH, LIVING, OTHER` 중 하나면 그 카테고리 지출만 반환합니다. 정렬·`limit`·커서 규칙은 그대로이고 소문자 등 잘못된 값은 400 `INVALID_REQUEST`(`category`). 다음 페이지는 `cursor`와 같은 `category`를 함께 보냅니다. 필터를 바꾸면 커서를 버리고 첫 페이지부터 다시 조회합니다
 - 입력 검증 순서: `month` → `limit` → `category` → `cursor`
 - `cursor`: 첫 요청에는 빼고, 이후에는 직전 응답의 `nextCursor`를 그대로 보냅니다. 해석하지 마세요
 - 응답 200: `{ "items": [지출 객체...], "nextCursor": "..." }`. 마지막 페이지는 `nextCursor: null`
@@ -295,7 +295,7 @@
 
 ### DELETE `/months/{month}/category-goals/{category}`
 
-응답 204. 목표가 없어도, 그 달 예산이 없어도 204이며 예산 때문에 생기는 400·409는 없습니다.
+응답 204. 잘못된 `{month}`·`{category}`는 PUT과 같이 400 `INVALID_REQUEST`(`month`/`category`)입니다. 목표가 없거나 그 달 예산이 없어도 400·409 없이 204입니다.
 
 ## curl 요청 예시
 

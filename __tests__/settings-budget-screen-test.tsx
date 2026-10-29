@@ -4,8 +4,10 @@ import { router } from 'expo-router';
 import { ApiError } from '@/api/client';
 import SettingsBudgetScreen from '@/app/settings/budget';
 import { CONNECTION_ERROR } from '@/lib/error-message';
+import { currentMonth, monthTitle, previousMonth } from '@/lib/month';
 
-jest.mock('expo-router', () => ({ router: { back: jest.fn() } }));
+let mockParams: { month?: string } = {};
+jest.mock('expo-router', () => ({ router: { back: jest.fn() }, useLocalSearchParams: () => mockParams }));
 
 const mockApi = { getBudget: jest.fn(), putBudget: jest.fn() };
 const mockRefreshStage = jest.fn();
@@ -16,6 +18,7 @@ jest.mock('@/session/session-provider', () => ({
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockParams = {};
   jest.useFakeTimers({ now: new Date('2026-10-15T12:00:00+09:00') });
   mockRefreshStage.mockResolvedValue(undefined);
 });
@@ -107,4 +110,46 @@ test('ignores a late response for the month that was open before the month chang
 
   await act(async () => resolveOctober({ month: '2026-10', amount: 300000 }));
   expect(screen.getByLabelText('예산 금액')).toHaveDisplayValue('');
+});
+
+test('opens a past month from the month param and saves it', async () => {
+  const past = previousMonth(currentMonth());
+  mockParams = { month: past };
+  mockApi.getBudget.mockResolvedValue({ month: past, amount: null });
+  mockApi.putBudget.mockResolvedValue({ month: past, amount: 250000 });
+  await render(<SettingsBudgetScreen />);
+
+  await fireEvent.changeText(await screen.findByLabelText('예산 금액'), '250000');
+  expect(screen.getByText(`${monthTitle(past)} 예산`)).toBeTruthy();
+  await fireEvent.press(screen.getByRole('button', { name: '저장' }));
+
+  await waitFor(() => expect(router.back).toHaveBeenCalledTimes(1));
+  expect(mockApi.getBudget).toHaveBeenCalledWith(past);
+  expect(mockApi.putBudget).toHaveBeenCalledWith(past, 250000);
+});
+
+test('shows the server month message for a past month instead of refreshing the stage', async () => {
+  const past = previousMonth(currentMonth());
+  mockParams = { month: past };
+  mockApi.getBudget.mockResolvedValue({ month: past, amount: 300000 });
+  mockApi.putBudget.mockRejectedValue(
+    new ApiError(400, 'INVALID_REQUEST', [{ field: 'month', message: '수정할 수 없는 달이에요' }]),
+  );
+  await render(<SettingsBudgetScreen />);
+
+  await fireEvent.changeText(await screen.findByLabelText('예산 금액'), '450000');
+  await fireEvent.press(screen.getByRole('button', { name: '저장' }));
+
+  await screen.findByText('수정할 수 없는 달이에요');
+  expect(mockRefreshStage).not.toHaveBeenCalled();
+  expect(router.back).not.toHaveBeenCalled();
+});
+
+test.each(['2099-01', 'abc'])('ignores a future or malformed month param (%s)', async (value) => {
+  mockParams = { month: value };
+  mockApi.getBudget.mockResolvedValue({ month: currentMonth(), amount: null });
+  await render(<SettingsBudgetScreen />);
+
+  await screen.findByLabelText('예산 금액');
+  expect(mockApi.getBudget).toHaveBeenCalledWith(currentMonth());
 });

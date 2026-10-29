@@ -1,5 +1,5 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -61,6 +61,14 @@ export default function GoalsScreen() {
   const [fieldErrors, setFieldErrors] = useState<Marks>({});
   const [unsaved, setUnsaved] = useState<Partial<Record<ExpenseCategory, true>>>({});
   const generation = useRef(0);
+  // Leaving mid-save lets the writes finish, but a gone screen must not update or go back again.
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   // Runs on first display, on retry, and when coming back from adding the month budget.
   const load = useCallback(() => {
@@ -116,6 +124,7 @@ export default function GoalsScreen() {
 
   function applyServer(goals: CategoryGoals): GoalAmounts {
     const amounts = goalAmountsOf(goals.goals);
+    if (!mounted.current) return amounts;
     setBudget(goals.budgetAmount);
     setServer(amounts);
     return amounts;
@@ -123,10 +132,11 @@ export default function GoalsScreen() {
 
   function finish() {
     savingRef.current = false;
-    setSaving(false);
+    if (mounted.current) setSaving(false);
   }
 
   async function handleFailure(e: unknown, category: ExpenseCategory, m: string) {
+    if (!mounted.current) return;
     const amountError = e instanceof ApiError && e.status === 400 ? e.fieldMessage('amount') : undefined;
     if (amountError) {
       setFieldErrors({ [category]: amountError });
@@ -137,7 +147,7 @@ export default function GoalsScreen() {
       const amounts = applyServer(await api.getCategoryGoals(m));
       const marks: Partial<Record<ExpenseCategory, true>> = {};
       for (const c of CATEGORIES) if (differs(texts, amounts, c)) marks[c] = true;
-      setUnsaved(marks);
+      if (mounted.current) setUnsaved(marks);
     } catch {
       // Without the server's state no field can be marked; the error sentence stays.
     }
@@ -155,7 +165,7 @@ export default function GoalsScreen() {
     try {
       fresh = await api.getCategoryGoals(m);
     } catch (e) {
-      setSaveError(errorMessage(e));
+      if (mounted.current) setSaveError(errorMessage(e));
       finish();
       return;
     }
@@ -165,7 +175,7 @@ export default function GoalsScreen() {
       return;
     }
     if (goalInputTotal(texts) > fresh.budgetAmount) {
-      setSaveError(EXCEED_MESSAGE);
+      if (mounted.current) setSaveError(EXCEED_MESSAGE);
       finish();
       return;
     }
@@ -179,7 +189,7 @@ export default function GoalsScreen() {
         return;
       }
     }
-    router.back();
+    if (mounted.current) router.back();
   }
 
   return (

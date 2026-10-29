@@ -217,6 +217,30 @@ test('saves once when the button is pressed twice quickly', async () => {
   expect(calls).toEqual(['put SHOPPING 20000']);
 });
 
+test('finishes the save but does not go back again after the screen was left', async () => {
+  mockApi.getCategoryGoals.mockResolvedValue(goalsOf(500000, { FOOD: 150000, CAFE: 50000 }));
+  const view = await render(<GoalsScreen />);
+  await screen.findByText(`${monthTitle(MONTH)} 카테고리 목표`);
+  let resolveDelete: () => void = () => {};
+  mockApi.deleteCategoryGoal.mockImplementation((_month: string, category: string) => {
+    calls.push(`delete ${category}`);
+    return new Promise<void>((resolve) => {
+      resolveDelete = resolve;
+    });
+  });
+
+  await fireEvent.changeText(field('카페'), '');
+  await fireEvent.changeText(field('쇼핑'), '80000');
+  await fireEvent.press(saveButton());
+  await waitFor(() => expect(calls).toEqual(['delete CAFE']));
+  await view.unmount();
+  resolveDelete();
+
+  await waitFor(() => expect(calls).toEqual(['delete CAFE', 'put SHOPPING 80000']));
+  await Promise.resolve();
+  expect(router.back).not.toHaveBeenCalled();
+});
+
 test('asks for the month budget first when the month has none', async () => {
   mockApi.getCategoryGoals.mockResolvedValue(goalsOf(null));
   await render(<GoalsScreen />);

@@ -1,0 +1,38 @@
+# 과거 월 예산(F-M08): 지난달 통계의 "넣기 ›"로 예산 입력 → 통계에 예산·남은 예산 → 목표 카드가 "목표 정하기"로 바뀜.
+# 준비: first-login 직후(예산 300,000원, 지출 0건). 지난달 예산은 없는 상태여야 한다.
+appId: com.altair.petgyebu
+env:
+  APP_URL: ${APP_URL || 'http://127.0.0.1:8081'}
+---
+- runFlow: ../subflows/open-app.yaml
+- extendedWaitUntil: { visible: "고양이, 안정", timeout: 120000 }
+- scrollUntilVisible: { element: "월별 통계", direction: DOWN, centerElement: true }
+- tapOn: "월별 통계"
+- extendedWaitUntil: { visible: "총 지출", timeout: 20000 }
+
+# 1. 지난달: 예산 없음 → 목표 카드는 예산 먼저
+- tapOn: "이전 달"
+- extendedWaitUntil: { visible: "미설정", timeout: 20000 }
+- assertVisible: "목표를 정하려면 이 달 예산이 먼저 있어야 해요."
+- assertVisible: ".*월 예산 넣기"
+- assertNotVisible: "목표 정하기"
+
+# 2. 예산 넣기 ›
+- tapOn: ".*넣기.*›.*|.*예산 미설정.*"
+- extendedWaitUntil: { visible: ".*월 예산", timeout: 20000 }
+- tapOn: "예산 금액"
+- inputText: "200000"
+- assertVisible: "200,000"
+- waitForAnimationToEnd
+- tapOn: "저장"
+
+# 3. 지난달 통계로 돌아와 예산·남은 예산·"목표 정하기"
+- extendedWaitUntil: { visible: "이 달에 정한 목표가 없어요.", timeout: 20000 }
+- assertVisible: ".*월 예산 200,000원, 고치기"
+- assertVisible: "200,000원"
+- assertVisible: "남은 예산"
+- assertNotVisible: "미설정"
+- assertVisible: "이 달에 정한 목표가 없어요."
+- assertVisible: "목표 정하기"
+- assertNotVisible: "지출 기록하기"
+- takeScreenshot: past-month-budget

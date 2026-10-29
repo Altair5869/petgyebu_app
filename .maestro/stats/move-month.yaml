@@ -7,9 +7,9 @@ env:
 - runFlow: ../subflows/open-app.yaml
 - extendedWaitUntil: { visible: "고양이, 안정", timeout: 120000 }
 - tapOn: "월별 통계"
-- extendedWaitUntil: { visible: "전체 내역", timeout: 20000 }
+- extendedWaitUntil: { visible: "총 지출", timeout: 20000 }
 - tapOn: "이전 달"
-- extendedWaitUntil: { visible: "old, .*월 .*일 · 기타, 7,000원", timeout: 20000 }
+- scrollUntilVisible: { element: "old, .*월 .*일 · 기타, 7,000원", direction: DOWN, centerElement: true }
 - tapOn: "old, .*월 .*일 · 기타, 7,000원"
 - extendedWaitUntil: { visible: "삭제", timeout: 20000 }
 # Tap the right end so the cursor follows the filled amount; a centre tap on Android lands mid-number and eraseText leaves digits behind.
@@ -21,8 +21,9 @@ env:
 - waitForAnimationToEnd
 - tapOn: "저장"
 # 지난달 통계로 돌아와 변경된 금액
-- extendedWaitUntil: { visible: "old, .*월 .*일 · 기타, 9,000원", timeout: 20000 }
+- scrollUntilVisible: { element: "old, .*월 .*일 · 기타, 9,000원", direction: DOWN, centerElement: true }
 - assertNotVisible: "old, .*월 .*일 · 기타, 7,000원"
+- scrollUntilVisible: { element: "총 지출", direction: UP }
 - assertVisible: "9,000원"
 - assertNotVisible: "지출 기록하기"
 # 뒤로 한 번이면 홈
@@ -43,39 +44,45 @@ env:
 
 # 날짜를 지난달 15일로 변경 → 지난달 통계로 복귀, 그 항목 포함
 - tapOn: "월별 통계"
-- extendedWaitUntil: { visible: "mv, .*월 .*일 · 식비, 3,000원", timeout: 20000 }
+- scrollUntilVisible: { element: "mv, .*월 .*일 · 식비, 3,000원", direction: DOWN, centerElement: true }
 - tapOn: "mv, .*월 .*일 · 식비, 3,000원"
 - extendedWaitUntil: { visible: "삭제", timeout: 20000 }
 - runFlow: ../subflows/pick-previous-month-15.yaml
 - tapOn: "저장"
-- extendedWaitUntil: { visible: "mv, .*월 .*일 · 식비, 3,000원", timeout: 20000 }
+- scrollUntilVisible: { element: "mv, .*월 .*일 · 식비, 3,000원", direction: DOWN, centerElement: true }
 - assertVisible: "old, .*월 .*일 · 기타, 9,000원"
+- scrollUntilVisible: { element: "총 지출", direction: UP }
 - assertVisible: "12,000원"
 - assertVisible: "2건"
 - assertNotVisible: "지출 기록하기"
 # 이번 달로 넘기면 빠져 있음
 - tapOn: "다음 달"
-- extendedWaitUntil: { visible: "지출 기록하기", timeout: 20000 }
+- extendedWaitUntil: { visible: "0건", timeout: 20000 }
 - assertNotVisible: "mv, .*월 .*일 · 식비, 3,000원"
-- assertVisible: "0건"
+- scrollUntilVisible: { element: "지출 기록하기", direction: DOWN, centerElement: true }
 # 같은 통계 화면에서 한 번 더: 이번 달 지출을 같은 지난달로 옮겨도 다시 그 달로 돌아온다(month 파라미터 비우기 확인)
 - tapOn: "지출 기록하기"
 - extendedWaitUntil: { visible: "금액을 입력해 주세요", timeout: 20000 }
 - tapOn: "지출 금액"
 - inputText: "1000"
-# With no category tap the number pad stays open and hides the memo field on Android.
+# With no category tap the number pad stays open and hides the memo field (Android, and iOS where "mv2" went into the amount field).
+- tapOn: "식비"
+- waitForAnimationToEnd
 - scrollUntilVisible:
     element: "선택"
 - tapOn: "선택"
 - inputText: "mv2"
 - waitForAnimationToEnd
 - tapOn: "저장"
-- extendedWaitUntil: { visible: "mv2, .*월 .*일.*, 1,000원", timeout: 20000 }
+# 화면이 이전 스크롤 위치로 돌아올 수 있어 맨 위에서부터 찾는다
+- scrollUntilVisible: { element: "총 지출", direction: UP }
+- scrollUntilVisible: { element: "mv2, .*월 .*일.*, 1,000원", direction: DOWN, centerElement: true }
 - tapOn: "mv2, .*월 .*일.*, 1,000원"
 - extendedWaitUntil: { visible: "삭제", timeout: 20000 }
 - runFlow: ../subflows/pick-previous-month-15.yaml
 - tapOn: "저장"
-- extendedWaitUntil: { visible: "mv2, .*월 .*일.*, 1,000원", timeout: 20000 }
+- scrollUntilVisible: { element: "mv2, .*월 .*일.*, 1,000원", direction: DOWN, centerElement: true }
+- scrollUntilVisible: { element: "총 지출", direction: UP }
 - assertVisible: "13,000원"
 - assertVisible: "3건"
 - assertNotVisible: "지출 기록하기"

@@ -18,7 +18,8 @@ env:
 - tapOn: "저장"
 - extendedWaitUntil: { visible: "288,000원 남았어요", timeout: 20000 }
 - tapOn: "월별 통계"
-- extendedWaitUntil: { visible: "latte, .*월 .*일 · 카페, 12,000원", timeout: 20000 }
+- extendedWaitUntil: { visible: "총 지출", timeout: 20000 }
+- scrollUntilVisible: { element: "latte, .*월 .*일 · 카페, 12,000원", direction: DOWN, centerElement: true }
 
 # 1. 내역에서 누르면 저장된 값이 채워지고 저장은 비활성
 - tapOn: "latte, .*월 .*일 · 카페, 12,000원"
@@ -35,22 +36,28 @@ env:
 - eraseText: 10
 - inputText: "7000"
 - waitForAnimationToEnd
+# 키패드가 올라오는 동안 저장 버튼 좌표가 옛 위치로 읽혀 키패드를 누르는 일이 있어 잠시 기다린다.
+- evalScript: ${(function () { const end = Date.now() + 1500; while (Date.now() < end) {} })()}
 - tapOn: "저장"
-- extendedWaitUntil: { visible: "latte, .*월 .*일 · 카페, 7,000원", timeout: 20000 }
+- scrollUntilVisible: { element: "총 지출", direction: UP }
+- scrollUntilVisible: { element: "latte, .*월 .*일 · 카페, 7,000원", direction: DOWN, centerElement: true }
 - assertNotVisible: "latte, .*월 .*일 · 카페, 12,000원"
 - tapOn: "뒤로|Navigate up"
 - extendedWaitUntil: { visible: "293,000원 남았어요", timeout: 20000 }
 
 # 3. 메모 지움 → 제목이 카테고리로
 - tapOn: "월별 통계"
-- extendedWaitUntil: { visible: "latte, .*월 .*일 · 카페, 7,000원", timeout: 20000 }
+- extendedWaitUntil: { visible: "총 지출", timeout: 20000 }
+- scrollUntilVisible: { element: "latte, .*월 .*일 · 카페, 7,000원", direction: DOWN, centerElement: true }
 - tapOn: "latte, .*월 .*일 · 카페, 7,000원"
 - extendedWaitUntil: { visible: "삭제", timeout: 20000 }
 - tapOn: "latte"
 - eraseText: 10
 - waitForAnimationToEnd
+- evalScript: ${(function () { const end = Date.now() + 1500; while (Date.now() < end) {} })()}
 - tapOn: "저장"
-- extendedWaitUntil: { visible: "카페, .*월 .*일, 7,000원", timeout: 20000 }
+- scrollUntilVisible: { element: "총 지출", direction: UP }
+- scrollUntilVisible: { element: "카페, .*월 .*일, 7,000원", direction: DOWN, centerElement: true }
 - assertNotVisible: "latte, .*월 .*일 · 카페, 7,000원"
 
 # 4. 카테고리 칩을 다시 눌러도 선택 유지(저장 비활성 = 변경 없음)
@@ -66,7 +73,8 @@ env:
 - tapOn: "취소"
 - assertVisible: "지출 금액"
 - tapOn: "뒤로|Navigate up"
-- extendedWaitUntil: { visible: "카페, .*월 .*일, 7,000원", timeout: 20000 }
+- scrollUntilVisible: { element: "총 지출", direction: UP }
+- scrollUntilVisible: { element: "카페, .*월 .*일, 7,000원", direction: DOWN, centerElement: true }
 
 # 6. 삭제 → 확인
 - tapOn: "카페, .*월 .*일, 7,000원"

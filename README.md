@@ -112,6 +112,8 @@ maestro test -e APP_URL=http://127.0.0.1:8081 .maestro/onboarding/relaunch-home.
 | `expenses/edit-deleted.yaml` | 수정 화면 중 다른 경로로 지출이 삭제되면 저장 시 안내 | `first-login` 직후 + 아래 "수정 화면 중 지출 지우기" |
 | `stats/monthly-stats.yaml` | 이번 달 통계·카테고리 비중, 지난달(예산 없음), 지출 없는 달, 예산 초과 | `first-login` 직후 + 아래 "지난달 지출 넣기"(지난달 지출 1건, 7,000원·`old`) |
 | `stats/move-month.yaml` | 지난달 지출 수정 후 지난달 통계로 복귀, 이번 달 지출을 날짜 선택기로 지난달로 이동(이번 달에서 빠지고 홈 잔액 복원), 같은 화면에서 반복 | `first-login` 직후 + "지난달 지출 넣기"(금액 7,000원, 메모 `old`, 카테고리 `OTHER`). 다시 돌리려면 아래 "move-month 다시 돌리기 전 정리"를 실행하고 `old`를 7,000원으로 되돌린 뒤 이번 달 지출을 지운다 |
+| `goals/past-month-budget.yaml` | 지난달 통계의 예산 줄 "넣기 ›"로 지난달 예산 200,000원 입력 → 통계에 예산·남은 예산, 목표 카드가 "목표 정하기"로 바뀜 | `first-login` 직후(지난달 예산 없음) |
+| `goals/category-goals.yaml` | 이번 달 통계 → 목표 정하기(식비 50,000·카페 10,000) → "남았어요" 줄 → 카페 12,000원 기록 → "넘었어요" 줄 → 카페 목표 줄로 카테고리 지출 화면 | `first-login` 직후 |
 | `insights/weekly-insights.yaml` | 홈의 "이번 주 돌아보기"(스크롤 필요) → 지출 없음 안내 → 카페 12,000원 기록 → 늘어난 카테고리 요약·카테고리별 변화·예측 카드 | `first-login` 직후 |
 | `settings/change-pet-and-budget.yaml` | 설정에서 펫을 강아지로, 이번 달 예산을 450,000원으로 바꾸고 홈에 반영 | `first-login` 직후 |
 | `settings/logout.yaml` | 로그아웃 → 로그인 화면 → 다시 로그인하면 홈 | 홈이 보이는 계정 |
@@ -121,6 +123,8 @@ maestro test -e APP_URL=http://127.0.0.1:8081 .maestro/onboarding/relaunch-home.
 | `expenses/list-server-unavailable.yaml` | 백엔드가 꺼지면 월별 통계에서 오류와 다시 시도 | 홈이 열린 상태, 백엔드 중지 |
 | `expenses/request-timeout.yaml` | 서버가 응답 없이 멈추면 10초 뒤 연결 오류, 지출 저장은 "저장됐는지 확인하지 못했어요. 다시 저장해도 한 번만 기록돼요." | `first-login` 직후 홈이 열린 상태, 아래 "서버 응답 멈추기" |
 | `expenses/expense-retry-once.yaml` | 시간 초과 뒤 서버를 재개하고 같은 입력으로 다시 저장해도 월별 통계에 4,321원 1건 | `request-timeout` 직후(등록 화면 유지), 서버 재개 |
+
+통계 화면에는 카테고리 목표 카드가 있어 "전체 내역"·카테고리 비율·"지출 기록하기"가 첫 화면 아래로 밀릴 수 있다. 시나리오는 "총 지출"로 화면 준비를 기다리고 `scrollUntilVisible`로 아래 요소를 찾는다. 입력칸을 바꾸거나 값을 지운 직후에는 키패드가 오르내리는 동안 "저장" 버튼 좌표가 옛 위치로 읽혀 키패드를 누르는 일이 있어, 그 경우 `evalScript`로 1.5초 기다린 뒤 누른다. `stats/*` 준비의 "지난달 지출 넣기"는 docker가 응답하지 않으면 계정 첫 로그인 전에 `POST /expenses`(지난달 날짜, 7,000원, `OTHER`, 메모 `old`)로 넣어도 된다. 새 Metro를 처음 띄운 뒤 첫 `first-login`은 번들 빌드 때문에 시간 초과로 실패할 수 있으니 한 번 더 실행한다.
 
 `stats/move-month.yaml`은 날짜 선택기의 접근성 이름(`Previous Month`, `15`)으로 지난달 15일을 고르고, 선택기를 닫을 때만 헤더 좌표(50%,10%)를 누른다. 접근성 이름은 시뮬레이터 언어가 영어일 때 기준이다. 흐름을 같은 계정에서 이어 돌린다고 가정하지 않는다. `monthly-stats`는 이번 달 지출 326,000원으로 예산을 넘긴 상태로 끝나므로, 그 뒤에 돌린 `move-month`·`edit-and-delete`·`settings/change-pet-and-budget`은 첫 단계의 "고양이, 안정"에서 실패한다. 이 흐름들과 `expenses/expense-retry-once`(절대값 4,321원 1건을 검증)는 각각 새 `first-login` 계정에서 돌린다. `settings/change-pet-and-budget`은 펫과 예산을 강아지·450,000원으로 바꾸고, `settings/delete-account`는 계정을 삭제하므로 그 계정에서는 맨 마지막에 돌린다. `move-month`는 `mv`(3,000원)·`mv2`(1,000원)를 지난달로 옮기므로, 다시 돌리기 전에는 아래 SQL로 지난달의 `mv`·`mv2`를 지우고 이번 달 지출을 앱에서 지우거나 `edit-deleted`의 DELETE(계정의 지출 전부 삭제)로 정리한다. 전부 지우면 `old`는 "지난달 지출 넣기"로 다시 넣는다.
 

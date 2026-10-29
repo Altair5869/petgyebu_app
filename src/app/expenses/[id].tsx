@@ -35,7 +35,8 @@ export default function EditExpenseScreen() {
   // The keyboard avoider measures itself from below the native header, so add the header back.
   const headerHeight = useHeaderHeight();
   const { scrollRef, onScrollLayout, onContentSizeChange, lastField } = useLastFieldScroll();
-  const id = Number(useLocalSearchParams<{ id: string }>().id);
+  const { id: idParam, from } = useLocalSearchParams<{ id: string; from?: string }>();
+  const id = Number(idParam);
   const [screen, setScreen] = useState<Screen>({ status: 'loading' });
   const [draft, setDraft] = useState<ExpenseDraft | null>(null);
   const [busy, setBusy] = useState<'save' | 'delete' | null>(null);
@@ -101,7 +102,10 @@ export default function EditExpenseScreen() {
     setFormError(null);
     try {
       const saved = await api.updateExpense(id, changes);
-      router.dismissTo({ pathname: '/expenses', params: { month: saved.expenseDate.slice(0, 7) } });
+      const savedMonth = saved.expenseDate.slice(0, 7);
+      // From the category list, stay there unless the expense moved to another month.
+      if (from === 'category' && savedMonth === original.expenseDate.slice(0, 7)) router.back();
+      else router.dismissTo({ pathname: '/expenses', params: { month: savedMonth } });
     } catch (e) {
       busyRef.current = false;
       setBusy(null);

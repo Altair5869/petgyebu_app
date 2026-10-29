@@ -7,6 +7,9 @@ import type {
   FieldError,
   Home,
   Insights,
+  CategoryGoals,
+  ExpenseCategory,
+  CategoryGoalSaved,
   Me,
   MonthStats,
   NewExpense,
@@ -20,6 +23,8 @@ export class ApiError extends Error {
     readonly status: number,
     readonly code: string,
     readonly fields: FieldError[] = [],
+    // The server's human-readable `message`, shown as-is for some conflicts.
+    readonly serverMessage?: string,
   ) {
     super(`API error ${status} ${code}`);
     this.name = 'ApiError';
@@ -61,7 +66,7 @@ type Reply = { ok: boolean; status: number; body: unknown };
 
 function toApiError(res: Reply): ApiError {
   const body = (res.body ?? {}) as Partial<ErrorBody>;
-  return new ApiError(res.status, body.code ?? 'UNKNOWN', body.fields ?? []);
+  return new ApiError(res.status, body.code ?? 'UNKNOWN', body.fields ?? [], body.message);
 }
 
 export type ApiClient = ReturnType<typeof createApiClient>;
@@ -218,12 +223,19 @@ export function createApiClient({ baseUrl, tokenStore, onSessionExpired }: ApiCl
     deleteExpense: (id: number) => request<void>('DELETE', `/expenses/${id}`),
     getMonthStats: (month: string) => request<MonthStats>('GET', `/months/${month}/stats`),
     getInsights: () => request<Insights>('GET', '/insights'),
+    getCategoryGoals: (month: string) =>
+      request<CategoryGoals>('GET', `/months/${month}/category-goals`),
+    putCategoryGoal: (month: string, category: ExpenseCategory, amount: number) =>
+      request<CategoryGoalSaved>('PUT', `/months/${month}/category-goals/${category}`, { amount }),
+    deleteCategoryGoal: (month: string, category: ExpenseCategory) =>
+      request<void>('DELETE', `/months/${month}/category-goals/${category}`),
     // The cursor is opaque: pass it back exactly as received.
-    getMonthExpenses: (month: string, cursor?: string) =>
+    getMonthExpenses: (month: string, cursor?: string, category?: ExpenseCategory) =>
       request<ExpensePage>(
         'GET',
         `/months/${month}/expenses?limit=${EXPENSE_PAGE_SIZE}` +
-          (cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''),
+          (cursor ? `&cursor=${encodeURIComponent(cursor)}` : '') +
+          (category ? `&category=${category}` : ''),
       ),
   };
 }

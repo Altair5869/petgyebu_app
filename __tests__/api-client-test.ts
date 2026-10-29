@@ -69,7 +69,7 @@ test('turns an error body into ApiError with code and field messages', async () 
 
   const error = await api.putBudget('2026-10', 0).catch((e: unknown) => e);
   expect(error).toBeInstanceOf(ApiError);
-  expect(error).toMatchObject({ status: 400, code: 'INVALID_REQUEST' });
+  expect(error).toMatchObject({ status: 400, code: 'INVALID_REQUEST', serverMessage: '입력 오류' });
   expect((error as ApiError).fieldMessage('amount')).toBe('금액을 확인해 주세요');
 });
 
@@ -319,6 +319,79 @@ test('gets insights from the insights endpoint with the Bearer token', async () 
   await api.restoreSession();
 
   await expect(api.getInsights()).resolves.toEqual(insights);
+});
+
+test('gets category goals for a month', async () => {
+  const goals = {
+    month: '2026-09',
+    budgetAmount: 80000,
+    goalTotalAmount: 100000,
+    goalsExceedBudget: true,
+    goals: [
+      { category: 'FOOD', goalAmount: 40000, spentAmount: 3000, remainingAmount: 37000, usagePercent: 7.5 },
+      { category: 'CAFE', goalAmount: 60000, spentAmount: 70000, remainingAmount: -10000, usagePercent: 116.6 },
+    ],
+  };
+  handler = (url, init) => {
+    if (url.endsWith('/auth/refresh')) return jsonResponse(200, REFRESH_OK);
+    expect(url).toBe(`${BASE}/months/2026-09/category-goals`);
+    expect(init.method).toBe('GET');
+    expect(bearer(init)).toBe('Bearer a1');
+    return jsonResponse(200, goals);
+  };
+  const { api } = setup('r0');
+  await api.restoreSession();
+
+  await expect(api.getCategoryGoals('2026-09')).resolves.toEqual(goals);
+});
+
+test('puts a category goal amount', async () => {
+  const saved = { month: '2026-09', category: 'CAFE', amount: 60000 };
+  handler = (url, init) => {
+    if (url.endsWith('/auth/refresh')) return jsonResponse(200, REFRESH_OK);
+    expect(url).toBe(`${BASE}/months/2026-09/category-goals/CAFE`);
+    expect(init.method).toBe('PUT');
+    expect(init.body).toBe('{"amount":60000}');
+    expect(bearer(init)).toBe('Bearer a1');
+    return jsonResponse(200, saved);
+  };
+  const { api } = setup('r0');
+  await api.restoreSession();
+
+  await expect(api.putCategoryGoal('2026-09', 'CAFE', 60000)).resolves.toEqual(saved);
+});
+
+test('deletes a category goal and accepts 204', async () => {
+  handler = (url, init) => {
+    if (url.endsWith('/auth/refresh')) return jsonResponse(200, REFRESH_OK);
+    expect(url).toBe(`${BASE}/months/2026-09/category-goals/HEALTH`);
+    expect(init.method).toBe('DELETE');
+    expect(bearer(init)).toBe('Bearer a1');
+    return new Response(null, { status: 204 });
+  };
+  const { api } = setup('r0');
+  await api.restoreSession();
+
+  await expect(api.deleteCategoryGoal('2026-09', 'HEALTH')).resolves.toBeUndefined();
+});
+
+test('filters month expenses by category and keeps it with the cursor', async () => {
+  const urls: string[] = [];
+  handler = (url) => {
+    if (url.endsWith('/auth/refresh')) return jsonResponse(200, REFRESH_OK);
+    urls.push(url);
+    return jsonResponse(200, { items: [], nextCursor: null });
+  };
+  const { api } = setup('r0');
+  await api.restoreSession();
+
+  await api.getMonthExpenses('2026-09', 'c 1', 'CAFE');
+  await api.getMonthExpenses('2026-09', undefined, 'CAFE');
+
+  expect(urls).toEqual([
+    `${BASE}/months/2026-09/expenses?limit=20&cursor=c%201&category=CAFE`,
+    `${BASE}/months/2026-09/expenses?limit=20&category=CAFE`,
+  ]);
 });
 
 describe('request timeout', () => {

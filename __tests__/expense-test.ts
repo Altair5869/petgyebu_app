@@ -1,5 +1,5 @@
 import type { ExpenseUpdate, NewExpense } from '@/api/types';
-import { CATEGORIES, CATEGORY_LABELS, expenseChanges, expenseRowText, parseMemo } from '@/lib/expense';
+import { CATEGORIES, CATEGORY_LABELS, expenseChanges, expenseRowText, parseCategoryParam, parseMemo } from '@/lib/expense';
 
 test('lists the seven categories in the fixed code order with Korean names', () => {
   expect(CATEGORIES).toEqual(['FOOD', 'CAFE', 'TRANSPORT', 'SHOPPING', 'HEALTH', 'LIVING', 'OTHER']);
@@ -55,5 +55,14 @@ describe('expenseChanges', () => {
   test('no memo before and after is no change', () => {
     const noMemo = { ...ORIGINAL, memo: null };
     expect(expenseChanges(noMemo, noMemo)).toEqual({});
+  });
+});
+
+describe('parseCategoryParam', () => {
+  test('accepts only the exact category codes', () => {
+    expect(parseCategoryParam('CAFE')).toBe('CAFE');
+    expect(parseCategoryParam('cafe')).toBeNull();
+    expect(parseCategoryParam('X')).toBeNull();
+    expect(parseCategoryParam(undefined)).toBeNull();
   });
 });

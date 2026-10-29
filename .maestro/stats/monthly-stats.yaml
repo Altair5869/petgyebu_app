@@ -37,39 +37,53 @@ env:
 - tapOn: "저장"
 - extendedWaitUntil: { visible: "274,000원 남았어요", timeout: 20000 }
 - tapOn: "월별 통계"
-- extendedWaitUntil: { visible: "전체 내역", timeout: 20000 }
+- extendedWaitUntil: { visible: "총 지출", timeout: 20000 }
 - assertVisible: "총 지출"
 - assertVisible: "26,000원"
 - assertVisible: "4건"
 - assertVisible: "8.6%"
 - assertVisible: "274,000원"
-- assertVisible: "16,000원 · 61.5%"
-- assertVisible: "8,000원 · 30.8%"
-- assertVisible: "2,000원 · 7.7%"
-- assertVisible: "지출 기록하기"
+# 이번 달: 다음 달 버튼 비활성(맨 위)
 - assertVisible: { text: "다음 달", enabled: false }
+- scrollUntilVisible: { element: "카페 16,000원 · 61.5%", direction: DOWN, centerElement: true }
+- assertVisible: "카페 16,000원 · 61.5%"
+- assertVisible: "식비 8,000원 · 30.8%"
+- assertVisible: "기타 2,000원 · 7.7%"
+- scrollUntilVisible: { element: "지출 기록하기", direction: DOWN, centerElement: true }
+- assertVisible: "지출 기록하기"
 
 # 2. 이전 달(지출 1건, 예산 없음)
+- runFlow: ../subflows/scroll-to-top.yaml
 - tapOn: "이전 달"
-- extendedWaitUntil: { visible: "전체 내역", timeout: 20000 }
+- extendedWaitUntil: { visible: "총 지출", timeout: 20000 }
 - assertVisible: "총 지출"
 - assertVisible: "1건"
 - assertVisible: "미설정"
-- assertNotVisible: "지출 기록하기"
 - assertVisible: "남은 예산"
+# 버튼은 카테고리 비율과 "전체 내역" 사이에 그려진다. 그 자리가 보이게 스크롤한 뒤 없음을 확인한다.
+- scrollUntilVisible: { element: "전체 내역", direction: DOWN, centerElement: true }
+- assertNotVisible: "지출 기록하기"
+- runFlow: ../subflows/scroll-to-top.yaml
 
 # 3. 지출 없는 달(두 달 전)
 - tapOn: "이전 달"
 - extendedWaitUntil: { visible: "이 달에는 기록한 지출이 없어요", timeout: 20000 }
 - assertVisible: "0원"
 - assertVisible: "0건"
+# 안내 문구가 보이는 위치에서 버튼 없음 확인(버튼은 이 문구 아래에 그려진다)
+- scrollUntilVisible: { element: "이 달에는 기록한 지출이 없어요", direction: DOWN, centerElement: true }
 - assertNotVisible: "지출 기록하기"
+- runFlow: ../subflows/scroll-to-top.yaml
 
 # 이번 달로 돌아와 예산 초과(6): 300,000원 넘게 기록
 - tapOn: "다음 달"
-- extendedWaitUntil: { visible: "전체 내역", timeout: 20000 }
+- extendedWaitUntil: { visible: "총 지출", timeout: 20000 }
+- runFlow: ../subflows/scroll-to-top.yaml
 - tapOn: "다음 달"
-- extendedWaitUntil: { visible: "지출 기록하기", timeout: 20000 }
+- extendedWaitUntil: { visible: "총 지출", timeout: 20000 }
+# 스크롤 위치가 달을 바꿔도 남아 있을 수 있어 맨 위에서부터 찾는다
+- runFlow: ../subflows/scroll-to-top.yaml
+- scrollUntilVisible: { element: "지출 기록하기", direction: DOWN, centerElement: true }
 - tapOn: "지출 기록하기"
 - extendedWaitUntil: { visible: "금액을 입력해 주세요", timeout: 20000 }
 - tapOn: "지출 금액"

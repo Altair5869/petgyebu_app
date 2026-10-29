@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 
 import { ApiError, type ApiClient } from '@/api/client';
-import type { Expense } from '@/api/types';
+import type { Expense, ExpenseCategory } from '@/api/types';
 
 type ListState = {
   status: 'loading' | 'error' | 'ready';
@@ -19,7 +19,10 @@ export type MonthExpenses = Omit<ListState, 'nextCursor'> & {
   loadMore: () => void;
 };
 
-export function useMonthExpenses(api: Pick<ApiClient, 'getMonthExpenses'>, month: string): MonthExpenses {
+export function useMonthExpenses(api: Pick<ApiClient, 'getMonthExpenses'>,
+  month: string,
+  category?: ExpenseCategory,
+): MonthExpenses {
   const [state, setState] = useState<ListState>(INITIAL);
   // Each reload starts a new generation; responses from older generations are ignored.
   const generation = useRef(0);
@@ -30,7 +33,11 @@ export function useMonthExpenses(api: Pick<ApiClient, 'getMonthExpenses'>, month
     function fetchPage(cursor: string | null) {
       const gen = generation.current;
       inFlight.current = true;
-      api.getMonthExpenses(month, cursor ?? undefined).then(
+      // Without a category keep the two-argument call shape.
+      const request = category
+        ? api.getMonthExpenses(month, cursor ?? undefined, category)
+        : api.getMonthExpenses(month, cursor ?? undefined);
+      request.then(
         (page) => {
           if (gen !== generation.current) return;
           inFlight.current = false;
@@ -56,7 +63,7 @@ export function useMonthExpenses(api: Pick<ApiClient, 'getMonthExpenses'>, month
         },
       );
     },
-    [api, month],
+    [api, month, category],
   );
 
   const reload = useCallback(() => {

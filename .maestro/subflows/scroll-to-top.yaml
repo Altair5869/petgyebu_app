@@ -1,0 +1,6 @@
+# 스크롤 화면을 맨 위로. scrollUntilVisible UP은 헤더 뒤에 가려진 요소도 "보임"으로 잡아 중간에 멈출 수 있다.
+appId: com.altair.petgyebu
+---
+- swipe: { start: "50%,30%", end: "50%,90%", duration: 300 }
+- swipe: { start: "50%,30%", end: "50%,90%", duration: 300 }
+- swipe: { start: "50%,30%", end: "50%,90%", duration: 300 }

@@ -40,3 +40,7 @@ export function expenseChanges(original: NewExpense, edited: NewExpense): Expens
   if (edited.memo !== original.memo) changes.memo = edited.memo;
   return changes;
 }
+
+export function parseCategoryParam(value: string | undefined): ExpenseCategory | null {
+  return CATEGORIES.find((c) => c === value) ?? null;
+}

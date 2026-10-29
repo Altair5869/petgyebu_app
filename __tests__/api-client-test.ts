@@ -69,7 +69,7 @@ test('turns an error body into ApiError with code and field messages', async () 
 
   const error = await api.putBudget('2026-10', 0).catch((e: unknown) => e);
   expect(error).toBeInstanceOf(ApiError);
-  expect(error).toMatchObject({ status: 400, code: 'INVALID_REQUEST' });
+  expect(error).toMatchObject({ status: 400, code: 'INVALID_REQUEST', serverMessage: '입력 오류' });
   expect((error as ApiError).fieldMessage('amount')).toBe('금액을 확인해 주세요');
 });
 

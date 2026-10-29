@@ -23,6 +23,8 @@ export class ApiError extends Error {
     readonly status: number,
     readonly code: string,
     readonly fields: FieldError[] = [],
+    // The server's human-readable `message`, shown as-is for some conflicts.
+    readonly serverMessage?: string,
   ) {
     super(`API error ${status} ${code}`);
     this.name = 'ApiError';
@@ -64,7 +66,7 @@ type Reply = { ok: boolean; status: number; body: unknown };
 
 function toApiError(res: Reply): ApiError {
   const body = (res.body ?? {}) as Partial<ErrorBody>;
-  return new ApiError(res.status, body.code ?? 'UNKNOWN', body.fields ?? []);
+  return new ApiError(res.status, body.code ?? 'UNKNOWN', body.fields ?? [], body.message);
 }
 
 export type ApiClient = ReturnType<typeof createApiClient>;

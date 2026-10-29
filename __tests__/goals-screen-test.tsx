@@ -46,6 +46,8 @@ function goalsOf(budgetAmount: number | null, amounts: Partial<Record<ExpenseCat
   };
 }
 
+jest.mock('expo-router/react-navigation', () => ({ useHeaderHeight: () => 116 }));
+
 // Records every write in order, so tests can check the save sequence.
 let calls: string[] = [];
 

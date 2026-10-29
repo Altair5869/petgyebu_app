@@ -1,4 +1,5 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useHeaderHeight } from 'expo-router/react-navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -47,6 +48,8 @@ function differs(texts: Texts, server: GoalAmounts, category: ExpenseCategory): 
 
 export default function GoalsScreen() {
   const { api } = useSession();
+  // The keyboard avoider measures itself from below the native header, so add the header back.
+  const headerHeight = useHeaderHeight();
   const params = useLocalSearchParams<{ month?: string }>();
   const month = parseMonthParam(params.month);
   const [loadState, setLoadState] = useState<'loading' | 'error' | 'ready'>('loading');
@@ -194,10 +197,11 @@ export default function GoalsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-      <KeyboardAvoidingView behavior="padding" style={styles.keyboardAvoiding}>
+      <KeyboardAvoidingView behavior="padding" keyboardVerticalOffset={headerHeight} style={styles.keyboardAvoiding}>
         <ScrollView
           contentInsetAdjustmentBehavior="automatic"
           contentContainerStyle={styles.container}
+          keyboardDismissMode="interactive"
           keyboardShouldPersistTaps="handled">
           <Text style={styles.title}>{monthTitle(month)} 카테고리 목표</Text>
           {exceededOnEntry && <Text style={styles.error}>{EXCEED_MESSAGE}</Text>}
@@ -243,6 +247,8 @@ export default function GoalsScreen() {
               );
             })}
           </View>
+        </ScrollView>
+        <View style={styles.footer}>
           {saveError && <Text style={styles.error}>{saveError}</Text>}
           <Button
             label="저장"
@@ -250,7 +256,7 @@ export default function GoalsScreen() {
             disabled={!changed || invalid || left < 0}
             loading={saving}
           />
-        </ScrollView>
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -284,4 +290,5 @@ const styles = StyleSheet.create({
   },
   unit: { fontFamily: fonts.regular, fontSize: 16, color: colors.text },
   error: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, color: colors.danger },
+  footer: { ...contentWidth, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 16, gap: 8 },
 });

@@ -28,6 +28,11 @@ async function setup(getMonthExpenses: jest.Mock) {
   return hook;
 }
 
+async function setupWithCategory(getMonthExpenses: jest.Mock) {
+  const api = { getMonthExpenses };
+  return renderHook(() => useMonthExpenses(api, '2026-09', 'CAFE'));
+}
+
 async function flush() {
   await act(async () => {});
 }
@@ -138,4 +143,30 @@ test('starts over from the first page on INVALID_CURSOR', async () => {
 
   expect(get).toHaveBeenLastCalledWith('2026-10', undefined);
   expect(result.current.items.map((e) => e.id)).toEqual([3, 2, 1]);
+});
+
+test('sends the category with the first page and with the cursor', async () => {
+  const get = jest.fn().mockResolvedValueOnce(page([2], 'n1')).mockResolvedValueOnce(page([1], null));
+  const { result } = await setupWithCategory(get);
+
+  await act(async () => result.current.reload());
+  expect(get).toHaveBeenLastCalledWith('2026-09', undefined, 'CAFE');
+
+  await act(async () => result.current.loadMore());
+  expect(get).toHaveBeenLastCalledWith('2026-09', 'n1', 'CAFE');
+});
+
+test('keeps the category when restarting after INVALID_CURSOR', async () => {
+  const get = jest
+    .fn()
+    .mockResolvedValueOnce(page([2], 'n1'))
+    .mockRejectedValueOnce(new ApiError(400, 'INVALID_CURSOR'))
+    .mockResolvedValueOnce(page([2, 1], null));
+  const { result } = await setupWithCategory(get);
+  await act(async () => result.current.reload());
+
+  await act(async () => result.current.loadMore());
+  await flush();
+
+  expect(get).toHaveBeenLastCalledWith('2026-09', undefined, 'CAFE');
 });

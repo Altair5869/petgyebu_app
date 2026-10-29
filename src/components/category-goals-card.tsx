@@ -22,7 +22,7 @@ export function CategoryGoalsCard({ goals, onEditGoals, onAddBudget, onSelect }:
       <View style={styles.titleRow}>
         <Text style={styles.title}>카테고리 목표</Text>
         {hasGoals && (
-          <Pressable accessibilityRole="button" accessibilityLabel="고치기 ›" onPress={onEditGoals} hitSlop={8} style={styles.edit}>
+          <Pressable accessibilityRole="button" accessibilityLabel="카테고리 목표 고치기" onPress={onEditGoals} hitSlop={8} style={styles.edit}>
             <Text style={styles.link}>고치기 ›</Text>
           </Pressable>
         )}

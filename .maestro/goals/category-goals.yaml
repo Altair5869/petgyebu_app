@@ -1,4 +1,4 @@
-# 카테고리 목표(F-M08): 이번 달 통계 → 목표 정하기(식비 50,000·카페 10,000) → 남은 금액 → 카페 12,000원 기록 → 초과 → 카테고리 지출 화면.
+# 카테고리 목표(F-M08): 이번 달 통계 → 목표 정하기(식비 50,000·카페 10,000) → 남은 금액 → 식비 8,000·카페 12,000원 기록 → 초과 → 카테고리 지출 화면(카페 지출만).
 # 준비: first-login 직후(예산 300,000원, 지출 0건).
 appId: com.altair.petgyebu
 env:
@@ -30,7 +30,17 @@ env:
 - extendedWaitUntil: { visible: "식비, 목표 50,000원 중 0원 썼어요, 50,000원 남았어요", timeout: 20000 }
 - assertVisible: "카페, 목표 10,000원 중 0원 썼어요, 10,000원 남았어요"
 
-# 3. 카페 12,000원 기록(통계의 "지출 기록하기")
+# 3. 식비 8,000원, 카페 12,000원 기록(통계의 "지출 기록하기"). 식비 지출이 있어야 카테고리 필터를 확인할 수 있다.
+- scrollUntilVisible: { element: "지출 기록하기", direction: DOWN, centerElement: true }
+- tapOn: "지출 기록하기"
+- extendedWaitUntil: { visible: "금액을 입력해 주세요", timeout: 20000 }
+- tapOn: "지출 금액"
+- inputText: "8000"
+- tapOn: "식비"
+- waitForAnimationToEnd
+- tapOn: "저장"
+- extendedWaitUntil: { visible: "식비, 목표 50,000원 중 8,000원 썼어요, 42,000원 남았어요", timeout: 20000 }
+- runFlow: ../subflows/scroll-to-top.yaml
 - scrollUntilVisible: { element: "지출 기록하기", direction: DOWN, centerElement: true }
 - tapOn: "지출 기록하기"
 - extendedWaitUntil: { visible: "금액을 입력해 주세요", timeout: 20000 }
@@ -40,13 +50,14 @@ env:
 - waitForAnimationToEnd
 - tapOn: "저장"
 - extendedWaitUntil: { visible: "카페, 목표 10,000원 중 12,000원 썼어요, 2,000원 넘었어요", timeout: 20000 }
-- assertVisible: "식비, 목표 50,000원 중 0원 썼어요, 50,000원 남았어요"
+- assertVisible: "식비, 목표 50,000원 중 8,000원 썼어요, 42,000원 남았어요"
 - takeScreenshot: stats-with-goals
 
-# 4. 카페 목표 줄 → 카테고리 지출 화면
+# 4. 카페 목표 줄 → 카테고리 지출 화면: 카페 지출만 있고 식비 지출은 없다
 - tapOn: "카페, 목표 10,000원 중 12,000원 썼어요, 2,000원 넘었어요"
 - extendedWaitUntil: { visible: "카테고리 지출", timeout: 20000 }
-- assertVisible: "12,000원"
 - assertVisible: "목표 10,000원 · 2,000원 초과"
-- assertNotVisible: "식비"
+- scrollUntilVisible: { element: "카페, .*월 .*일, 12,000원", direction: DOWN, centerElement: true }
+- assertVisible: "카페, .*월 .*일, 12,000원"
+- assertNotVisible: "식비, .*월 .*일, 8,000원"
 - takeScreenshot: category-expenses

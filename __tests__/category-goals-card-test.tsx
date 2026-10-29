@@ -46,7 +46,7 @@ test('goal rows show remaining or over, progress text and a capped bar', async (
   screen.getByText('120,000원 / 목표 150,000원');
   expect(screen.getByTestId('goal-bar-CAFE')).toHaveStyle({ width: '100%' });
   expect(screen.getByTestId('goal-bar-FOOD')).toHaveStyle({ width: '80%' });
-  await fireEvent.press(screen.getByRole('button', { name: '고치기 ›' }));
+  await fireEvent.press(screen.getByRole('button', { name: '카테고리 목표 고치기' }));
   expect(handlers.onEditGoals).toHaveBeenCalled();
   await fireEvent.press(
     screen.getByRole('button', { name: '식비, 목표 150,000원 중 120,000원 썼어요, 30,000원 남았어요' }),

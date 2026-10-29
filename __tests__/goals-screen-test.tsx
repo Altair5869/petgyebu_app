@@ -199,6 +199,31 @@ test('sends nothing when the budget was lowered elsewhere before saving', async 
   expect(router.back).not.toHaveBeenCalled();
 });
 
+test('shows the exceed warning once when the budget read before saving says goals exceed it', async () => {
+  await renderWith(500000, { FOOD: 150000, CAFE: 50000 });
+  expect(screen.queryByText(EXCEED)).toBeNull();
+
+  await fireEvent.changeText(field('쇼핑'), '10000');
+  // Another device lowered the budget below the goals already saved.
+  mockApi.getCategoryGoals.mockResolvedValue(goalsOf(100000, { FOOD: 150000, CAFE: 50000 }));
+  await fireEvent.press(saveButton());
+
+  await waitFor(() => expect(screen.getAllByText(EXCEED)).toHaveLength(1));
+  expect(mockApi.putCategoryGoal).not.toHaveBeenCalled();
+});
+
+test('clears the exceed warning once a read shows the goals fit the budget again', async () => {
+  await renderWith(80000, { FOOD: 40000, CAFE: 60000 });
+  expect(screen.getByText(EXCEED)).toBeTruthy();
+
+  await fireEvent.changeText(field('식비'), '10000');
+  mockApi.getCategoryGoals.mockResolvedValue(goalsOf(500000, { FOOD: 40000, CAFE: 60000 }));
+  await fireEvent.press(saveButton());
+
+  await waitFor(() => expect(router.back).toHaveBeenCalledTimes(1));
+  expect(screen.queryByText(EXCEED)).toBeNull();
+});
+
 test('saves once when the button is pressed twice quickly', async () => {
   await renderWith(500000, { FOOD: 150000 });
   let resolveRead: (value: unknown) => void = () => {};

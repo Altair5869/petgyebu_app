@@ -56,7 +56,7 @@ export default function GoalsScreen() {
   const [budget, setBudget] = useState<number | null>(null);
   // The server's goals as last read; "changed" and "not saved" compare against these.
   const [server, setServer] = useState<GoalAmounts>({});
-  const [exceededOnEntry, setExceededOnEntry] = useState(false);
+  const [exceeded, setExceeded] = useState(false);
   const [texts, setTexts] = useState<Texts>(() => textsOf({}));
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
@@ -85,7 +85,7 @@ export default function GoalsScreen() {
         const amounts = goalAmountsOf(goals.goals);
         setBudget(goals.budgetAmount);
         setServer(amounts);
-        setExceededOnEntry(goals.goalsExceedBudget);
+        setExceeded(goals.goalsExceedBudget);
         setTexts(textsOf(amounts));
         setSaveError(null);
         setFieldErrors({});
@@ -130,6 +130,7 @@ export default function GoalsScreen() {
     if (!mounted.current) return amounts;
     setBudget(goals.budgetAmount);
     setServer(amounts);
+    setExceeded(goals.goalsExceedBudget);
     return amounts;
   }
 
@@ -204,7 +205,7 @@ export default function GoalsScreen() {
           keyboardDismissMode="interactive"
           keyboardShouldPersistTaps="handled">
           <Text style={styles.title}>{monthTitle(month)} 카테고리 목표</Text>
-          {exceededOnEntry && <Text style={styles.error}>{EXCEED_MESSAGE}</Text>}
+          {exceeded && <Text style={styles.error}>{EXCEED_MESSAGE}</Text>}
           <View style={styles.summary}>
             <Text style={styles.summaryText}>
               예산 {formatWon(budget)} · 목표 합 {formatWon(total)}
@@ -249,7 +250,7 @@ export default function GoalsScreen() {
           </View>
         </ScrollView>
         <View style={styles.footer}>
-          {saveError && <Text style={styles.error}>{saveError}</Text>}
+          {saveError && !(exceeded && saveError === EXCEED_MESSAGE) && <Text style={styles.error}>{saveError}</Text>}
           <Button
             label="저장"
             onPress={() => void save(month)}

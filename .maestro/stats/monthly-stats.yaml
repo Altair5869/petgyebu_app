@@ -70,7 +70,7 @@ env:
 - extendedWaitUntil: { visible: "이 달에는 기록한 지출이 없어요", timeout: 20000 }
 - assertVisible: "0원"
 - assertVisible: "0건"
-# 안내 문구가 보이는 위치에서 버튼 없음 확인(버튼은 이 문구 위에 그려진다)
+# 안내 문구가 보이는 위치에서 버튼 없음 확인(버튼은 이 문구 아래에 그려진다)
 - scrollUntilVisible: { element: "이 달에는 기록한 지출이 없어요", direction: DOWN, centerElement: true }
 - assertNotVisible: "지출 기록하기"
 - runFlow: ../subflows/scroll-to-top.yaml

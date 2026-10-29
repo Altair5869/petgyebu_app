@@ -308,7 +308,7 @@ test('the budget row opens the budget screen for the shown month', async () => {
 test('goal edit and category rows navigate with month and category', async () => {
   await render(<MonthStatsScreen />);
 
-  await fireEvent.press(await screen.findByRole('button', { name: '고치기 ›' }));
+  await fireEvent.press(await screen.findByRole('button', { name: '카테고리 목표 고치기' }));
   expect(router.push).toHaveBeenCalledWith({ pathname: '/goals', params: { month: currentMonth() } });
 
   await fireEvent.press(screen.getByRole('button', { name: /^식비, 목표/ }));

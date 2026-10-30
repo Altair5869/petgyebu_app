@@ -62,6 +62,11 @@ export type MonthStats = {
   categories: CategoryStat[];
 };
 
+export type DayTotal = { date: string; spentAmount: number; expenseCount: number };
+
+// Only days with spending, by date ascending.
+export type DailyTotals = { month: string; days: DayTotal[] };
+
 export type DayRange = { from: string; to: string };
 
 export type WeeklyCategoryChange = {

@@ -394,6 +394,27 @@ test('filters month expenses by category and keeps it with the cursor', async ()
   ]);
 });
 
+test('day list and daily totals hit the calendar endpoints', async () => {
+  const urls: string[] = [];
+  handler = (url) => {
+    if (url.endsWith('/auth/refresh')) return jsonResponse(200, REFRESH_OK);
+    urls.push(url);
+    return jsonResponse(200, url.includes('daily-totals') ? { month: '2026-09', days: [] } : { items: [], nextCursor: null });
+  };
+  const { api } = setup('r0');
+  await api.restoreSession();
+
+  await api.getMonthExpenses('2026-09', undefined, undefined, '2026-09-28');
+  await api.getMonthExpenses('2026-09', 'c1', undefined, '2026-09-28');
+  await expect(api.getDailyTotals('2026-09')).resolves.toEqual({ month: '2026-09', days: [] });
+
+  expect(urls).toEqual([
+    `${BASE}/months/2026-09/expenses?limit=20&date=2026-09-28`,
+    `${BASE}/months/2026-09/expenses?limit=20&cursor=c1&date=2026-09-28`,
+    `${BASE}/months/2026-09/daily-totals`,
+  ]);
+});
+
 describe('request timeout', () => {
   // A server that accepts the connection but never answers; aborting rejects like real fetch.
   function hangingFetch(_url: string, init: RequestInit) {

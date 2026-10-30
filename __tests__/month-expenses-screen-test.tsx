@@ -2,11 +2,18 @@ import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { router } from 'expo-router';
 
 import MonthStatsScreen from '@/app/expenses';
-import { currentMonth, monthTitle, previousMonth } from '@/lib/month';
+import { currentMonth, formatDay, monthTitle, previousMonth, todayInSeoul } from '@/lib/month';
 
-let mockFocusEffect: () => void = () => {};
+// The screen registers several focus effects; a regained focus runs all of them.
+const mockFocusEffects = new Set<() => void>();
+const mockFocusEffect = () => mockFocusEffects.forEach((effect) => effect());
 let mockParams: { month?: string } = {};
-const mockApi = { getMonthExpenses: jest.fn(), getMonthStats: jest.fn(), getCategoryGoals: jest.fn() };
+const mockApi = {
+  getMonthExpenses: jest.fn(),
+  getMonthStats: jest.fn(),
+  getCategoryGoals: jest.fn(),
+  getDailyTotals: jest.fn(),
+};
 
 jest.mock('@/session/session-provider', () => ({
   useSession: () => ({ api: mockApi }),
@@ -18,8 +25,13 @@ jest.mock('expo-router', () => {
     router: { push: jest.fn(), setParams: jest.fn() },
     useLocalSearchParams: () => mockParams,
     useFocusEffect: (effect: () => void) => {
-      mockFocusEffect = effect;
-      useEffect(() => effect(), [effect]);
+      useEffect(() => {
+        mockFocusEffects.add(effect);
+        effect();
+        return () => {
+          mockFocusEffects.delete(effect);
+        };
+      }, [effect]);
     },
   };
 });
@@ -48,6 +60,7 @@ beforeEach(() => {
   mockApi.getMonthStats.mockImplementation((month: string) => Promise.resolve(statsFor(month)));
   mockApi.getMonthExpenses.mockResolvedValue(EMPTY_PAGE);
   mockApi.getCategoryGoals.mockImplementation((month: string) => Promise.resolve(goalsFor(month)));
+  mockApi.getDailyTotals.mockImplementation((month: string) => Promise.resolve({ month, days: [] }));
 });
 
 test('opens on the current month with stats and the record button', async () => {
@@ -315,5 +328,146 @@ test('goal edit and category rows navigate with month and category', async () =>
   expect(router.push).toHaveBeenCalledWith({
     pathname: '/expenses/by-category',
     params: { month: currentMonth(), category: 'FOOD' },
+  });
+});
+
+describe('calendar tab', () => {
+  const SEPT_TOTALS = {
+    month: '2026-09',
+    days: [
+      { date: '2026-09-01', spentAmount: 800, expenseCount: 1 },
+      { date: '2026-09-28', spentAmount: 23000, expenseCount: 2 },
+    ],
+  };
+  const lunch = { id: 7, amount: 15000, expenseDate: '2026-09-28', category: 'FOOD', memo: '점심' };
+
+  function dayPage(date?: string) {
+    return date === '2026-09-28' ? { items: [lunch], nextCursor: null } : EMPTY_PAGE;
+  }
+
+  async function openSeptemberCalendar() {
+    mockParams = { month: '2026-09' };
+    mockApi.getDailyTotals.mockImplementation((month: string) =>
+      Promise.resolve(month === '2026-09' ? SEPT_TOTALS : { month, days: [] }),
+    );
+    mockApi.getMonthExpenses.mockImplementation((_m: string, _c?: string, _cat?: string, date?: string) =>
+      Promise.resolve(dayPage(date)),
+    );
+    await render(<MonthStatsScreen />);
+    await screen.findByText('26,000원');
+    await fireEvent.press(screen.getByRole('tab', { name: '달력' }));
+    await screen.findByText('9월 1일 · 800원');
+  }
+
+  test('opens on the list and loads the calendar only when its tab is chosen', async () => {
+    await render(<MonthStatsScreen />);
+    await screen.findByText('전체 내역');
+    expect(screen.getByRole('tab', { name: '목록' }).props.accessibilityState?.selected).toBe(true);
+    expect(mockApi.getDailyTotals).not.toHaveBeenCalled();
+
+    await fireEvent.press(screen.getByRole('tab', { name: '달력' }));
+
+    // This month starts on today.
+    const today = todayInSeoul();
+    await screen.findByText(formatDay(today));
+    expect(mockApi.getDailyTotals).toHaveBeenCalledWith(currentMonth());
+    expect(mockApi.getMonthExpenses).toHaveBeenLastCalledWith(currentMonth(), undefined, undefined, today);
+    expect(screen.getByRole('button', { name: new RegExp(`^${formatDay(today)}, 오늘`) }).props.accessibilityState?.selected).toBe(true);
+    screen.getByText('이날은 지출이 없어요');
+    expect(screen.queryByText('전체 내역')).toBeNull();
+  });
+
+  test('a past month starts on the 1st and shortens day totals in the cells', async () => {
+    await openSeptemberCalendar();
+
+    expect(screen.getByRole('button', { name: '9월 1일, 800원' }).props.accessibilityState?.selected).toBe(true);
+    screen.getByText('800');
+    screen.getByText('2.3만');
+    screen.getByRole('button', { name: '9월 2일, 지출 없음' });
+    expect(mockApi.getMonthExpenses).toHaveBeenLastCalledWith('2026-09', undefined, undefined, '2026-09-01');
+  });
+
+  test('picking a day shows its total and expenses without reloading the calendar', async () => {
+    await openSeptemberCalendar();
+
+    await fireEvent.press(screen.getByRole('button', { name: '9월 28일, 23,000원' }));
+
+    await screen.findByText('9월 28일 · 23,000원');
+    screen.getByRole('button', { name: /15,000원$/ });
+    expect(mockApi.getMonthExpenses).toHaveBeenLastCalledWith('2026-09', undefined, undefined, '2026-09-28');
+    expect(mockApi.getDailyTotals).toHaveBeenCalledTimes(1);
+  });
+
+  test('changing the month picks the default day again', async () => {
+    await openSeptemberCalendar();
+    await fireEvent.press(screen.getByRole('button', { name: '9월 28일, 23,000원' }));
+    await screen.findByText('9월 28일 · 23,000원');
+
+    await fireEvent.press(screen.getByRole('button', { name: '이전 달' }));
+    await screen.findByText('8월 1일');
+    await fireEvent.press(screen.getByRole('button', { name: '다음 달' }));
+
+    await screen.findByText('9월 1일 · 800원');
+    expect(mockApi.getDailyTotals).toHaveBeenLastCalledWith('2026-09');
+  });
+
+  test('returning from an edit reloads the totals and the day, keeping the picked day and tab', async () => {
+    await openSeptemberCalendar();
+    await fireEvent.press(screen.getByRole('button', { name: '9월 28일, 23,000원' }));
+    await fireEvent.press(await screen.findByRole('button', { name: /15,000원$/ }));
+    expect(router.push).toHaveBeenCalledWith('/expenses/7');
+    const statsCalls = mockApi.getMonthStats.mock.calls.length;
+
+    // The expense moved to another day.
+    mockApi.getDailyTotals.mockResolvedValue({ ...SEPT_TOTALS, days: [{ date: '2026-09-28', spentAmount: 8000, expenseCount: 1 }] });
+    mockApi.getMonthExpenses.mockResolvedValue(EMPTY_PAGE);
+    await act(async () => mockFocusEffect());
+
+    await screen.findByText('9월 28일 · 8,000원');
+    screen.getByText('이날은 지출이 없어요');
+    expect(mockApi.getDailyTotals).toHaveBeenCalledTimes(2);
+    expect(mockApi.getMonthStats).toHaveBeenCalledTimes(statsCalls);
+  });
+
+  test('saving an edit returns with the month param and keeps the picked day', async () => {
+    await openSeptemberCalendar();
+    // The screen consumed the opening param.
+    mockParams = {};
+    await screen.rerender(<MonthStatsScreen />);
+    await fireEvent.press(screen.getByRole('button', { name: '9월 28일, 23,000원' }));
+    await screen.findByText('9월 28일 · 23,000원');
+
+    // The edit screen dismisses back with params { month: savedMonth }.
+    mockParams = { month: '2026-09' };
+    await screen.rerender(<MonthStatsScreen />);
+    await act(async () => mockFocusEffect());
+
+    await screen.findByText('9월 28일 · 23,000원');
+    expect(screen.getByRole('button', { name: '9월 28일, 23,000원' }).props.accessibilityState?.selected).toBe(true);
+    expect(screen.getByRole('tab', { name: '달력' }).props.accessibilityState?.selected).toBe(true);
+  });
+
+  test('a failed day list keeps the calendar and retries only that day', async () => {
+    await openSeptemberCalendar();
+    mockApi.getMonthExpenses.mockRejectedValueOnce(new TypeError('Network request failed'));
+
+    await fireEvent.press(screen.getByRole('button', { name: '9월 28일, 23,000원' }));
+    await fireEvent.press(await screen.findByRole('button', { name: '다시 시도' }));
+
+    await screen.findByRole('button', { name: /15,000원$/ });
+    screen.getByText('9월 28일 · 23,000원');
+    expect(mockApi.getDailyTotals).toHaveBeenCalledTimes(1);
+  });
+
+  test('a failed calendar load offers a retry', async () => {
+    mockApi.getDailyTotals.mockRejectedValueOnce(new TypeError('Network request failed'));
+    await render(<MonthStatsScreen />);
+    await screen.findByText('전체 내역');
+    await fireEvent.press(screen.getByRole('tab', { name: '달력' }));
+
+    await fireEvent.press(await screen.findByRole('button', { name: '다시 시도' }));
+
+    await screen.findByText(formatDay(todayInSeoul()));
+    expect(mockApi.getDailyTotals).toHaveBeenCalledTimes(2);
   });
 });

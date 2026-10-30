@@ -15,24 +15,21 @@ env:
 - tapOn: "선택"
 # ASCII text: Maestro on Android drops focus while typing Hangul.
 - inputText: "latte"
-- waitForAnimationToEnd
-- tapOn: "저장"
+- runFlow: ../subflows/tap-save.yaml
 - extendedWaitUntil: { visible: "288,000원 남았어요", timeout: 20000 }
 - assertVisible: "사용률 4%"
 - tapOn: "지출 기록하기"
 - tapOn: "지출 금액"
 - inputText: "5000"
-- waitForAnimationToEnd
-- tapOn: "저장"
+- runFlow: ../subflows/tap-save.yaml
 - extendedWaitUntil: { visible: "283,000원 남았어요", timeout: 20000 }
 - tapOn: "지출 기록하기"
 - tapOn: "지출 금액"
 - inputText: "150000"
-- waitForAnimationToEnd
-- tapOn: "저장"
+- runFlow: ../subflows/tap-save.yaml
 - extendedWaitUntil: { visible: "고양이, 주의", timeout: 20000 }
 - tapOn: "월별 통계"
-- extendedWaitUntil: { visible: "전체 내역", timeout: 20000 }
+- extendedWaitUntil: { visible: "총 지출", timeout: 20000 }
 - assertVisible: "167,000원"
 - assertVisible: "3건"
 # Each row is one accessible element labelled "{title}, {subtitle}, {amount}".

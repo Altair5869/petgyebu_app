@@ -18,10 +18,7 @@ env:
 - inputText: "50000"
 - tapOn: "카페 목표 금액"
 - inputText: "10000"
-- waitForAnimationToEnd
-# 입력칸을 바꿀 때 키패드가 잠깐 내려갔다 올라오며 저장 버튼 위치가 흔들린다. 자리가 잡힐 때까지 1.5초 기다린다.
-- evalScript: ${(function () { const end = Date.now() + 1500; while (Date.now() < end) {} })()}
-- tapOn: "저장"
+- runFlow: ../subflows/tap-save.yaml
 
 # 2. 통계의 목표 줄
 # iOS는 목표 줄 하나를 접근성 요소 하나로 묶어 "50,000원 남음" 같은 보이는 문구는 따로 잡히지 않는다.
@@ -36,8 +33,7 @@ env:
 - tapOn: "지출 금액"
 - inputText: "8000"
 - tapOn: "식비"
-- waitForAnimationToEnd
-- tapOn: "저장"
+- runFlow: ../subflows/tap-save.yaml
 - extendedWaitUntil: { visible: "식비, 목표 50,000원 중 8,000원 썼어요, 42,000원 남았어요", timeout: 20000 }
 - runFlow: ../subflows/scroll-to-top.yaml
 - scrollUntilVisible: { element: "지출 기록하기", direction: DOWN, centerElement: true }
@@ -46,8 +42,7 @@ env:
 - tapOn: "지출 금액"
 - inputText: "12000"
 - tapOn: "카페"
-- waitForAnimationToEnd
-- tapOn: "저장"
+- runFlow: ../subflows/tap-save.yaml
 - extendedWaitUntil: { visible: "카페, 목표 10,000원 중 12,000원 썼어요, 2,000원 넘었어요", timeout: 20000 }
 - assertVisible: "식비, 목표 50,000원 중 8,000원 썼어요, 42,000원 남았어요"
 - takeScreenshot: stats-with-goals

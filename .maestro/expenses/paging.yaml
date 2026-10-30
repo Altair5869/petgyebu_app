@@ -6,7 +6,7 @@ env:
 - runFlow: ../subflows/open-app.yaml
 - extendedWaitUntil: { visible: "월별 통계", timeout: 120000 }
 - tapOn: "월별 통계"
-- extendedWaitUntil: { visible: "전체 내역", timeout: 20000 }
+- extendedWaitUntil: { visible: "총 지출", timeout: 20000 }
 - assertVisible: "25건"
 # The summary cells wrap onto two rows, so the list starts below the first screen.
 - scrollUntilVisible:

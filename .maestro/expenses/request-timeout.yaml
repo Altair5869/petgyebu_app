@@ -11,7 +11,6 @@ appId: com.altair.petgyebu
 - extendedWaitUntil: { visible: "금액을 입력해 주세요", timeout: 20000 }
 - tapOn: "지출 금액"
 - inputText: "4321"
-- waitForAnimationToEnd
-- tapOn: "저장"
+- runFlow: ../subflows/tap-save.yaml
 - extendedWaitUntil: { visible: "저장됐는지 확인하지 못했어요. 다시 저장해도 한 번만 기록돼요.", timeout: 20000 }
 - assertVisible: "4,321"

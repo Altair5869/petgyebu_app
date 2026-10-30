@@ -13,28 +13,24 @@ env:
 - tapOn: "지출 금액"
 - inputText: "12000"
 - tapOn: "카페"
-- waitForAnimationToEnd
-- tapOn: "저장"
+- runFlow: ../subflows/tap-save.yaml
 - extendedWaitUntil: { visible: "288,000원 남았어요", timeout: 20000 }
 - tapOn: "지출 기록하기"
 - tapOn: "지출 금액"
 - inputText: "4000"
 - tapOn: "카페"
-- waitForAnimationToEnd
-- tapOn: "저장"
+- runFlow: ../subflows/tap-save.yaml
 - extendedWaitUntil: { visible: "284,000원 남았어요", timeout: 20000 }
 - tapOn: "지출 기록하기"
 - tapOn: "지출 금액"
 - inputText: "8000"
 - tapOn: "식비"
-- waitForAnimationToEnd
-- tapOn: "저장"
+- runFlow: ../subflows/tap-save.yaml
 - extendedWaitUntil: { visible: "276,000원 남았어요", timeout: 20000 }
 - tapOn: "지출 기록하기"
 - tapOn: "지출 금액"
 - inputText: "2000"
-- waitForAnimationToEnd
-- tapOn: "저장"
+- runFlow: ../subflows/tap-save.yaml
 - extendedWaitUntil: { visible: "274,000원 남았어요", timeout: 20000 }
 - tapOn: "월별 통계"
 - extendedWaitUntil: { visible: "총 지출", timeout: 20000 }
@@ -88,8 +84,7 @@ env:
 - extendedWaitUntil: { visible: "금액을 입력해 주세요", timeout: 20000 }
 - tapOn: "지출 금액"
 - inputText: "300000"
-- waitForAnimationToEnd
-- tapOn: "저장"
+- runFlow: ../subflows/tap-save.yaml
 - extendedWaitUntil: { visible: "초과", timeout: 20000 }
 - assertVisible: "326,000원"
 - assertVisible: "26,000원"

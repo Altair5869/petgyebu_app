@@ -9,11 +9,11 @@ env:
 - extendedWaitUntil: { visible: "금액을 입력해 주세요", timeout: 20000 }
 - tapOn: "지출 금액"
 - inputText: "9000"
-- waitForAnimationToEnd
-- tapOn: "저장"
+- runFlow: ../subflows/tap-save.yaml
 - extendedWaitUntil: { visible: "291,000원 남았어요", timeout: 20000 }
 - tapOn: "월별 통계"
-- extendedWaitUntil: { visible: "기타, .*월 .*일, 9,000원", timeout: 20000 }
+- extendedWaitUntil: { visible: "총 지출", timeout: 20000 }
+- scrollUntilVisible: { element: "기타, .*월 .*일, 9,000원", direction: DOWN, centerElement: true }
 - tapOn: "기타, .*월 .*일, 9,000원"
 - extendedWaitUntil: { visible: "삭제", timeout: 20000 }
 # Tap the right end so the cursor follows the filled amount; a centre tap on Android lands mid-number and eraseText leaves digits behind.

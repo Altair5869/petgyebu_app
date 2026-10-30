@@ -22,8 +22,7 @@ env:
 - tapOn: "예산 금액"
 - inputText: "200000"
 - assertVisible: "200,000"
-- waitForAnimationToEnd
-- tapOn: "저장"
+- runFlow: ../subflows/tap-save.yaml
 
 # 3. 지난달 통계로 돌아와 예산·남은 예산·"목표 정하기"
 - extendedWaitUntil: { visible: "이 달에 정한 목표가 없어요.", timeout: 20000 }

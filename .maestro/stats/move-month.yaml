@@ -18,8 +18,7 @@ env:
     point: "95%,50%"
 - eraseText: 10
 - inputText: "9000"
-- waitForAnimationToEnd
-- tapOn: "저장"
+- runFlow: ../subflows/tap-save.yaml
 # 지난달 통계로 돌아와 변경된 금액
 - scrollUntilVisible: { element: "old, .*월 .*일 · 기타, 9,000원", direction: DOWN, centerElement: true }
 - assertNotVisible: "old, .*월 .*일 · 기타, 7,000원"
@@ -39,8 +38,7 @@ env:
 - tapOn: "식비"
 - tapOn: "선택"
 - inputText: "mv"
-- waitForAnimationToEnd
-- tapOn: "저장"
+- runFlow: ../subflows/tap-save.yaml
 - extendedWaitUntil: { visible: "297,000원 남았어요", timeout: 20000 }
 
 # 날짜를 지난달 15일로 변경 → 지난달 통계로 복귀, 그 항목 포함
@@ -76,8 +74,7 @@ env:
     element: "선택"
 - tapOn: "선택"
 - inputText: "mv2"
-- waitForAnimationToEnd
-- tapOn: "저장"
+- runFlow: ../subflows/tap-save.yaml
 # 화면이 이전 스크롤 위치로 돌아올 수 있어 맨 위에서부터 찾는다
 - runFlow: ../subflows/scroll-to-top.yaml
 - scrollUntilVisible: { element: "mv2, .*월 .*일.*, 1,000원", direction: DOWN, centerElement: true }

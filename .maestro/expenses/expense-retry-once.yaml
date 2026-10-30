@@ -7,6 +7,6 @@ appId: com.altair.petgyebu
 - tapOn: "저장"
 - extendedWaitUntil: { visible: "295,679원 남았어요", timeout: 20000 }
 - tapOn: "월별 통계"
-- extendedWaitUntil: { visible: "전체 내역", timeout: 20000 }
+- extendedWaitUntil: { visible: "총 지출", timeout: 20000 }
 - assertVisible: "4,321원"
 - assertVisible: "1건"

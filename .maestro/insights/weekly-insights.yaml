@@ -21,8 +21,7 @@ env:
 - tapOn: "지출 금액"
 - inputText: "12000"
 - tapOn: "카페"
-- waitForAnimationToEnd
-- tapOn: "저장"
+- runFlow: ../subflows/tap-save.yaml
 - extendedWaitUntil: { visible: "288,000원 남았어요", timeout: 20000 }
 
 # 3. 이번 주가 지난주보다 늘어난 카테고리

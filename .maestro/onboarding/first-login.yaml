@@ -15,8 +15,7 @@ env:
 - inputText: "300000"
 - assertVisible: "300,000"
 # The save button moves above the number pad; wait for the keyboard animation.
-- waitForAnimationToEnd
-- tapOn: "저장"
+- runFlow: ../subflows/tap-save.yaml
 - extendedWaitUntil: { visible: "고양이, 안정", timeout: 20000 }
 - assertVisible: "예산에 여유가 있어 마음이 편안해요"
 - assertVisible: "300,000원 남았어요"

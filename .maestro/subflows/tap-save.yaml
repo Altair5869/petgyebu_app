@@ -1,0 +1,7 @@
+# Tap "저장" once the keyboard has settled. waitForAnimationToEnd can return while the save
+# footer is still sliding up above the keypad, so a tap at its old position lands on the keypad.
+appId: com.altair.petgyebu
+---
+- waitForAnimationToEnd
+- evalScript: ${(function () { const end = Date.now() + 1500; while (Date.now() < end) {} })()}
+- tapOn: "저장"

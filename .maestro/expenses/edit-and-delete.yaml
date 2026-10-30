@@ -76,6 +76,7 @@ env:
 - tapOn: "삭제"
 - extendedWaitUntil: { visible: "이 지출을 삭제할까요?", timeout: 10000 }
 - tapOn: { text: "삭제", index: 0 }
-- extendedWaitUntil: { visible: "이 달에는 기록한 지출이 없어요", timeout: 20000 }
+- extendedWaitUntil: { visible: "0건", timeout: 20000 }
+- scrollUntilVisible: { element: "이 달에는 기록한 지출이 없어요", direction: DOWN, centerElement: true }
 - tapOn: "뒤로|Navigate up"
 - extendedWaitUntil: { visible: "300,000원 남았어요", timeout: 20000 }

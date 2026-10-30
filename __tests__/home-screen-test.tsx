@@ -53,6 +53,7 @@ test('DOG home offers a head-petting control while preserving budget information
 beforeEach(() => {
   jest.clearAllMocks();
   mockRefreshStage.mockResolvedValue(undefined);
+  mockFontScale = 2;
 });
 
 test('shows pet state, balance, usage, and the first-record guide', async () => {
@@ -264,16 +265,17 @@ describe('stats links placement', () => {
     return ['월별 통계', '이번 주 돌아보기'].map((name) => within(scroll).queryByRole('link', { name }) !== null);
   }
 
-  test('sit in the fixed footer at default text size so they show without scrolling', async () => {
-    mockFontScale = 1;
+  // iOS text size steps from RCTAccessibilityManager: default 1, XXL 1.235, XXXL 1.353.
+  test.each([1, 1.235])('sit in the fixed footer at fontScale %p so they show without scrolling', async (fontScale) => {
+    mockFontScale = fontScale;
     mockApi.getHome.mockResolvedValue(HOME);
     await render(<HomeScreen />);
     await screen.findByLabelText('고양이, 안정');
     expect(linksInScroll()).toEqual([false, false]);
   });
 
-  test('move into the scroll content with large text so the footer stays small', async () => {
-    mockFontScale = 1.65;
+  test('move into the scroll content from iOS XXXL text so the footer stays small', async () => {
+    mockFontScale = 1.353;
     mockApi.getHome.mockResolvedValue(HOME);
     await render(<HomeScreen />);
     await screen.findByLabelText('고양이, 안정');

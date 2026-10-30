@@ -170,3 +170,29 @@ test('keeps the category when restarting after INVALID_CURSOR', async () => {
 
   expect(get).toHaveBeenLastCalledWith('2026-09', undefined, 'CAFE');
 });
+
+test('sends the day with the first page and with the cursor', async () => {
+  const get = jest.fn().mockResolvedValueOnce(page([2], 'n1')).mockResolvedValueOnce(page([1], null));
+  const { result } = await renderHook(() => useMonthExpenses({ getMonthExpenses: get }, '2026-10', undefined, '2026-10-17'));
+
+  await act(async () => result.current.reload());
+  expect(get).toHaveBeenLastCalledWith('2026-10', undefined, undefined, '2026-10-17');
+
+  await act(async () => result.current.loadMore());
+  expect(get).toHaveBeenLastCalledWith('2026-10', 'n1', undefined, '2026-10-17');
+});
+
+test('items loaded for one day are not shown for the next before it reloads', async () => {
+  const get = jest.fn().mockResolvedValue(page([2], null));
+  const { result, rerender } = await renderHook(
+    ({ date }: { date: string }) => useMonthExpenses({ getMonthExpenses: get }, '2026-10', undefined, date),
+    { initialProps: { date: '2026-10-17' } },
+  );
+  await act(async () => result.current.reload());
+  expect(result.current.items).toHaveLength(1);
+
+  await rerender({ date: '2026-10-18' });
+
+  expect(result.current.status).toBe('loading');
+  expect(result.current.items).toEqual([]);
+});

@@ -10,6 +10,7 @@ import type {
   CategoryGoals,
   ExpenseCategory,
   CategoryGoalSaved,
+  DailyTotals,
   Me,
   MonthStats,
   NewExpense,
@@ -222,6 +223,7 @@ export function createApiClient({ baseUrl, tokenStore, onSessionExpired }: ApiCl
       request<Expense>('PATCH', `/expenses/${id}`, body),
     deleteExpense: (id: number) => request<void>('DELETE', `/expenses/${id}`),
     getMonthStats: (month: string) => request<MonthStats>('GET', `/months/${month}/stats`),
+    getDailyTotals: (month: string) => request<DailyTotals>('GET', `/months/${month}/daily-totals`),
     getInsights: () => request<Insights>('GET', '/insights'),
     getCategoryGoals: (month: string) =>
       request<CategoryGoals>('GET', `/months/${month}/category-goals`),
@@ -230,12 +232,13 @@ export function createApiClient({ baseUrl, tokenStore, onSessionExpired }: ApiCl
     deleteCategoryGoal: (month: string, category: ExpenseCategory) =>
       request<void>('DELETE', `/months/${month}/category-goals/${category}`),
     // The cursor is opaque: pass it back exactly as received.
-    getMonthExpenses: (month: string, cursor?: string, category?: ExpenseCategory) =>
+    getMonthExpenses: (month: string, cursor?: string, category?: ExpenseCategory, date?: string) =>
       request<ExpensePage>(
         'GET',
         `/months/${month}/expenses?limit=${EXPENSE_PAGE_SIZE}` +
           (cursor ? `&cursor=${encodeURIComponent(cursor)}` : '') +
-          (category ? `&category=${category}` : ''),
+          (category ? `&category=${category}` : '') +
+          (date ? `&date=${date}` : ''),
       ),
   };
 }

@@ -1,0 +1,73 @@
+# 달력 탭: 날짜별 합계, 날짜 선택, 그날 목록, 수정 후 합계 갱신과 선택 날짜 유지, 월 이동 시 첫 날짜.
+# 준비: first-login 직후(예산 300,000원, 지출 0건). 오늘 날짜로 15,000원(lunch)·8,000원을 기록한다.
+appId: com.altair.petgyebu
+env:
+  APP_URL: ${APP_URL || 'http://127.0.0.1:8081'}
+---
+- runFlow: ../subflows/open-app.yaml
+- extendedWaitUntil: { visible: "고양이, 안정", timeout: 120000 }
+- tapOn: "지출 기록하기"
+- extendedWaitUntil: { visible: "금액을 입력해 주세요", timeout: 20000 }
+- tapOn: "지출 금액"
+- inputText: "15000"
+- tapOn: "식비"
+# The label and the input are both named "메모"; tap the input's placeholder.
+- tapOn: "선택"
+- inputText: "lunch"
+- runFlow: ../subflows/tap-save.yaml
+- extendedWaitUntil: { visible: "285,000원 남았어요", timeout: 20000 }
+- tapOn: "지출 기록하기"
+- extendedWaitUntil: { visible: "금액을 입력해 주세요", timeout: 20000 }
+- tapOn: "지출 금액"
+- inputText: "8000"
+- tapOn: "카페"
+- runFlow: ../subflows/tap-save.yaml
+- extendedWaitUntil: { visible: "277,000원 남았어요", timeout: 20000 }
+
+# 칸의 줄인 금액(2.3만 등)은 칸 라벨에 가려 Maestro가 읽지 못하므로 스크린샷과 Jest로 확인한다.
+# 1. 통계는 "목록"으로 열리고, "달력"을 누르면 오늘이 선택돼 그날 합계와 목록을 보여 준다
+- tapOn: "월별 통계"
+- extendedWaitUntil: { visible: "총 지출", timeout: 20000 }
+- assertVisible: { text: "목록", selected: true }
+- tapOn: "달력"
+- extendedWaitUntil: { visible: ".*월 .*일 · 23,000원", timeout: 20000 }
+- assertVisible: { text: "달력", selected: true }
+- assertVisible: { text: ".*월 .*일, 오늘, 23,000원", selected: true }
+- assertNotVisible: "총 지출"
+- takeScreenshot: calendar-today
+- scrollUntilVisible: { element: "lunch, .*, 15,000원", direction: DOWN, centerElement: true }
+- assertVisible: "카페, .*, 8,000원"
+
+# 2. 지출 없는 날(1일이나 2일 중 오늘이 아닌 날)을 누르면 빈 문구
+- runFlow: ../subflows/scroll-to-top.yaml
+- tapOn: ".*월 [12]일, 지출 없음"
+- extendedWaitUntil: { visible: "이날은 지출이 없어요", timeout: 20000 }
+- assertNotVisible: "lunch, .*, 15,000원"
+
+# 3. 오늘로 돌아와 지출을 고치면, 돌아왔을 때 달력 탭·오늘 선택이 그대로이고 합계가 바뀐다
+- tapOn: ".*월 .*일, 오늘, 23,000원"
+- extendedWaitUntil: { visible: ".*월 .*일 · 23,000원", timeout: 20000 }
+- scrollUntilVisible: { element: "lunch, .*, 15,000원", direction: DOWN, centerElement: true }
+- tapOn: "lunch, .*, 15,000원"
+- extendedWaitUntil: { visible: "삭제", timeout: 20000 }
+# Tap the right end so the cursor follows the filled amount.
+- tapOn:
+    text: "지출 금액"
+    point: "95%,50%"
+- eraseText: 10
+- inputText: "5000"
+- runFlow: ../subflows/tap-save.yaml
+- extendedWaitUntil: { visible: ".*월 .*일 · 13,000원", timeout: 20000 }
+- assertVisible: { text: "달력", selected: true }
+- assertVisible: { text: ".*월 .*일, 오늘, 13,000원", selected: true }
+- scrollUntilVisible: { element: "lunch, .*, 5,000원", direction: DOWN, centerElement: true }
+- takeScreenshot: calendar-after-edit
+
+# 4. 지난달은 1일이 선택되고, 이번 달로 돌아오면 다시 오늘이 선택된다
+- runFlow: ../subflows/scroll-to-top.yaml
+- tapOn: "이전 달"
+- extendedWaitUntil: { visible: { text: ".*월 1일, 지출 없음", selected: true }, timeout: 20000 }
+- assertVisible: "이날은 지출이 없어요"
+- tapOn: "다음 달"
+- extendedWaitUntil: { visible: ".*월 .*일 · 13,000원", timeout: 20000 }
+- assertVisible: { text: ".*월 .*일, 오늘, 13,000원", selected: true }

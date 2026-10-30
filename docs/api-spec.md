@@ -156,7 +156,8 @@
 
 - `limit`: 기본 20, 1~50 밖이면 400 `INVALID_REQUEST`(보정하지 않음)
 - `category`: 선택. `FOOD, CAFE, TRANSPORT, SHOPPING, HEALTH, LIVING, OTHER` 중 하나면 그 카테고리 지출만 반환합니다. 정렬·`limit`·커서 규칙은 그대로이고 소문자 등 잘못된 값은 400 `INVALID_REQUEST`(`category`). 다음 페이지는 `cursor`와 같은 `category`를 함께 보냅니다. 필터를 바꾸면 커서를 버리고 첫 페이지부터 다시 조회합니다
-- 입력 검증 순서: `month` → `limit` → `category` → `cursor`
+- `date`: 선택. `YYYY-MM-DD`(서울 기준)이면 그날 지출만 반환합니다. 정렬·`limit`·커서 규칙은 그대로이고 `category`와 함께 쓸 수 있습니다. `{month}` 밖의 날짜·형식 오류·없는 날짜는 400 `INVALID_REQUEST`(`date`), 현재 월의 아직 오지 않은 날짜는 200과 빈 목록입니다. 다음 페이지는 `cursor`와 같은 `date`를 함께 보냅니다. 앱의 달력은 `category`를 보내지 않습니다
+- 입력 검증 순서: `month` → `limit` → `category` → `date` → `cursor`
 - `cursor`: 첫 요청에는 빼고, 이후에는 직전 응답의 `nextCursor`를 그대로 보냅니다. 해석하지 마세요
 - 응답 200: `{ "items": [지출 객체...], "nextCursor": "..." }`. 마지막 페이지는 `nextCursor: null`
 - 정렬: 날짜 내림차순, 같은 날짜는 ID 내림차순
@@ -217,6 +218,24 @@
 - 지출이 0건이면 `spentAmount: 0`, `expenseCount: 0`, `categories: []`
 - `categories`: 지출이 있는 항목만 금액 내림차순. 동률이면 `FOOD, CAFE, TRANSPORT, SHOPPING, HEALTH, LIVING, OTHER` 순서
 - `sharePercent`: 소수 첫째 자리 **반올림**(`usagePercent`는 버림). 합이 99.9%나 100.1%여도 보정하지 않습니다
+
+### GET `/months/{month}/daily-totals`
+
+그 달 날짜별 지출 합계를 반환합니다(달력용). 지출이 없는 달도 200입니다.
+
+```json
+{
+  "month": "2026-10",
+  "days": [
+    { "date": "2026-10-03", "spentAmount": 8700, "expenseCount": 1 },
+    { "date": "2026-10-28", "spentAmount": 23000, "expenseCount": 2 }
+  ]
+}
+```
+
+- `days`: 지출이 있는 날만 `date` 오름차순(서울 기준). 지출이 없는 달은 `days: []`
+- `spentAmount`·`expenseCount`의 합은 같은 달 통계의 값과 같습니다
+- 오류: 잘못된 `{month}`는 400 `INVALID_REQUEST`(`month`)
 
 ## 인사이트 API
 
@@ -380,6 +399,8 @@ curl -X POST "$BASE/expenses" \
 # 월 목록 첫 페이지 / 다음 페이지 / 한 카테고리만
 curl "$BASE/months/2026-10/expenses?limit=20" -H "Authorization: Bearer $TOKEN"
 curl "$BASE/months/2026-10/expenses?category=CAFE" -H "Authorization: Bearer $TOKEN"
+curl "$BASE/months/2026-10/expenses?date=2026-10-28" -H "Authorization: Bearer $TOKEN"
+curl "$BASE/months/2026-10/daily-totals" -H "Authorization: Bearer $TOKEN"
 curl -G "$BASE/months/2026-10/expenses" --data-urlencode "cursor=<nextCursor>" \
   -H "Authorization: Bearer $TOKEN"
 

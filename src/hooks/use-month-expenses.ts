@@ -9,11 +9,13 @@ type ListState = {
   nextCursor: string | null;
   loadingMore: boolean;
   moreError: boolean;
+  // The month/category/date this state was loaded for.
+  query: string | null;
 };
 
-const INITIAL: ListState = { status: 'loading', items: [], nextCursor: null, loadingMore: false, moreError: false };
+const INITIAL: ListState = { status: 'loading', items: [], nextCursor: null, loadingMore: false, moreError: false, query: null };
 
-export type MonthExpenses = Omit<ListState, 'nextCursor'> & {
+export type MonthExpenses = Omit<ListState, 'nextCursor' | 'query'> & {
   hasMore: boolean;
   reload: () => void;
   loadMore: () => void;
@@ -22,7 +24,10 @@ export type MonthExpenses = Omit<ListState, 'nextCursor'> & {
 export function useMonthExpenses(api: Pick<ApiClient, 'getMonthExpenses'>,
   month: string,
   category?: ExpenseCategory,
+  // One day of the month (YYYY-MM-DD) for the calendar.
+  date?: string,
 ): MonthExpenses {
+  const query = `${month}|${category ?? ''}|${date ?? ''}`;
   const [state, setState] = useState<ListState>(INITIAL);
   // Each reload starts a new generation; responses from older generations are ignored.
   const generation = useRef(0);
@@ -33,10 +38,12 @@ export function useMonthExpenses(api: Pick<ApiClient, 'getMonthExpenses'>,
     function fetchPage(cursor: string | null) {
       const gen = generation.current;
       inFlight.current = true;
-      // Without a category keep the two-argument call shape.
+      // Without a filter keep the two-argument call shape.
       const request = category
         ? api.getMonthExpenses(month, cursor ?? undefined, category)
-        : api.getMonthExpenses(month, cursor ?? undefined);
+        : date
+          ? api.getMonthExpenses(month, cursor ?? undefined, undefined, date)
+          : api.getMonthExpenses(month, cursor ?? undefined);
       request.then(
         (page) => {
           if (gen !== generation.current) return;
@@ -48,6 +55,7 @@ export function useMonthExpenses(api: Pick<ApiClient, 'getMonthExpenses'>,
             nextCursor: page.nextCursor,
             loadingMore: false,
             moreError: false,
+            query: s.query,
           }));
         },
         (error: unknown) => {
@@ -59,19 +67,19 @@ export function useMonthExpenses(api: Pick<ApiClient, 'getMonthExpenses'>,
             fetchPage(null);
             return;
           }
-          setState((s) => (cursor ? { ...s, loadingMore: false, moreError: true } : { ...INITIAL, status: 'error' }));
+          setState((s) => (cursor ? { ...s, loadingMore: false, moreError: true } : { ...INITIAL, status: 'error', query: s.query }));
         },
       );
     },
-    [api, month, category],
+    [api, month, category, date],
   );
 
   const reload = useCallback(() => {
     generation.current += 1;
     cursorRef.current = null;
-    setState(INITIAL);
+    setState({ ...INITIAL, query });
     fetchPage(null);
-  }, [fetchPage]);
+  }, [fetchPage, query]);
 
   const loadMore = useCallback(() => {
     const cursor = cursorRef.current;
@@ -80,6 +88,7 @@ export function useMonthExpenses(api: Pick<ApiClient, 'getMonthExpenses'>,
     fetchPage(cursor);
   }, [fetchPage]);
 
-  const { nextCursor, ...rest } = state;
+  // Until reload runs for a new month, category or date, the old items must not show as this one's.
+  const { nextCursor, ...rest } = state.query === query ? state : INITIAL;
   return { ...rest, hasMore: nextCursor !== null, reload, loadMore };
 }

@@ -8,7 +8,6 @@ env:
 - extendedWaitUntil: { visible: "고양이, 안정", timeout: 120000 }
 
 # 1. 지출이 없으면 빈 안내
-- scrollUntilVisible: { element: "이번 주 돌아보기", direction: DOWN, centerElement: true }
 - tapOn: "이번 주 돌아보기"
 - extendedWaitUntil: { visible: "이번 주와 지난주에 기록한 지출이 없어요", timeout: 20000 }
 - assertNotVisible: "카테고리별 변화"
@@ -27,7 +26,6 @@ env:
 - extendedWaitUntil: { visible: "288,000원 남았어요", timeout: 20000 }
 
 # 3. 이번 주가 지난주보다 늘어난 카테고리
-- scrollUntilVisible: { element: "이번 주 돌아보기", direction: DOWN, centerElement: true }
 - tapOn: "이번 주 돌아보기"
 - extendedWaitUntil: { visible: "이번 주에는 지난주보다 카페에 12,000원 더 썼어요", timeout: 20000 }
 - assertVisible: "카테고리별 변화"

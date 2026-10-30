@@ -6,7 +6,6 @@ env:
 ---
 - runFlow: ../subflows/open-app.yaml
 - extendedWaitUntil: { visible: "고양이, 안정", timeout: 120000 }
-- scrollUntilVisible: { element: "월별 통계", direction: DOWN, centerElement: true }
 - tapOn: "월별 통계"
 - extendedWaitUntil: { visible: "총 지출", timeout: 20000 }
 

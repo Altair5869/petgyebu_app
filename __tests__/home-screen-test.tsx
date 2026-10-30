@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 
 import { router } from 'expo-router';
 import { AppState, StyleSheet } from 'react-native';
@@ -24,6 +24,13 @@ jest.mock('expo-router', () => {
     },
   };
 });
+
+// The React Native Jest preset reports fontScale 2; tests that care about placement set their own.
+let mockFontScale = 2;
+jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
+  __esModule: true,
+  default: () => ({ width: 402, height: 874, scale: 3, fontScale: mockFontScale }),
+}));
 
 const HOME = {
   month: '2026-10',
@@ -249,4 +256,27 @@ test('the weekly insights link opens the insights screen', async () => {
 
   fireEvent.press(await screen.findByRole('link', { name: '이번 주 돌아보기' }));
   expect(router.push).toHaveBeenCalledWith('/insights');
+});
+
+describe('stats links placement', () => {
+  function linksInScroll() {
+    const scroll = screen.getByTestId('home-scroll');
+    return ['월별 통계', '이번 주 돌아보기'].map((name) => within(scroll).queryByRole('link', { name }) !== null);
+  }
+
+  test('sit in the fixed footer at default text size so they show without scrolling', async () => {
+    mockFontScale = 1;
+    mockApi.getHome.mockResolvedValue(HOME);
+    await render(<HomeScreen />);
+    await screen.findByLabelText('고양이, 안정');
+    expect(linksInScroll()).toEqual([false, false]);
+  });
+
+  test('move into the scroll content with large text so the footer stays small', async () => {
+    mockFontScale = 1.65;
+    mockApi.getHome.mockResolvedValue(HOME);
+    await render(<HomeScreen />);
+    await screen.findByLabelText('고양이, 안정');
+    expect(linksInScroll()).toEqual([true, true]);
+  });
 });

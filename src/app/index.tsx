@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { router, useFocusEffect } from 'expo-router';
-import { ActivityIndicator, AppState, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, AppState, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiError } from '@/api/client';
@@ -17,6 +17,8 @@ import { colors as COLORS, fonts } from '@/theme';
 type HomeLoad = { status: 'loading' } | { status: 'error'; message: string } | { status: 'loaded'; home: Home };
 
 const LOAD_FAILED = '정보를 불러오지 못했어요. 다시 시도해 주세요.';
+// iOS "XXL" text (two steps above the default) still fits "이번 주 돌아보기" on one line in a half-width button.
+const FOOTER_LINKS_MAX_FONT_SCALE = 1.3;
 
 function isStageError(error: unknown): boolean {
   return error instanceof ApiError && (error.code === 'PET_REQUIRED' || error.code === 'BUDGET_REQUIRED');
@@ -26,6 +28,7 @@ export default function HomeScreen() {
   const { api, refreshStage } = useSession();
   const [load, setLoad] = useState<HomeLoad>({ status: 'loading' });
   const [focused, setFocused] = useState(false);
+  const { fontScale } = useWindowDimensions();
 
   const fetchHome = useCallback(() => {
     const showError = (message: string) => () => setLoad({ status: 'error', message });
@@ -81,9 +84,23 @@ export default function HomeScreen() {
 
   const { home } = load;
   const petCopy = PET_STATE_COPY[home.petState];
+  // Side by side in the fixed footer so both show without scrolling. With larger text the pair would
+  // wrap inside each button and the footer would cover most of the screen, so they stack at the end
+  // of the scroll content instead.
+  const linksInFooter = fontScale <= FOOTER_LINKS_MAX_FONT_SCALE;
+  const links = (
+    <View style={linksInFooter ? styles.footerLinks : styles.scrollLinks}>
+      <Pressable accessibilityRole="link" accessibilityLabel="월별 통계" onPress={() => router.push('/expenses')} style={({ pressed }) => [styles.statsLink, pressed && styles.pressed]}>
+        <Text style={styles.link}>월별 통계</Text>
+      </Pressable>
+      <Pressable accessibilityRole="link" accessibilityLabel="이번 주 돌아보기" onPress={() => router.push('/insights')} style={({ pressed }) => [styles.statsLink, pressed && styles.pressed]}>
+        <Text style={styles.link}>이번 주 돌아보기</Text>
+      </Pressable>
+    </View>
+  );
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView testID="home-scroll" contentContainerStyle={styles.container}>
         <View style={styles.header}>
           <Text style={styles.month}>{monthTitle(home.month)}</Text>
           <Pressable accessibilityRole="link" accessibilityLabel="설정" onPress={() => router.push('/settings')}
@@ -125,16 +142,10 @@ export default function HomeScreen() {
             </View>
           </View>
         </View>
-        <Pressable accessibilityRole="link" accessibilityLabel="월별 통계" onPress={() => router.push('/expenses')} style={({ pressed }) => [styles.statsLink, pressed && styles.pressed]}>
-          <Text style={[styles.link, styles.statsLabel]}>월별 통계 보기</Text>
-          <Text accessibilityElementsHidden importantForAccessibility="no" style={styles.link}>→</Text>
-        </Pressable>
-        <Pressable accessibilityRole="link" accessibilityLabel="이번 주 돌아보기" onPress={() => router.push('/insights')} style={({ pressed }) => [styles.statsLink, pressed && styles.pressed]}>
-          <Text style={[styles.link, styles.statsLabel]}>이번 주 돌아보기</Text>
-          <Text accessibilityElementsHidden importantForAccessibility="no" style={styles.link}>→</Text>
-        </Pressable>
+        {!linksInFooter && links}
       </ScrollView>
       <View style={styles.footer}>
+        {linksInFooter && links}
         {home.spentAmount === 0 && <Text style={styles.firstRecord}>첫 지출을 기록해 보세요</Text>}
         <Pressable
           accessibilityRole="button"
@@ -168,9 +179,10 @@ const styles = StyleSheet.create({
   totalAmount: { fontSize: 17, fontFamily: fonts.bold, color: COLORS.text, fontVariant: ['tabular-nums'] },
   caption: { fontFamily: fonts.regular, fontSize: 14, color: COLORS.muted },
   firstRecord: { fontFamily: fonts.regular, fontSize: 14, color: COLORS.muted, textAlign: 'center' },
-  statsLink: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16, borderRadius: 16, backgroundColor: COLORS.secondary, padding: 16 },
-  statsLabel: { flexShrink: 1 },
-  link: { fontSize: 15, fontFamily: fonts.bold, color: COLORS.primary },
+  footerLinks: { flexDirection: 'row', gap: 12 },
+  scrollLinks: { gap: 12 },
+  statsLink: { flexGrow: 1, flexBasis: 0, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 16, backgroundColor: COLORS.secondary, paddingHorizontal: 12, paddingVertical: 12 },
+  link: { fontSize: 15, fontFamily: fonts.bold, color: COLORS.primary, textAlign: 'center' },
   footer: { width: '100%', maxWidth: 560, alignSelf: 'center', paddingHorizontal: 24, paddingTop: 16, paddingBottom: 16, gap: 12 },
   action: { minHeight: 56, borderRadius: 16, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', padding: 16 },
   actionLabel: { fontSize: 17, fontFamily: fonts.bold, color: COLORS.surface, textAlign: 'center' },

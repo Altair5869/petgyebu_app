@@ -1,4 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
+import { useHeaderHeight } from 'expo-router/react-navigation';
 import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, ScrollView, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,6 +15,8 @@ import { colors, contentWidth, fonts } from '@/theme';
 
 export default function SettingsBudgetScreen() {
   const { api, refreshStage } = useSession();
+  // The keyboard avoider measures itself from below the native header, so add the header back.
+  const headerHeight = useHeaderHeight();
   const params = useLocalSearchParams<{ month?: string }>();
   const month = parseMonthParam(params.month) ?? currentMonth();
   const [text, setText] = useState('');
@@ -75,7 +78,7 @@ export default function SettingsBudgetScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-      <KeyboardAvoidingView behavior="padding" style={styles.keyboardAvoiding}>
+      <KeyboardAvoidingView behavior="padding" keyboardVerticalOffset={headerHeight} style={styles.keyboardAvoiding}>
         <ScrollView
           contentInsetAdjustmentBehavior="automatic"
           contentContainerStyle={styles.container}

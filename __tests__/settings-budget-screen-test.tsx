@@ -8,6 +8,14 @@ import { currentMonth, monthTitle, previousMonth } from '@/lib/month';
 
 let mockParams: { month?: string } = {};
 jest.mock('expo-router', () => ({ router: { back: jest.fn() }, useLocalSearchParams: () => mockParams }));
+// The native stack header sits above the screen; its height offsets the keyboard avoidance.
+jest.mock('expo-router/react-navigation', () => ({ useHeaderHeight: () => 116 }));
+// Render the avoider as a plain view that keeps its props, so tests can read the offset.
+jest.mock('react-native/Libraries/Components/Keyboard/KeyboardAvoidingView', () => {
+  const { createElement } = jest.requireActual('react');
+  const { View } = jest.requireActual('react-native');
+  return { __esModule: true, default: (props: object) => createElement(View, { ...props, testID: 'keyboard-avoiding' }) };
+});
 
 const mockApi = { getBudget: jest.fn(), putBudget: jest.fn() };
 const mockRefreshStage = jest.fn();
@@ -45,6 +53,12 @@ test('saves the current month and goes back', async () => {
 
   await waitFor(() => expect(router.back).toHaveBeenCalledTimes(1));
   expect(mockApi.putBudget).toHaveBeenCalledWith('2026-10', 450000);
+});
+
+test('lifts the save button by the header height so the keypad does not cover it', async () => {
+  mockApi.getBudget.mockResolvedValue({ month: '2026-10', amount: 300000 });
+  await render(<SettingsBudgetScreen />);
+  expect((await screen.findByTestId('keyboard-avoiding')).props.keyboardVerticalOffset).toBe(116);
 });
 
 test('disables saving for zero', async () => {

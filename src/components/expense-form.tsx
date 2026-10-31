@@ -57,7 +57,8 @@ export function ExpenseForm({ value, onChange, fieldErrors, minDay, allowCategor
       </View>
 
       <View style={styles.field}>
-        <Text style={styles.label}>날짜</Text>
+        {/* The Android date button already reads 날짜; iOS keeps the caption beside its picker. */}
+        <Text importantForAccessibility="no" style={styles.label}>날짜</Text>
         <ExpenseDateField
           day={day}
           minDay={minDay}

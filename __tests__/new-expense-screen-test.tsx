@@ -228,6 +228,11 @@ test('lifts the save footer by the header height so the keypad does not cover it
   expect(screen.getByTestId('keyboard-avoiding').props.keyboardVerticalOffset).toBe(116);
 });
 
+test('keeps the date caption out of the Android reader, since the date button already says 날짜', async () => {
+  await render(<NewExpenseScreen />);
+  expect(screen.getByText('날짜').props.importantForAccessibility).toBe('no');
+});
+
 test('choosing a category closes the number pad, which has no close key', async () => {
   const dismiss = jest.spyOn(Keyboard, 'dismiss');
   await render(<NewExpenseScreen />);

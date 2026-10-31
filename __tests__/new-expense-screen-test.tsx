@@ -228,6 +228,17 @@ test('lifts the save footer by the header height so the keypad does not cover it
   expect(screen.getByTestId('keyboard-avoiding').props.keyboardVerticalOffset).toBe(116);
 });
 
+test('shrinks the amount to the field width so large text keeps the first digits', async () => {
+  await render(<NewExpenseScreen />);
+  const input = screen.getByLabelText('지출 금액');
+  await fireEvent.changeText(input, '1234567890');
+  expect(input.props.allowFontScaling).toBe(false);
+
+  await fireEvent(input, 'layout', { nativeEvent: { layout: { width: 200, height: 80, x: 0, y: 0 } } });
+  // 1,234,567,890 is about 7.51em wide; (200 - 4) / 7.51 rounds down to 26.
+  expect(input).toHaveStyle({ fontSize: 26 });
+});
+
 test('keeps the date caption out of the Android reader, since the date button already says 날짜', async () => {
   await render(<NewExpenseScreen />);
   expect(screen.getByText('날짜').props.importantForAccessibility).toBe('no');

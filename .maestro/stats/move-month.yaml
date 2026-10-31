@@ -35,7 +35,10 @@ env:
 - extendedWaitUntil: { visible: "금액을 입력해 주세요", timeout: 20000 }
 - tapOn: "지출 금액"
 - inputText: "3000"
-- tapOn: "식비"
+- runFlow:
+    file: ../subflows/tap-category.yaml
+    env:
+      CATEGORY: "식비"
 - tapOn: "선택"
 - inputText: "mv"
 - runFlow: ../subflows/tap-save.yaml
@@ -68,7 +71,10 @@ env:
 - tapOn: "지출 금액"
 - inputText: "1000"
 # With no category tap the number pad stays open and hides the memo field (Android, and iOS where "mv2" went into the amount field).
-- tapOn: "식비"
+- runFlow:
+    file: ../subflows/tap-category.yaml
+    env:
+      CATEGORY: "식비"
 - waitForAnimationToEnd
 - scrollUntilVisible:
     element: "선택"

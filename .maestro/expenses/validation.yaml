@@ -10,8 +10,11 @@ env:
 - assertVisible: { text: "저장", enabled: false }
 - tapOn: "지출 금액"
 - inputText: "1000"
-# The number pad covers the memo field; a first-row chip closes it (the second row sits behind the save button).
-- tapOn: "식비"
+# The number pad covers the memo field; a category chip closes it (tap-category scrolls it on screen first).
+- runFlow:
+    file: ../subflows/tap-category.yaml
+    env:
+      CATEGORY: "식비"
 # The label and the input are both named "메모"; tap the input's placeholder.
 - tapOn: "선택"
 # ASCII text: Maestro on Android drops focus while typing Hangul.

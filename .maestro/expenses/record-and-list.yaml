@@ -10,7 +10,10 @@ env:
 - extendedWaitUntil: { visible: "금액을 입력해 주세요", timeout: 20000 }
 - tapOn: "지출 금액"
 - inputText: "12000"
-- tapOn: "카페"
+- runFlow:
+    file: ../subflows/tap-category.yaml
+    env:
+      CATEGORY: "카페"
 # The label and the input are both named "메모"; tap the input's placeholder.
 - tapOn: "선택"
 # ASCII text: Maestro on Android drops focus while typing Hangul.

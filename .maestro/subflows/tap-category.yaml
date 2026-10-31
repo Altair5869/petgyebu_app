@@ -1,0 +1,8 @@
+# Tap a category chip right after typing an amount. With the number pad up on a small screen
+# (iPhone SE) the chips sit below the visible form, where their bounds overlap the save footer and a
+# tap lands on "저장". Scroll the form up first so the chip is on screen.
+appId: com.altair.petgyebu
+---
+- swipe: { start: "50%,35%", end: "50%,15%", duration: 400 }
+- waitForAnimationToEnd
+- tapOn: ${CATEGORY}

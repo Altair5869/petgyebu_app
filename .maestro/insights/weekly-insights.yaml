@@ -20,7 +20,10 @@ env:
 - extendedWaitUntil: { visible: "금액을 입력해 주세요", timeout: 20000 }
 - tapOn: "지출 금액"
 - inputText: "12000"
-- tapOn: "카페"
+- runFlow:
+    file: ../subflows/tap-category.yaml
+    env:
+      CATEGORY: "카페"
 - runFlow: ../subflows/tap-save.yaml
 - extendedWaitUntil: { visible: "288,000원 남았어요", timeout: 20000 }
 

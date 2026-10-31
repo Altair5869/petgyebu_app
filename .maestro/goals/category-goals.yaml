@@ -32,7 +32,10 @@ env:
 - extendedWaitUntil: { visible: "금액을 입력해 주세요", timeout: 20000 }
 - tapOn: "지출 금액"
 - inputText: "8000"
-- tapOn: "식비"
+- runFlow:
+    file: ../subflows/tap-category.yaml
+    env:
+      CATEGORY: "식비"
 - runFlow: ../subflows/tap-save.yaml
 - extendedWaitUntil: { visible: "식비, 목표 50,000원 중 8,000원 썼어요, 42,000원 남았어요", timeout: 20000 }
 - runFlow: ../subflows/scroll-to-top.yaml
@@ -41,7 +44,10 @@ env:
 - extendedWaitUntil: { visible: "금액을 입력해 주세요", timeout: 20000 }
 - tapOn: "지출 금액"
 - inputText: "12000"
-- tapOn: "카페"
+- runFlow:
+    file: ../subflows/tap-category.yaml
+    env:
+      CATEGORY: "카페"
 - runFlow: ../subflows/tap-save.yaml
 - extendedWaitUntil: { visible: "카페, 목표 10,000원 중 12,000원 썼어요, 2,000원 넘었어요", timeout: 20000 }
 - assertVisible: "식비, 목표 50,000원 중 8,000원 썼어요, 42,000원 남았어요"

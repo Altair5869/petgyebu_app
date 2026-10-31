@@ -61,6 +61,19 @@ test('lifts the save button by the header height so the keypad does not cover it
   expect((await screen.findByTestId('keyboard-avoiding')).props.keyboardVerticalOffset).toBe(116);
 });
 
+test('shrinks the amount to the field width so large text keeps the first digits', async () => {
+  // The Jest preset reports fontScale 2, so the amount would grow to 64pt.
+  mockApi.getBudget.mockResolvedValue({ month: '2026-10', amount: 300000 });
+  await render(<SettingsBudgetScreen />);
+  const input = await screen.findByLabelText('예산 금액');
+  await waitFor(() => expect(input).toHaveDisplayValue('300,000'));
+  expect(input).toHaveStyle({ fontSize: 64 });
+  expect(input.props.allowFontScaling).toBe(false);
+
+  await fireEvent(input, 'layout', { nativeEvent: { layout: { width: 230, height: 80, x: 0, y: 0 } } });
+  expect(input).toHaveStyle({ fontSize: 52 });
+});
+
 test('disables saving for zero', async () => {
   mockApi.getBudget.mockResolvedValue({ month: '2026-10', amount: 300000 });
   await render(<SettingsBudgetScreen />);

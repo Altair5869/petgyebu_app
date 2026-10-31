@@ -2,6 +2,7 @@ import { Keyboard, Pressable, StyleSheet, Text, TextInput, View } from 'react-na
 
 import type { ExpenseCategory } from '@/api/types';
 import { ExpenseDateField } from '@/components/expense-date-field';
+import { useFittedAmountFont } from '@/hooks/use-fitted-amount-font';
 import { CATEGORIES, CATEGORY_LABELS, parseMemo } from '@/lib/expense';
 import { formatAmountInput, parseAmountInput } from '@/lib/money';
 import { todayInSeoul } from '@/lib/month';
@@ -30,10 +31,13 @@ type Props = {
   memoFocus?: { onFocus: () => void; onBlur: () => void };
 };
 
+const AMOUNT_FONT_SIZE = 32;
+
 export function ExpenseForm({ value, onChange, fieldErrors, minDay, allowCategoryClear, memoFocus }: Props) {
   const { amountText, day, category, memoText } = value;
   const amount = parseAmountInput(amountText, '금액을 입력해 주세요');
   const memo = parseMemo(memoText);
+  const amountFont = useFittedAmountFont(amountText, AMOUNT_FONT_SIZE);
 
   return (
     <>
@@ -48,7 +52,9 @@ export function ExpenseForm({ value, onChange, fieldErrors, minDay, allowCategor
             placeholder="0"
             placeholderTextColor={colors.muted}
             selectionColor={colors.primary}
-            style={styles.amountInput}
+            allowFontScaling={false}
+            onLayout={amountFont.onLayout}
+            style={[styles.amountInput, { fontSize: amountFont.fontSize }]}
           />
           <Text style={styles.unit}>원</Text>
         </View>
@@ -122,7 +128,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     borderColor: colors.primary,
   },
-  amountInput: { flex: 1, minWidth: 0, minHeight: 56, fontSize: 32, fontFamily: fonts.bold, paddingVertical: 12, color: colors.text, fontVariant: ['tabular-nums'] },
+  amountInput: { flex: 1, minWidth: 0, minHeight: 56, fontFamily: fonts.bold, paddingVertical: 12, paddingHorizontal: 0, color: colors.text },
   unit: { fontFamily: fonts.regular, fontSize: 20, color: colors.text, marginLeft: 8 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {

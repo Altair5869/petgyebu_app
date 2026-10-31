@@ -1,6 +1,7 @@
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/button';
+import { useFittedAmountFont } from '@/hooks/use-fitted-amount-font';
 import { parseBudgetInput } from '@/lib/money';
 import { colors, fonts } from '@/theme';
 
@@ -13,8 +14,11 @@ type BudgetFormProps = {
   onSave: () => void;
 };
 
+const AMOUNT_FONT_SIZE = 32;
+
 export function BudgetForm({ text, onChangeText, hint, serverError, saving, onSave }: BudgetFormProps) {
   const parsed = parseBudgetInput(text);
+  const amountFont = useFittedAmountFont(text, AMOUNT_FONT_SIZE);
 
   return (
     <View style={styles.container}>
@@ -30,7 +34,9 @@ export function BudgetForm({ text, onChangeText, hint, serverError, saving, onSa
             placeholder="0"
             placeholderTextColor={colors.muted}
             selectionColor={colors.primary}
-            style={styles.input}
+            allowFontScaling={false}
+            onLayout={amountFont.onLayout}
+            style={[styles.input, { fontSize: amountFont.fontSize }]}
           />
           <Text style={styles.unit}>원</Text>
         </View>
@@ -50,7 +56,7 @@ const styles = StyleSheet.create({
   field: { gap: 12, backgroundColor: colors.surface, padding: 24, borderRadius: 24 },
   label: { fontSize: 14, fontFamily: fonts.bold, color: colors.muted },
   inputRow: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: 2, borderColor: colors.primary },
-  input: { flex: 1, minWidth: 0, minHeight: 56, fontSize: 32, fontFamily: fonts.bold, paddingVertical: 12, color: colors.text, fontVariant: ['tabular-nums'] },
+  input: { flex: 1, minWidth: 0, minHeight: 56, fontFamily: fonts.bold, paddingVertical: 12, paddingHorizontal: 0, color: colors.text },
   unit: { fontFamily: fonts.regular, fontSize: 20, color: colors.text, marginLeft: 8 },
   hint: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, color: colors.muted },
   error: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, color: colors.danger },

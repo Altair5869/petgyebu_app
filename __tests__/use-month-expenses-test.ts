@@ -196,3 +196,26 @@ test('items loaded for one day are not shown for the next before it reloads', as
   expect(result.current.status).toBe('loading');
   expect(result.current.items).toEqual([]);
 });
+
+test('a late response for the previous day never shows after the next day has loaded', async () => {
+  const dayA = deferred<ExpensePage>();
+  const dayB = deferred<ExpensePage>();
+  const get = jest.fn().mockReturnValueOnce(dayA.promise).mockReturnValueOnce(dayB.promise);
+  const { result, rerender } = await renderHook(
+    ({ date }: { date: string }) => useMonthExpenses({ getMonthExpenses: get }, '2026-10', undefined, date),
+    { initialProps: { date: '2026-10-17' } },
+  );
+  await act(async () => result.current.reload());
+
+  await rerender({ date: '2026-10-18' });
+  await act(async () => result.current.reload());
+  expect(get).toHaveBeenLastCalledWith('2026-10', undefined, undefined, '2026-10-18');
+
+  await act(async () => dayB.resolve(page([2], null)));
+  expect(result.current.items.map((e) => e.id)).toEqual([2]);
+
+  await act(async () => dayA.resolve(page([1], null)));
+  await flush();
+  expect(result.current.status).toBe('ready');
+  expect(result.current.items.map((e) => e.id)).toEqual([2]);
+});

@@ -53,11 +53,11 @@ export default function MonthStatsScreen() {
   const [month, setMonthState] = useState(paramMonth ?? currentMonth());
   // A new screen always opens on the list.
   const [view, setView] = useState<StatsTab>('list');
-  // The day picked on the calendar; null means the default day of the month.
-  const [pickedDay, setPickedDay] = useState<string | null>(null);
+  // The calendar's day. Its default is decided when the month is set, so it stays past midnight.
+  const [selectedDay, setSelectedDay] = useState(() => initialSelectedDay(month));
   const setMonth = (next: string) => {
     setMonthState(next);
-    setPickedDay(null);
+    setSelectedDay(initialSelectedDay(next));
   };
   // Adjust state while rendering when the param changes (no effect, no extra commit).
   const [seenParam, setSeenParam] = useState(paramMonth);
@@ -66,7 +66,6 @@ export default function MonthStatsScreen() {
     // Saving an edit comes back with the saved month; the same month keeps the picked day.
     if (paramMonth && paramMonth !== month) setMonth(paramMonth);
   }
-  const selectedDay = pickedDay ?? initialSelectedDay(month);
   // Consume the param so a later navigation carrying the same month is a change again.
   useEffect(() => {
     if (monthParam) router.setParams({ month: undefined });
@@ -194,7 +193,7 @@ export default function MonthStatsScreen() {
                 today={todayInSeoul()}
                 amounts={amounts}
                 selected={selectedDay}
-                onSelect={setPickedDay}
+                onSelect={setSelectedDay}
               />
               <Text style={styles.section}>
                 {dayAmount === undefined ? formatDay(selectedDay) : `${formatDay(selectedDay)} · ${formatWon(dayAmount)}`}

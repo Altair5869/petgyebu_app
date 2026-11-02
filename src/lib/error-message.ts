@@ -13,6 +13,7 @@ export function errorMessage(error: unknown, timeoutMessage: string = CONNECTION
   if (error instanceof SocialLoginUnavailableError) return LOGIN_UNAVAILABLE;
   if (error instanceof ApiError) {
     if (error.code === 'IDEMPOTENCY_KEY_REUSED') return '이미 저장된 기록과 내용이 달라요. 월별 통계에서 확인해 주세요.';
+    if (error.code === 'MONTHLY_EXPENSE_LIMIT_EXCEEDED') return '한 달에 기록할 수 있는 지출은 1,000건까지예요.';
     if (error.code === 'SOCIAL_LOGIN_FAILED') return '로그인에 실패했어요. 다시 시도해 주세요.';
     if (error.code === 'SOCIAL_LOGIN_UNAVAILABLE') {
       return LOGIN_UNAVAILABLE;

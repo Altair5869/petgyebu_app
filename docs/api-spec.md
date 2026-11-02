@@ -150,6 +150,7 @@
 - 응답 201: 지출 객체
 - 응답 200: 같은 사용자·같은 키·같은 본문(정규화 후 `amount`, `expenseDate`, `category`, `memo`)의 재요청. 기존 지출 객체
 - 응답 409 `IDEMPOTENCY_KEY_REUSED`: 같은 키에 다른 본문
+- 응답 409 `MONTHLY_EXPENSE_LIMIT_EXCEEDED`: `expenseDate`가 속한 달의 지출이 이미 1,000건(사용자별). 같은 키·같은 본문의 재요청(200)은 상한과 관계없이 기존 지출을 돌려준다
 - 응답 400 `INVALID_REQUEST`: 키 형식 오류(field `Idempotency-Key`). 본문 검증이 키 조회보다 먼저다
 
 ### GET `/months/{month}/expenses?limit=20&cursor=...`
@@ -172,6 +173,7 @@
 - 보낸 필드만 바뀝니다. `memo: null`은 메모 삭제입니다
 - `amount`·`expenseDate`·`category`를 `null`로 보내면 400입니다. 생성의 `OTHER` 기본값은 적용되지 않습니다
 - 날짜를 다른 월로 옮길 수 있습니다. 이때 앱은 이전 월과 새 월의 목록·통계를 모두 다시 조회합니다
+- 옮길 달의 지출이 이미 1,000건이면 409 `MONTHLY_EXPENSE_LIMIT_EXCEEDED`이고 지출은 바뀌지 않습니다. 같은 달 안의 수정에는 상한을 적용하지 않습니다
 - 응답 200: 수정된 지출 객체
 
 ### DELETE `/expenses/{expenseId}`
@@ -428,6 +430,7 @@ curl -X DELETE "$BASE/expenses/42" -H "Authorization: Bearer $TOKEN"
 | 404 | `NOT_FOUND` | 없는 경로 | - |
 | 405 | `METHOD_NOT_ALLOWED` | 지원하지 않는 메서드(`Allow` 헤더 포함) | - |
 | 409 | `IDEMPOTENCY_KEY_REUSED` | 같은 `Idempotency-Key`에 다른 본문 | 충돌 안내 문구와 월별 통계 확인 안내 |
+| 409 | `MONTHLY_EXPENSE_LIMIT_EXCEEDED` | 지출 날짜가 속한 달의 지출이 이미 1,000건(생성, 다른 달로 옮기는 수정) | 상한 안내 문구 |
 | 409 | `PET_REQUIRED` | 펫 미선택 상태에서 홈 호출 | 펫 선택 화면 |
 | 409 | `BUDGET_REQUIRED` | 현재 월 예산 없이 홈 호출, 그 달 예산 없이 목표 PUT | 예산 설정 화면, 목표는 예산 입력 안내 |
 | 409 | `CATEGORY_GOALS_EXCEED_BUDGET` | 목표 합이 그 달 예산 초과 | 서버 `message`를 그대로 표시 |

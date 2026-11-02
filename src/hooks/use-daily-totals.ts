@@ -3,11 +3,12 @@ import { useCallback, useRef, useState } from 'react';
 import type { ApiClient } from '@/api/client';
 import type { DailyTotals } from '@/api/types';
 
-type TotalsState = { status: 'loading' | 'error' | 'ready'; totals: DailyTotals | null };
+// month is the month this state was loaded for.
+type TotalsState = { status: 'loading' | 'error' | 'ready'; totals: DailyTotals | null; month: string | null };
 
-const INITIAL: TotalsState = { status: 'loading', totals: null };
+const INITIAL: TotalsState = { status: 'loading', totals: null, month: null };
 
-export type UseDailyTotals = TotalsState & { reload: () => void };
+export type UseDailyTotals = Omit<TotalsState, 'month'> & { reload: () => void };
 
 export function useDailyTotals(api: Pick<ApiClient, 'getDailyTotals'>, month: string): UseDailyTotals {
   const [state, setState] = useState<TotalsState>(INITIAL);
@@ -17,16 +18,18 @@ export function useDailyTotals(api: Pick<ApiClient, 'getDailyTotals'>, month: st
   const reload = useCallback(() => {
     generation.current += 1;
     const gen = generation.current;
-    setState(INITIAL);
+    setState({ ...INITIAL, month });
     api.getDailyTotals(month).then(
       (totals) => {
-        if (gen === generation.current) setState({ status: 'ready', totals });
+        if (gen === generation.current) setState({ status: 'ready', totals, month });
       },
       () => {
-        if (gen === generation.current) setState({ status: 'error', totals: null });
+        if (gen === generation.current) setState({ status: 'error', totals: null, month });
       },
     );
   }, [api, month]);
 
-  return { ...state, reload };
+  // Until reload runs for a new month, the last month's result or error must not show as this one's.
+  const { month: _loaded, ...rest } = state.month === month ? state : INITIAL;
+  return { ...rest, reload };
 }

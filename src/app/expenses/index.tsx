@@ -1,5 +1,5 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { ExpenseCategory } from '@/api/types';
@@ -84,26 +84,47 @@ export default function MonthStatsScreen() {
     reloadGoals();
   }, [reloadStats, reloadList, reloadGoals]);
 
-  // Runs on first display, after a month change (reload identities change), and on every return.
-  // Each tab loads only its own data.
-  useFocusEffect(useCallback(() => {
-    if (view === 'list') reload();
-  }, [view, reload]));
-
   const totals = useDailyTotals(api, month);
   const day = useMonthExpenses(api, month, undefined, selectedDay);
   const { reload: reloadTotals } = totals;
   const { reload: reloadDay } = day;
-  // Separate so picking a day reloads only that day's list, not the calendar.
-  useFocusEffect(useCallback(() => {
-    if (view === 'calendar') reloadTotals();
-  }, [view, reloadTotals]));
-  useFocusEffect(useCallback(() => {
-    if (view === 'calendar') reloadDay();
-  }, [view, reloadDay]));
   const reloadCalendar = () => {
     reloadTotals();
     reloadDay();
+  };
+
+  // Both tabs stay mounted so switching keeps each one's data and scroll position.
+  // A tab reloads only when its data is from before the screen was last left, or for another month or day.
+  const focusCount = useRef(0);
+  const loaded = useRef({ list: '', totals: '', day: '' });
+  const loadTab = useCallback(
+    (tab: StatsTab) => {
+      const now = loaded.current;
+      const key = `${focusCount.current}|${month}`;
+      if (tab === 'list') {
+        if (now.list !== key) reload();
+        now.list = key;
+        return;
+      }
+      if (now.totals !== key) reloadTotals();
+      now.totals = key;
+      // Picking a day reloads only that day's list, not the calendar.
+      const dayKey = `${key}|${selectedDay}`;
+      if (now.day !== dayKey) reloadDay();
+      now.day = dayKey;
+    },
+    [month, selectedDay, reload, reloadTotals, reloadDay],
+  );
+  // Leaving the screen (an edit may follow) makes both tabs stale. Counting on blur, not focus,
+  // keeps it independent of whether a return also changes the month and reruns the load first.
+  useFocusEffect(useCallback(() => () => {
+    focusCount.current += 1;
+  }, []));
+  useFocusEffect(useCallback(() => loadTab(view), [loadTab, view]));
+  // Start the load in the same update as the switch, so a stale tab never shows its old data.
+  const changeView = (next: StatsTab) => {
+    loadTab(next);
+    setView(next);
   };
 
   const failed = stats.status === 'error' || list.status === 'error' || goals.status === 'error';
@@ -125,7 +146,7 @@ export default function MonthStatsScreen() {
   const navigator = (
     <>
       <MonthNavigator month={month} onChange={setMonth} />
-      <Tabs view={view} onChange={setView} />
+      <Tabs view={view} onChange={changeView} />
     </>
   );
   const retryState = (onRetry: () => void) => (
@@ -145,58 +166,57 @@ export default function MonthStatsScreen() {
       <Text style={[styles.message, styles.footer]}>{ended}</Text>
     ) : undefined;
 
-  if (view === 'calendar') {
-    const calendarFailed = totals.status === 'error';
-    const readyTotals = !calendarFailed && totals.status === 'ready' && totals.totals?.month === month ? totals.totals : null;
-    const dayReady = readyTotals !== null && day.status === 'ready';
-    const amounts = new Map(readyTotals?.days.map((d) => [d.date, d.spentAmount]));
-    const dayAmount = amounts.get(selectedDay);
-    return (
-      <FlatList
-        testID="expense-list"
-        style={styles.list}
-        contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={styles.content}
-        data={dayReady ? day.items : []}
-        keyExtractor={(item) => String(item.id)}
-        renderItem={({ item }) => <ExpenseRow expense={item} onPress={() => openExpense(item.id)} />}
-        ItemSeparatorComponent={Separator}
-        ListHeaderComponent={
-          <View style={styles.header}>
-            {navigator}
-            {calendarFailed ? (
-              retryState(reloadCalendar)
-            ) : readyTotals ? (
-              <>
-                <MonthCalendar
-                  month={month}
-                  today={todayInSeoul()}
-                  amounts={amounts}
-                  selected={selectedDay}
-                  onSelect={setPickedDay}
-                />
-                <Text style={styles.section}>
-                  {dayAmount === undefined ? formatDay(selectedDay) : `${formatDay(selectedDay)} · ${formatWon(dayAmount)}`}
-                </Text>
-                {day.status === 'error' ? retryState(reloadDay) : !dayReady && <ActivityIndicator color={colors.primary} />}
-              </>
-            ) : (
-              <ActivityIndicator color={colors.primary} style={styles.state} />
-            )}
-          </View>
-        }
-        ListEmptyComponent={dayReady ? <Text style={styles.message}>이날은 지출이 없어요</Text> : undefined}
-        ListFooterComponent={dayReady ? pageFooter(day, undefined) : undefined}
-        onEndReached={dayReady && !day.moreError ? day.loadMore : undefined}
-        onEndReachedThreshold={0.5}
-      />
-    );
-  }
-
-  return (
+  const calendarShown = view === 'calendar';
+  const calendarFailed = totals.status === 'error';
+  const readyTotals = !calendarFailed && totals.status === 'ready' && totals.totals?.month === month ? totals.totals : null;
+  const dayReady = readyTotals !== null && day.status === 'ready';
+  const amounts = new Map(readyTotals?.days.map((d) => [d.date, d.spentAmount]));
+  const dayAmount = amounts.get(selectedDay);
+  const calendarList = (
     <FlatList
-      testID="expense-list"
-      style={styles.list}
+      testID={calendarShown ? 'expense-list' : undefined}
+      style={[styles.list, !calendarShown && styles.hidden]}
+      contentInsetAdjustmentBehavior="automatic"
+      contentContainerStyle={styles.content}
+      data={dayReady ? day.items : []}
+      keyExtractor={(item) => String(item.id)}
+      renderItem={({ item }) => <ExpenseRow expense={item} onPress={() => openExpense(item.id)} />}
+      ItemSeparatorComponent={Separator}
+      ListHeaderComponent={
+        <View style={styles.header}>
+          {navigator}
+          {calendarFailed ? (
+            retryState(reloadCalendar)
+          ) : readyTotals ? (
+            <>
+              <MonthCalendar
+                month={month}
+                today={todayInSeoul()}
+                amounts={amounts}
+                selected={selectedDay}
+                onSelect={setPickedDay}
+              />
+              <Text style={styles.section}>
+                {dayAmount === undefined ? formatDay(selectedDay) : `${formatDay(selectedDay)} · ${formatWon(dayAmount)}`}
+              </Text>
+              {day.status === 'error' ? retryState(reloadDay) : !dayReady && <ActivityIndicator color={colors.primary} />}
+            </>
+          ) : (
+            <ActivityIndicator color={colors.primary} style={styles.state} />
+          )}
+        </View>
+      }
+      ListEmptyComponent={dayReady ? <Text style={styles.message}>이날은 지출이 없어요</Text> : undefined}
+      ListFooterComponent={dayReady ? pageFooter(day, undefined) : undefined}
+      onEndReached={calendarShown && dayReady && !day.moreError ? day.loadMore : undefined}
+      onEndReachedThreshold={0.5}
+    />
+  );
+
+  const monthList = (
+    <FlatList
+      testID={calendarShown ? undefined : 'expense-list'}
+      style={[styles.list, calendarShown && styles.hidden]}
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={styles.content}
       data={ready ? list.items : []}
@@ -228,14 +248,23 @@ export default function MonthStatsScreen() {
       }
       ListFooterComponent={ready ? pageFooter(list, '모든 내역을 불러왔어요') : undefined}
       // After a failed page only the footer button retries, so layout changes can't loop requests.
-      onEndReached={ready && !list.moreError ? list.loadMore : undefined}
+      onEndReached={!calendarShown && ready && !list.moreError ? list.loadMore : undefined}
       onEndReachedThreshold={0.5}
     />
+  );
+
+  return (
+    <View style={styles.screen}>
+      {calendarList}
+      {monthList}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: colors.background },
   list: { flex: 1, backgroundColor: colors.background },
+  hidden: { display: 'none' },
   content: { ...contentWidth, padding: 24, paddingBottom: 40 },
   header: { gap: 24, marginBottom: 16 },
   section: { fontSize: 18, fontFamily: fonts.bold, color: colors.text },

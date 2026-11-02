@@ -4,9 +4,33 @@ import { router } from 'expo-router';
 import MonthStatsScreen from '@/app/expenses';
 import { currentMonth, formatDay, monthTitle, previousMonth, todayInSeoul } from '@/lib/month';
 
-// The screen registers several focus effects; a regained focus runs all of them.
-const mockFocusEffects = new Set<() => void>();
-const mockFocusEffect = () => mockFocusEffects.forEach((effect) => effect());
+// Mirrors expo-router's useFocusEffect: an effect set up while focused runs at once and skips the
+// focus event that follows; leaving runs the cleanups and a regained focus runs the rest.
+type MockFocusEntry = { cleanup: unknown; ran: boolean };
+const mockFocusEffects = new Map<() => unknown, MockFocusEntry>();
+let mockFocused = true;
+const mockRun = (effect: () => unknown, entry: MockFocusEntry) => {
+  entry.cleanup = effect();
+  entry.ran = true;
+};
+const mockBlur = () => {
+  mockFocused = false;
+  mockFocusEffects.forEach((entry) => {
+    if (typeof entry.cleanup === 'function') entry.cleanup();
+    entry.cleanup = undefined;
+    entry.ran = false;
+  });
+};
+const mockFocus = () => {
+  mockFocused = true;
+  mockFocusEffects.forEach((entry, effect) => {
+    if (!entry.ran) mockRun(effect, entry);
+  });
+};
+const mockFocusEffect = () => {
+  mockBlur();
+  mockFocus();
+};
 let mockParams: { month?: string } = {};
 const mockApi = {
   getMonthExpenses: jest.fn(),
@@ -24,11 +48,13 @@ jest.mock('expo-router', () => {
   return {
     router: { push: jest.fn(), setParams: jest.fn() },
     useLocalSearchParams: () => mockParams,
-    useFocusEffect: (effect: () => void) => {
+    useFocusEffect: (effect: () => unknown) => {
       useEffect(() => {
-        mockFocusEffects.add(effect);
-        effect();
+        const entry: MockFocusEntry = { cleanup: undefined, ran: false };
+        mockFocusEffects.set(effect, entry);
+        if (mockFocused) mockRun(effect, entry);
         return () => {
+          if (typeof entry.cleanup === 'function') entry.cleanup();
           mockFocusEffects.delete(effect);
         };
       }, [effect]);
@@ -56,6 +82,7 @@ const EMPTY_PAGE = { items: [], nextCursor: null };
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockFocused = true;
   mockParams = {};
   mockApi.getMonthStats.mockImplementation((month: string) => Promise.resolve(statsFor(month)));
   mockApi.getMonthExpenses.mockResolvedValue(EMPTY_PAGE);
@@ -457,6 +484,74 @@ describe('calendar tab', () => {
     await screen.findByRole('button', { name: /15,000원$/ });
     screen.getByText('9월 28일 · 23,000원');
     expect(mockApi.getDailyTotals).toHaveBeenCalledTimes(1);
+  });
+
+  test('switching tabs back and forth keeps both tabs without reloading', async () => {
+    await openSeptemberCalendar();
+    await fireEvent.press(screen.getByRole('button', { name: '9월 28일, 23,000원' }));
+    await screen.findByText('9월 28일 · 23,000원');
+    const listCalls = mockApi.getMonthExpenses.mock.calls.length;
+
+    await fireEvent.press(screen.getByRole('tab', { name: '목록' }));
+    screen.getByText('전체 내역');
+    await fireEvent.press(screen.getByRole('tab', { name: '달력' }));
+
+    screen.getByText('9월 28일 · 23,000원');
+    expect(mockApi.getMonthStats).toHaveBeenCalledTimes(1);
+    expect(mockApi.getDailyTotals).toHaveBeenCalledTimes(1);
+    expect(mockApi.getMonthExpenses).toHaveBeenCalledTimes(listCalls);
+  });
+
+  test('after a return on one tab, the other tab reloads when it is shown', async () => {
+    await openSeptemberCalendar();
+    await act(async () => mockFocusEffect());
+    expect(mockApi.getDailyTotals).toHaveBeenCalledTimes(2);
+    expect(mockApi.getMonthStats).toHaveBeenCalledTimes(1);
+
+    mockApi.getMonthStats.mockResolvedValue(statsFor('2026-09', 41000));
+    await fireEvent.press(screen.getByRole('tab', { name: '목록' }));
+
+    await screen.findByText('41,000원');
+    expect(mockApi.getMonthStats).toHaveBeenCalledTimes(2);
+    await fireEvent.press(screen.getByRole('tab', { name: '달력' }));
+    expect(mockApi.getDailyTotals).toHaveBeenCalledTimes(2);
+  });
+
+  test('a month changed on the list reloads the calendar when its tab is shown', async () => {
+    await openSeptemberCalendar();
+    await fireEvent.press(screen.getByRole('tab', { name: '목록' }));
+    await fireEvent.press(screen.getByRole('button', { name: '이전 달' }));
+    await screen.findByText('26,000원');
+
+    await fireEvent.press(screen.getByRole('tab', { name: '달력' }));
+
+    await screen.findByText('8월 1일');
+    expect(mockApi.getDailyTotals).toHaveBeenLastCalledWith('2026-08');
+  });
+
+  test('returning from an edit saved into another month reloads once, then switching tabs does not', async () => {
+    await openSeptemberCalendar();
+    mockParams = {};
+    await screen.rerender(<MonthStatsScreen />);
+    await act(async () => mockBlur());
+
+    // dismissTo pops and sets the saved month in one update: the screen is already focused when the
+    // month change reruns the load, and the focus event comes after it.
+    mockFocused = true;
+    mockParams = { month: '2026-08' };
+    await screen.rerender(<MonthStatsScreen />);
+    await act(async () => mockFocus());
+    await screen.findByText('8월 1일');
+    const totalsCalls = mockApi.getDailyTotals.mock.calls.length;
+    const statsCalls = mockApi.getMonthStats.mock.calls.length;
+
+    await fireEvent.press(screen.getByRole('tab', { name: '목록' }));
+    await screen.findByText('26,000원');
+    await fireEvent.press(screen.getByRole('tab', { name: '달력' }));
+    await fireEvent.press(screen.getByRole('tab', { name: '목록' }));
+
+    expect(mockApi.getDailyTotals).toHaveBeenCalledTimes(totalsCalls);
+    expect(mockApi.getMonthStats).toHaveBeenCalledTimes(statsCalls + 1);
   });
 
   test('a failed calendar load offers a retry', async () => {

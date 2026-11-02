@@ -554,6 +554,27 @@ describe('calendar tab', () => {
     expect(mockApi.getMonthStats).toHaveBeenCalledTimes(statsCalls + 1);
   });
 
+  test('the default day stays when the clock passes midnight into the next month', async () => {
+    jest.useFakeTimers({ now: new Date('2026-10-31T23:59:00+09:00'), doNotFake: ['setTimeout', 'clearTimeout', 'setImmediate', 'queueMicrotask', 'nextTick'] });
+    try {
+      await render(<MonthStatsScreen />);
+      await screen.findByText('전체 내역');
+      await fireEvent.press(screen.getByRole('tab', { name: '달력' }));
+      await screen.findByText('10월 31일');
+      expect(mockApi.getMonthExpenses).toHaveBeenLastCalledWith('2026-10', undefined, undefined, '2026-10-31');
+
+      jest.setSystemTime(new Date('2026-11-01T00:01:00+09:00'));
+      await screen.rerender(<MonthStatsScreen />);
+      await act(async () => {});
+
+      screen.getByText('10월 31일');
+      expect(screen.getByRole('button', { name: /^10월 31일/ }).props.accessibilityState?.selected).toBe(true);
+      expect(mockApi.getMonthExpenses).not.toHaveBeenCalledWith('2026-10', undefined, undefined, '2026-10-01');
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   test('a failed calendar load offers a retry', async () => {
     mockApi.getDailyTotals.mockRejectedValueOnce(new TypeError('Network request failed'));
     await render(<MonthStatsScreen />);

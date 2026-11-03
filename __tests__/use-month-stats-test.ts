@@ -37,18 +37,46 @@ test('reports an error and recovers on reload', async () => {
   expect(result.current.status).toBe('ready');
 });
 
-test('reload clears previous stats immediately', async () => {
+test('reloading the same month keeps the previous stats until the new ones arrive', async () => {
   const second = deferred<MonthStats>();
+  const updated = { ...stats('2026-10'), spentAmount: 5000 };
   const get = jest.fn().mockResolvedValueOnce(stats('2026-10')).mockReturnValueOnce(second.promise);
   const { result } = await renderHook(() => useMonthStats({ getMonthStats: get }, '2026-10'));
   await act(async () => result.current.reload());
 
   await act(async () => result.current.reload());
+  expect(result.current.status).toBe('ready');
+  expect(result.current.stats).toEqual(stats('2026-10'));
+
+  await act(async () => second.resolve(updated));
+  expect(result.current.stats).toEqual(updated);
+});
+
+test('a failed reload of the same month shows the error instead of the old stats', async () => {
+  const get = jest.fn().mockResolvedValueOnce(stats('2026-10')).mockRejectedValueOnce(new TypeError('Network request failed'));
+  const { result } = await renderHook(() => useMonthStats({ getMonthStats: get }, '2026-10'));
+  await act(async () => result.current.reload());
+
+  await act(async () => result.current.reload());
+
+  expect(result.current.status).toBe('error');
+  expect(result.current.stats).toBeNull();
+});
+
+test('reloading after a month change starts from loading', async () => {
+  const august = deferred<MonthStats>();
+  const get = jest.fn().mockResolvedValueOnce(stats('2026-09')).mockReturnValueOnce(august.promise);
+  const api = { getMonthStats: get };
+  const { result, rerender } = await renderHook(({ month }: { month: string }) => useMonthStats(api, month), {
+    initialProps: { month: '2026-09' },
+  });
+  await act(async () => result.current.reload());
+
+  await rerender({ month: '2026-08' });
+  await act(async () => result.current.reload());
+
   expect(result.current.status).toBe('loading');
   expect(result.current.stats).toBeNull();
-
-  await act(async () => second.resolve(stats('2026-10')));
-  expect(result.current.status).toBe('ready');
 });
 
 test('ignores a late response from the previous month', async () => {

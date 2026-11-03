@@ -18,7 +18,9 @@ export function useCategoryGoals(api: Pick<ApiClient, 'getCategoryGoals'>, month
   const reload = useCallback(() => {
     generation.current += 1;
     const gen = generation.current;
-    setState({ ...INITIAL, month });
+    // The same month keeps showing what it has until the new response lands, so returning to a
+    // screen does not flash a spinner. Another month starts from loading.
+    setState((s) => (s.status === 'ready' && s.month === month ? s : { ...INITIAL, month }));
     api.getCategoryGoals(month).then(
       (goals) => {
         if (gen === generation.current) setState({ status: 'ready', goals, month });

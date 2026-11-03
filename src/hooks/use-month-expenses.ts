@@ -77,7 +77,9 @@ export function useMonthExpenses(api: Pick<ApiClient, 'getMonthExpenses'>,
   const reload = useCallback(() => {
     generation.current += 1;
     cursorRef.current = null;
-    setState({ ...INITIAL, query });
+    // The same month, category and day keep the loaded items until the first page arrives and
+    // replaces them, so returning to a screen does not flash a spinner. Another query starts from loading.
+    setState((s) => (s.status === 'ready' && s.query === query ? { ...s, loadingMore: false, moreError: false } : { ...INITIAL, query }));
     fetchPage(null);
   }, [fetchPage, query]);
 

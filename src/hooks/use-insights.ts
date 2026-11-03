@@ -17,7 +17,8 @@ export function useInsights(api: Pick<ApiClient, 'getInsights'>): UseInsights {
   const reload = useCallback(() => {
     generation.current += 1;
     const gen = generation.current;
-    setState(INITIAL);
+    // Keep showing the loaded insights until the new response lands, so returning does not flash a spinner.
+    setState((s) => (s.status === 'ready' ? s : INITIAL));
     api.getInsights().then(
       (insights) => {
         if (gen === generation.current) setState({ status: 'ready', insights });

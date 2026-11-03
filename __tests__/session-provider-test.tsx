@@ -54,6 +54,7 @@ function Probe() {
   return (
     <>
       <Text>{state.status === 'signedIn' ? `signedIn:${state.stage}` : state.status}</Text>
+      <Text>{state.status === 'signedIn' && state.home ? `home:${state.home.month}` : 'no home'}</Text>
       <Pressable onPress={retry}>
         <Text>retry</Text>
       </Pressable>
@@ -93,28 +94,60 @@ test('is signed out without a stored refresh token', async () => {
   await screen.findByText('signedOut');
 });
 
-test('goes to the pet stage without asking for the budget', async () => {
+const HOME = {
+  month: '2026-10',
+  petType: 'CAT',
+  petState: 'STABLE',
+  budgetAmount: 300000,
+  spentAmount: 0,
+  usagePercent: 0,
+  budgetBalanceAmount: 300000,
+};
+
+test('boots with the refresh and one /home request, and keeps the home response', async () => {
   const urls: string[] = [];
   handler = (url) => {
     urls.push(url);
     if (url.endsWith('/auth/refresh')) return jsonResponse(200, TOKENS);
-    return jsonResponse(200, { id: 1, provider: 'KAKAO', petType: null });
+    return jsonResponse(200, HOME);
+  };
+  await renderSession(storeWith('r0'));
+
+  await screen.findByText('signedIn:ready');
+  screen.getByText('home:2026-10');
+  expect(urls).toEqual(['http://api.test/api/v1/auth/refresh', 'http://api.test/api/v1/home']);
+});
+
+test('goes to the pet stage when /home asks for a pet', async () => {
+  handler = (url) => {
+    if (url.endsWith('/auth/refresh')) return jsonResponse(200, TOKENS);
+    return jsonResponse(409, { code: 'PET_REQUIRED' });
   };
   await renderSession(storeWith('r0'));
 
   await screen.findByText('signedIn:pet');
-  expect(urls.some((u) => u.includes('/budget'))).toBe(false);
+  screen.getByText('no home');
 });
 
-test('goes to the budget stage when the current month has no budget', async () => {
+test('goes to the budget stage when /home asks for the current month budget', async () => {
   handler = (url) => {
     if (url.endsWith('/auth/refresh')) return jsonResponse(200, TOKENS);
-    if (url.endsWith('/users/me')) return jsonResponse(200, { id: 1, provider: 'KAKAO', petType: 'CAT' });
-    return jsonResponse(200, { month: '2026-10', amount: null });
+    return jsonResponse(409, { code: 'BUDGET_REQUIRED' });
   };
   await renderSession(storeWith('r0'));
 
   await screen.findByText('signedIn:budget');
+  screen.getByText('no home');
+});
+
+test('an unexpected /home conflict shows the retry screen instead of guessing a stage', async () => {
+  handler = (url) => {
+    if (url.endsWith('/auth/refresh')) return jsonResponse(200, TOKENS);
+    return jsonResponse(409, { code: 'SOMETHING_ELSE' });
+  };
+  await renderSession(storeWith('r0'));
+
+  await screen.findByText('error');
 });
 
 test('signs out and clears the token when the refresh token is rejected', async () => {
@@ -170,7 +203,7 @@ test('retry reboots the session after a network failure', async () => {
 
   handler = (url) => {
     if (url.endsWith('/auth/refresh')) return jsonResponse(200, TOKENS);
-    return jsonResponse(200, { id: 1, provider: 'KAKAO', petType: null });
+    return jsonResponse(409, { code: 'PET_REQUIRED' });
   };
   await fireEvent.press(screen.getByText('retry'));
 
@@ -180,7 +213,7 @@ test('retry reboots the session after a network failure', async () => {
 test('signIn logs in with the dev credential and resolves the stage', async () => {
   handler = (url) => {
     if (url.endsWith('/auth/login/kakao')) return jsonResponse(200, TOKENS);
-    return jsonResponse(200, { id: 1, provider: 'KAKAO', petType: null });
+    return jsonResponse(409, { code: 'PET_REQUIRED' });
   };
   await renderSession(storeWith(null));
   await screen.findByText('signedOut');
@@ -195,25 +228,23 @@ test('signIn logs in with the dev credential and resolves the stage', async () =
 test('refreshStage re-resolves the stage from the server', async () => {
   handler = (url) => {
     if (url.endsWith('/auth/refresh')) return jsonResponse(200, TOKENS);
-    return jsonResponse(200, { id: 1, provider: 'KAKAO', petType: null });
+    return jsonResponse(409, { code: 'PET_REQUIRED' });
   };
   await renderSession(storeWith('r0'));
   await screen.findByText('signedIn:pet');
 
-  handler = (url) => {
-    if (url.endsWith('/users/me')) return jsonResponse(200, { id: 1, provider: 'KAKAO', petType: 'CAT' });
-    return jsonResponse(200, { month: '2026-10', amount: 300000 });
-  };
+  handler = () => jsonResponse(200, HOME);
   await fireEvent.press(screen.getByText('refresh'));
 
   await screen.findByText('signedIn:ready');
+  screen.getByText('home:2026-10');
 });
 
 describe('leaving the session', () => {
   async function signedIn() {
     handler = (url) => {
       if (url.endsWith('/auth/refresh')) return jsonResponse(200, TOKENS);
-      return jsonResponse(200, { id: 1, provider: 'KAKAO', petType: null });
+      return jsonResponse(409, { code: 'PET_REQUIRED' });
     };
     const store = storeWith('r0');
     await renderSession(store);

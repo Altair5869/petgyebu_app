@@ -1,9 +1,8 @@
 import { createContext, use, useCallback, useEffect, useState, type PropsWithChildren } from 'react';
 
 import { ApiError, createApiClient, type ApiClient, type TokenStore } from '@/api/client';
-import type { Me, Provider } from '@/api/types';
-import { currentMonth } from '@/lib/month';
-import { resolveStage, type Stage } from '@/lib/onboarding-stage';
+import type { Home, Me, Provider } from '@/api/types';
+import type { Stage } from '@/lib/onboarding-stage';
 
 import { getSocialCredential, signOutSocial, unlinkSocial } from './social-credential';
 import { secureTokenStore } from './token-store';
@@ -12,7 +11,8 @@ export type SessionState =
   | { status: 'loading' }
   | { status: 'error' }
   | { status: 'signedOut' }
-  | { status: 'signedIn'; stage: Stage };
+  // `home` is the /home response that settled the stage, so the home screen can show it without a second request.
+  | { status: 'signedIn'; stage: Stage; home: Home | null };
 
 type SessionContextValue = {
   state: SessionState;
@@ -32,11 +32,15 @@ export function useSession(): SessionContextValue {
   return value;
 }
 
-async function loadStage(api: ApiClient): Promise<Stage> {
-  const me = await api.getMe();
-  if (me.petType === null) return resolveStage(null, null);
-  const budget = await api.getBudget(currentMonth());
-  return resolveStage(me.petType, budget.amount);
+// /home checks the pet first and then the current month's budget, so one request settles the stage.
+async function loadSignedIn(api: ApiClient): Promise<SessionState> {
+  try {
+    return { status: 'signedIn', stage: 'ready', home: await api.getHome() };
+  } catch (error) {
+    if (error instanceof ApiError && error.code === 'PET_REQUIRED') return { status: 'signedIn', stage: 'pet', home: null };
+    if (error instanceof ApiError && error.code === 'BUDGET_REQUIRED') return { status: 'signedIn', stage: 'budget', home: null };
+    throw error;
+  }
 }
 
 function isUnauthorized(error: unknown): boolean {
@@ -61,7 +65,7 @@ export function SessionProvider({ baseUrl, tokenStore = secureTokenStore, childr
     (async () => {
       try {
         const restored = await api.restoreSession();
-        const next: SessionState = restored ? { status: 'signedIn', stage: await loadStage(api) } : { status: 'signedOut' };
+        const next: SessionState = restored ? await loadSignedIn(api) : { status: 'signedOut' };
         if (active) setState(next);
       } catch (error) {
         if (active) setState(isUnauthorized(error) ? { status: 'signedOut' } : { status: 'error' });
@@ -76,13 +80,13 @@ export function SessionProvider({ baseUrl, tokenStore = secureTokenStore, childr
     async (provider: Provider) => {
       const credential = await getSocialCredential(provider);
       await api.login(provider, credential);
-      setState({ status: 'signedIn', stage: await loadStage(api) });
+      setState(await loadSignedIn(api));
     },
     [api],
   );
 
   const refreshStage = useCallback(async () => {
-    setState({ status: 'signedIn', stage: await loadStage(api) });
+    setState(await loadSignedIn(api));
   }, [api]);
 
   const signOut = useCallback(

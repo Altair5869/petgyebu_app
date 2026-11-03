@@ -9,9 +9,14 @@ import HomeScreen from '@/app/index';
 const mockApi = { getHome: jest.fn() };
 const mockRefreshStage = jest.fn();
 let mockFocusEffect: (() => void) | undefined;
+let mockSessionHome: unknown = null;
 
 jest.mock('@/session/session-provider', () => ({
-  useSession: () => ({ api: mockApi, refreshStage: mockRefreshStage }),
+  useSession: () => ({
+    state: { status: 'signedIn', stage: 'ready', home: mockSessionHome },
+    api: mockApi,
+    refreshStage: mockRefreshStage,
+  }),
 }));
 
 jest.mock('expo-router', () => {
@@ -54,6 +59,29 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockRefreshStage.mockResolvedValue(undefined);
   mockFontScale = 2;
+  mockSessionHome = null;
+});
+
+describe('with the /home response the session booted with', () => {
+  test('shows it at once without asking again', async () => {
+    mockSessionHome = HOME;
+    await render(<HomeScreen />);
+
+    screen.getByLabelText('고양이, 안정');
+    screen.getByLabelText('300,000원 남았어요');
+    expect(mockApi.getHome).not.toHaveBeenCalled();
+  });
+
+  test('still refetches on the next focus', async () => {
+    mockSessionHome = HOME;
+    mockApi.getHome.mockResolvedValue({ ...HOME, month: '2026-11' });
+    await render(<HomeScreen />);
+
+    await act(async () => mockFocusEffect?.());
+
+    await screen.findByText('2026년 11월');
+    expect(mockApi.getHome).toHaveBeenCalledTimes(1);
+  });
 });
 
 test('shows pet state, balance, usage, and the first-record guide', async () => {

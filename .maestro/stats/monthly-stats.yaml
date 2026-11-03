@@ -93,6 +93,8 @@ env:
 - tapOn: "지출 금액"
 - inputText: "300000"
 - runFlow: ../subflows/tap-save.yaml
+# 통계 탭은 돌아와도 스크롤 위치를 유지하므로(#36), 맨 위 요약의 "초과"를 보려면 위로 올린다
+- runFlow: ../subflows/scroll-to-top.yaml
 - extendedWaitUntil: { visible: "초과", timeout: 20000 }
 - assertVisible: "326,000원"
 - assertVisible: "26,000원"

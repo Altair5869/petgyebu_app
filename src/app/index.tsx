@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { router, useFocusEffect } from 'expo-router';
 import { ActivityIndicator, AppState, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -25,8 +25,11 @@ function isStageError(error: unknown): boolean {
 }
 
 export default function HomeScreen() {
-  const { api, refreshStage } = useSession();
-  const [load, setLoad] = useState<HomeLoad>({ status: 'loading' });
+  const { state, api, refreshStage } = useSession();
+  // The session just fetched /home to decide this stage; show that instead of asking again on mount.
+  const [bootHome] = useState(() => (state.status === 'signedIn' ? state.home : null));
+  const [load, setLoad] = useState<HomeLoad>(bootHome ? { status: 'loaded', home: bootHome } : { status: 'loading' });
+  const skipFirstFetch = useRef(bootHome !== null);
   const [focused, setFocused] = useState(false);
   const { fontScale } = useWindowDimensions();
 
@@ -47,7 +50,8 @@ export default function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       setFocused(true);
-      fetchHome();
+      if (skipFirstFetch.current) skipFirstFetch.current = false;
+      else fetchHome();
       return () => setFocused(false);
     }, [fetchHome]),
   );

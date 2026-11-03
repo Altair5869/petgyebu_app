@@ -18,7 +18,9 @@ export function useDailyTotals(api: Pick<ApiClient, 'getDailyTotals'>, month: st
   const reload = useCallback(() => {
     generation.current += 1;
     const gen = generation.current;
-    setState({ ...INITIAL, month });
+    // The same month keeps showing what it has until the new response lands, so returning to a
+    // screen does not flash a spinner. Another month starts from loading.
+    setState((s) => (s.status === 'ready' && s.month === month ? s : { ...INITIAL, month }));
     api.getDailyTotals(month).then(
       (totals) => {
         if (gen === generation.current) setState({ status: 'ready', totals, month });

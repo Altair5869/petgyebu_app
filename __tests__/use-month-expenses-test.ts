@@ -129,6 +129,34 @@ test('reload drops the cursor and ignores a late page from before the reload', a
   expect(result.current.hasMore).toBe(true);
 });
 
+test('reloading the same month keeps the items until the first page replaces them', async () => {
+  const fresh = deferred<ExpensePage>();
+  const get = jest.fn().mockResolvedValueOnce(page([3, 2], 'c1')).mockResolvedValueOnce(page([1], null)).mockReturnValueOnce(fresh.promise);
+  const { result } = await setup(get);
+  await act(async () => result.current.reload());
+  await act(async () => result.current.loadMore());
+
+  await act(async () => result.current.reload());
+  expect(result.current.status).toBe('ready');
+  expect(result.current.items.map((e) => e.id)).toEqual([3, 2, 1]);
+  expect(get).toHaveBeenLastCalledWith('2026-10', undefined);
+
+  await act(async () => fresh.resolve(page([4, 3], 'c2')));
+  expect(result.current.items.map((e) => e.id)).toEqual([4, 3]);
+  expect(result.current.hasMore).toBe(true);
+});
+
+test('a failed reload of the same month shows the error instead of the old items', async () => {
+  const get = jest.fn().mockResolvedValueOnce(page([1], null)).mockRejectedValueOnce(new TypeError('Network request failed'));
+  const { result } = await setup(get);
+  await act(async () => result.current.reload());
+
+  await act(async () => result.current.reload());
+
+  expect(result.current.status).toBe('error');
+  expect(result.current.items).toEqual([]);
+});
+
 test('starts over from the first page on INVALID_CURSOR', async () => {
   const get = jest
     .fn()

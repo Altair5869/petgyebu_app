@@ -298,6 +298,24 @@ test('regaining focus reloads both APIs', async () => {
   expect(mockApi.getMonthExpenses).toHaveBeenCalledTimes(2);
 });
 
+test('returning to the screen keeps the stats and rows shown until the reload lands', async () => {
+  mockApi.getMonthExpenses.mockResolvedValue({ items: [row(1, '하나')], nextCursor: null });
+  await render(<MonthStatsScreen />);
+  await screen.findByText('하나');
+  let resolveStats!: (value: ReturnType<typeof statsFor>) => void;
+  mockApi.getMonthStats.mockReturnValueOnce(new Promise((resolve) => {
+    resolveStats = resolve;
+  }));
+
+  await act(async () => mockFocusEffect());
+
+  screen.getByText('26,000원');
+  screen.getByText('하나');
+  await act(async () => resolveStats(statsFor(currentMonth(), 31000)));
+  expect(screen.getAllByText('31,000원').length).toBeGreaterThan(0);
+  expect(screen.queryByText('26,000원')).toBeNull();
+});
+
 test('shows the goals card for the month', async () => {
   await render(<MonthStatsScreen />);
 

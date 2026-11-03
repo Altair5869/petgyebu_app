@@ -51,6 +51,20 @@ test('ignores a late response from an earlier reload', async () => {
   expect(result.current.insights).toEqual(insights(2));
 });
 
+test('keeps the loaded insights while reloading', async () => {
+  const second = deferred<Insights>();
+  const get = jest.fn().mockResolvedValueOnce(insights(1)).mockReturnValueOnce(second.promise);
+  const { result } = await renderHook(() => useInsights({ getInsights: get }));
+  await act(async () => result.current.reload());
+
+  await act(async () => result.current.reload());
+  expect(result.current.status).toBe('ready');
+  expect(result.current.insights).toEqual(insights(1));
+
+  await act(async () => second.resolve(insights(2)));
+  expect(result.current.insights).toEqual(insights(2));
+});
+
 test('reload is stable while api is unchanged', async () => {
   const api = { getInsights: jest.fn().mockResolvedValue(insights(1)) };
   const { result, rerender } = await renderHook(() => useInsights(api));
